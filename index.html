@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-brand-background">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ListingPal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            'brand-background': '#171E2B',
+            'brand-panel': '#242B40',
+            'brand-card': '#2D374F',
+            'brand-primary': '#4A55C7',
+            'brand-secondary': '#38A169',
+            'brand-accent': '#805AD5',
+            'brand-text-primary': '#F7FAFC',
+            'brand-text-secondary': '#A0AEC0',
+            'brand-text-tertiary': '#718096',
+            'brand-border': '#4A5568',
+            'brand-danger': '#E53E3E',
+            'brand-input-bg': '#2D374F',
+          },
+          backgroundImage: {
+            'brand-gradient': 'linear-gradient(to right, #805AD5, #4A55C7)',
+          }
+        }
+      }
+    }
+  </script>
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto {
+        content-visibility: auto;
+      }
+    }
+    
+    /* CSS Variables for Modern Design System */
+    :root {
+      --card-primary: rgba(42, 45, 58, 0.95);
+      --card-accent: rgba(51, 65, 85, 0.8);
+      --border-subtle: rgba(255, 255, 255, 0.1);
+      --border-medium: rgba(255, 255, 255, 0.2);
+      --transition-medium: 0.3s ease-out;
+      --glow-primary: rgba(74, 85, 199, 0.4);
+      --glow-secondary: rgba(56, 161, 105, 0.4);
+    }
+
+    /* Tool Card Base Class - Matching Specification */
+    .tool-card {
+      background: var(--card-primary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 0.75rem;
+      padding: 1.5rem;
+      transition: all var(--transition-medium);
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      min-height: fit-content;
+      max-height: 120px;
+      height: 120px;
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+    }
+
+    .tool-card h4 {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tool-card:hover {
+      border-color: var(--border-medium);
+      transform: translateY(-4px);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+
+    .tool-card.enabled:hover {
+      background: var(--card-accent);
+    }
+
+    .tool-card.disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .tool-card.disabled:hover {
+      transform: none;
+      border-color: var(--border-subtle);
+    }
+
+    /* Mobile Responsive Optimizations */
+    @media (max-width: 768px) {
+      .tool-card {
+        padding: 1rem; /* Slightly less padding on mobile */
+      }
+      
+      .tool-card:hover {
+        transform: translateY(-2px); /* Reduced hover lift on mobile */
+      }
+    }
+
+    /* Glass morphism card styling for landing page */
+    .card-glass {
+      background: rgba(42, 45, 58, 0.8);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* Line clamp utilities for text truncation */
+    .line-clamp-2 {
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+    }
+
+    .line-clamp-3 {
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 3;
+    }
+
+    /* Modern Input/Textarea Enhancements */
+    textarea, input[type="text"], input[type="email"], input[type="password"], input[type="number"] {
+      background: #242B40 !important;
+      color: #F7FAFC !important;
+      border: 1px solid #4A5568 !important;
+    }
+
+    textarea::placeholder, input::placeholder {
+      color: #718096 !important;
+      opacity: 0.8;
+    }
+
+    textarea:focus, input:focus {
+      background: #2D374F !important;
+      border-color: #4A55C7 !important;
+      box-shadow: 0 0 0 3px rgba(74, 85, 199, 0.1) !important;
+    }
+
+    textarea:hover, input:hover {
+      background: #2D374F !important;
+      border-color: #718096 !important;
+    }
+
+    .tool-card.selected::before {
+      background: linear-gradient(135deg, rgba(74, 85, 199, 0.2) 0%, rgba(74, 85, 199, 0.1) 100%);
+      opacity: 1;
+    }
+
+    .tool-card.disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      background: rgba(42, 45, 58, 0.5);
+    }
+
+    .tool-card.disabled:hover {
+      transform: none;
+      border-color: var(--border-subtle);
+      box-shadow: none;
+    }
+
+    /* Icon containers with glow effects */
+    .tool-icon {
+      transition: all var(--transition-medium);
+      border-radius: 0.5rem;
+      padding: 0.5rem;
+      position: relative;
+    }
+
+    .tool-card:hover .tool-icon {
+      transform: scale(1.05);
+    }
+
+    .tool-card.selected .tool-icon {
+      box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+    }
+
+    /* Generated status indicator */
+    .generated-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      animation: fadeInScale 0.5s ease-out;
+    }
+
+    .generated-dot {
+      width: 0.375rem;
+      height: 0.375rem;
+      background: #10B981;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    /* Selection indicator */
+    .selection-indicator {
+      width: 1rem;
+      height: 1rem;
+      background: linear-gradient(135deg, #4A55C7 0%, #667EEA 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: bounceIn 0.4s ease-out;
+      box-shadow: 0 0 10px rgba(74, 85, 199, 0.5);
+      flex-shrink: 0;
+    }
+
+    /* Animations */
+    @keyframes fadeInScale {
+      from {
+        opacity: 0;
+        transform: scale(0.8);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    @keyframes bounceIn {
+      0% {
+        opacity: 0;
+        transform: scale(0.3);
+      }
+      50% {
+        opacity: 1;
+        transform: scale(1.05);
+      }
+      70% {
+        transform: scale(0.9);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.6;
+      }
+    }
+
+    /* Grid animations */
+    .tool-grid {
+      animation: slideInUp 0.6s ease-out;
+    }
+
+    @keyframes slideInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Start button modern styling */
+    .start-workflow-btn {
+      background: linear-gradient(135deg, #4A55C7 0%, #667EEA 50%, #38A169 100%);
+      border: none;
+      padding: 0.75rem 2rem;
+      border-radius: 0.75rem;
+      color: white;
+      font-weight: 600;
+      font-size: 1.125rem;
+      transition: all var(--transition-medium);
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 10px 20px -5px rgba(74, 85, 199, 0.3);
+    }
+
+    .start-workflow-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.6s;
+    }
+
+    .start-workflow-btn:hover::before {
+      left: 100%;
+    }
+
+    .start-workflow-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 
+        0 15px 30px -5px rgba(74, 85, 199, 0.4),
+        0 0 40px rgba(74, 85, 199, 0.3);
+    }
+
+    .start-workflow-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .start-workflow-btn:disabled:hover {
+      transform: none;
+      box-shadow: none;
+    }
+    
+    /* Custom scrollbar for webkit browsers */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #171E2B; /* brand-background */
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #4A5568; /* brand-border */
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #718096; /* brand-text-tertiary */
+    }
+
+    /* Range Slider Styling */
+    .slider::-webkit-slider-thumb {
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #4a55c7;
+      cursor: pointer;
+      border: 2px solid #ffffff;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .slider::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #4a55c7;
+      cursor: pointer;
+      border: 2px solid #ffffff;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+  </style>
+<script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://esm.sh/react-dom@^19.1.0/",
+    "react-router-dom": "https://esm.sh/react-router-dom@^7.6.2",
+    "react/": "https://esm.sh/react@^19.1.0/",
+    "react": "https://esm.sh/react@^19.1.0",
+    "@heroicons/react/": "https://esm.sh/@heroicons/react@^2.2.0/"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body class="bg-brand-background text-brand-text-primary font-sans antialiased">
+  <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>

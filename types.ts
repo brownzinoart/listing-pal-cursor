@@ -1,0 +1,67 @@
+import { ForwardRefExoticComponent, RefAttributes, SVGProps } from "react";
+
+export interface User {
+  id: string;
+  email: string;
+}
+
+export interface ListingImage {
+  id: string; // a unique id for the image itself, e.g. for key prop
+  url: string; // base64 data URL
+  name?: string; // original file name, optional
+}
+
+export interface Listing {
+  id: string;
+  userId: string;
+  address: string;
+  bedrooms: number;
+  bathrooms: number;
+  squareFootage: number;
+  yearBuilt: number;
+  price: number;
+  keyFeatures: string;
+  images: ListingImage[]; 
+  propertyType?: string; 
+  generatedDescription?: string;
+  generatedFacebookPost?: string;
+  generatedInstagramCaption?: string;
+  generatedXPost?: string;
+  generatedEmail?: string;
+  // For AI Room Redesign
+  generatedRoomDesigns?: {
+    originalImageUrl: string;
+    styleId: string;
+    redesignedImageUrl: string;
+    prompt?: string;
+    createdAt?: string;
+  }[];
+}
+
+export type AuthFormMode = 'login' | 'signup';
+
+export enum AlertType {
+  SUCCESS = 'success',
+  ERROR = 'error',
+  INFO = 'info',
+}
+
+export interface AlertMessage {
+  id: string;
+  type: AlertType;
+  message: string;
+}
+
+export interface AiWorkflowTool {
+  id: string;
+  name: string;
+  pathSuffix?: string; 
+  enabled: boolean; 
+}
+
+export interface AiDesignStyle {
+  id: string;
+  name: string;
+  description: string;
+  icon: ForwardRefExoticComponent<Omit<SVGProps<SVGSVGElement>, "ref"> & { title?: string | undefined; titleId?: string | undefined; } & RefAttributes<SVGSVGElement>>; // Heroicon type
+}

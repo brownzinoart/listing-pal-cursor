@@ -1,0 +1,40 @@
+{
+  "name": "realtyboost-ai---phase-1",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "server": "node server.js",
+    "server:dev": "nodemon server.js",
+    "start": "npm run build && npm run server",
+    "dev:full": "concurrently \"npm run dev\" \"npm run server:dev\""
+  },
+  "dependencies": {
+    "@heroicons/react": "^2.2.0",
+    "axios": "^1.6.8",
+    "cloudinary": "^2.6.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.18.3",
+    "firebase": "^11.9.0",
+    "multer": "^1.4.5-lts.1",
+    "react": "^19.1.0",
+    "react-compare-image": "^3.5.4",
+    "react-dom": "^19.1.0",
+    "react-router-dom": "^7.6.2",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "@types/react": "^19.1.6",
+    "@types/react-dom": "^19.1.6",
+    "@vitejs/plugin-react": "^4.5.1",
+    "concurrently": "^9.1.2",
+    "nodemon": "^3.1.0",
+    "typescript": "~5.7.2",
+    "vite": "^6.2.0"
+  }
+}
