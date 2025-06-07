@@ -362,9 +362,9 @@ const FlyerGeneratorPage: React.FC = () => {
           <PropertySummaryHeader listing={listing} />
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">
           {/* Customization Panel */}
-          <div className="xl:col-span-1 space-y-6">
+          <div className="xl:col-span-2 space-y-6">
             {/* Template Selection */}
             <div className="bg-brand-panel border border-brand-border rounded-lg p-6">
               <h3 className="text-lg font-semibold text-brand-text-primary mb-4 flex items-center">
@@ -467,9 +467,9 @@ const FlyerGeneratorPage: React.FC = () => {
             </Button>
           </div>
 
-          {/* Preview Panel */}
-          <div className="xl:col-span-2">
-            <div className="bg-brand-panel border border-brand-border rounded-lg p-6">
+          {/* Preview Panel - Now takes more space and matches height */}
+          <div className="xl:col-span-3">
+            <div className="bg-brand-panel border border-brand-border rounded-lg p-6 h-full min-h-[800px] flex flex-col">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-semibold text-brand-text-primary">Flyer Preview</h3>
                 {generatedImageUrl && (
@@ -494,18 +494,23 @@ const FlyerGeneratorPage: React.FC = () => {
                 )}
               </div>
               
-              <div className="flex justify-center">
-                <div className="relative">
+              <div className="flex-1 flex justify-center items-center">
+                <div className="relative max-w-full max-h-full">
                   <canvas
                     ref={canvasRef}
-                    className="max-w-full h-auto border border-brand-border rounded-lg shadow-lg"
-                    style={{ width: '400px', height: 'auto' }}
+                    className="max-w-full max-h-full border border-brand-border rounded-lg shadow-lg"
+                    style={{ 
+                      width: 'auto', 
+                      height: 'auto',
+                      maxWidth: '100%',
+                      maxHeight: '700px'
+                    }}
                   />
                   {!generatedImageUrl && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-brand-card/80 rounded-lg">
+                    <div className="absolute inset-0 flex items-center justify-center bg-brand-card/80 rounded-lg min-h-[500px] min-w-[350px]">
                       <div className="text-center">
-                        <PhotoIcon className="h-16 w-16 text-brand-text-tertiary mx-auto mb-4" />
-                        <p className="text-brand-text-secondary">Click "Generate Flyer" to create your marketing flyer</p>
+                        <PhotoIcon className="h-20 w-20 text-brand-text-tertiary mx-auto mb-4" />
+                        <p className="text-brand-text-secondary text-lg">Click "Generate Flyer" to create your marketing flyer</p>
                       </div>
                     </div>
                   )}
