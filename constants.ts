@@ -14,6 +14,7 @@ export const TOOLKIT_TOOLS = [
   { id: "email", name: "Introductory Email", pathSuffix: "/generate/email", enabled: true, color: "bg-teal-600", icon: EnvelopeIcon, subtitle: "Professional email campaigns" },
   { id: "interior", name: "Interior Reimagined", pathSuffix: "/ai/room-redesign", enabled: true, color: "bg-pink-600", icon: LightBulbIcon, subtitle: "AI interior styling" },
   { id: "flyer", name: "Flyer Generator", pathSuffix: "/generate/flyer", enabled: true, color: "bg-orange-600", icon: PaintBrushIcon, subtitle: "Custom marketing flyers" },
+  { id: "ads", name: "Paid Social Ads", pathSuffix: "/generate/paid-ads", enabled: true, color: "bg-red-600", icon: MegaphoneIcon, subtitle: "Targeted social media advertising" },
 ];
 
 export const DESCRIPTION_STYLES = [
