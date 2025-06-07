@@ -13,7 +13,7 @@ export const TOOLKIT_TOOLS = [
   { id: "x", name: "X (Twitter) Media", pathSuffix: "/generate/x-post", enabled: true, color: "bg-sky-600", icon: ChatBubbleLeftRightIcon, subtitle: "Concise X posts" },
   { id: "email", name: "Introductory Email", pathSuffix: "/generate/email", enabled: true, color: "bg-teal-600", icon: EnvelopeIcon, subtitle: "Professional email campaigns" },
   { id: "interior", name: "Interior Reimagined", pathSuffix: "/ai/room-redesign", enabled: true, color: "bg-pink-600", icon: LightBulbIcon, subtitle: "AI interior styling" },
-  { id: "flyer", name: "Flyer Generator", enabled: true, color: "bg-orange-600", icon: PaintBrushIcon, subtitle: "Custom marketing flyers" },
+  { id: "flyer", name: "Flyer Generator", pathSuffix: "/generate/flyer", enabled: true, color: "bg-orange-600", icon: PaintBrushIcon, subtitle: "Custom marketing flyers" },
 ];
 
 export const DESCRIPTION_STYLES = [

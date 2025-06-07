@@ -14,6 +14,7 @@ import FacebookPostGeneratorPage from './components/listings/generation/Facebook
 import InstagramPostGeneratorPage from './components/listings/generation/InstagramPostGeneratorPage';
 import XPostGeneratorPage from './components/listings/generation/XPostGeneratorPage';
 import EmailGeneratorPage from './components/listings/generation/EmailGeneratorPage';
+import FlyerGeneratorPage from './components/listings/generation/FlyerGeneratorPage';
 
 const App: React.FC = () => {
   const { user, isLoading } = useAuth();
@@ -58,6 +59,10 @@ const App: React.FC = () => {
           <Route
             path="/listings/:id/generate/email"
             element={user ? <EmailGeneratorPage /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/listings/:id/generate/flyer"
+            element={user ? <FlyerGeneratorPage /> : <Navigate to="/login" />}
           />
           <Route
             path="/listings/:id/ai/room-redesign"

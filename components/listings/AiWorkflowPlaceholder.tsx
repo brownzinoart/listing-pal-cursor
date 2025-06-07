@@ -76,6 +76,7 @@ const ToolkitPlaceholder: React.FC<ToolkitPlaceholderProps> = ({ listing }) => {
     ...(listing.generatedXPost ? ['x'] : []),
     ...(listing.generatedEmail ? ['email'] : []),
     ...(listing.generatedRoomDesigns && listing.generatedRoomDesigns.length > 0 ? ['interior'] : []),
+    ...(listing.generatedFlyers && listing.generatedFlyers.length > 0 ? ['flyer'] : []),
     // Add other generated content types as they become available
   ] : [];
 

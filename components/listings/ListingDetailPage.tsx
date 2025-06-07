@@ -253,7 +253,7 @@ const ListingDetailPage: React.FC = () => {
         </div>
 
         {/* Generated Content Sections */}
-        {(listing.generatedDescription || listing.generatedFacebookPost || listing.generatedInstagramCaption || listing.generatedXPost || listing.generatedEmail) && (
+        {(listing.generatedDescription || listing.generatedFacebookPost || listing.generatedInstagramCaption || listing.generatedXPost || listing.generatedEmail || (listing.generatedFlyers && listing.generatedFlyers.length > 0)) && (
           <div className="mb-8">
             {/* Property Description - Full Width */}
             {listing.generatedDescription && (
@@ -406,6 +406,73 @@ const ListingDetailPage: React.FC = () => {
                   <div className="text-brand-text-secondary leading-relaxed whitespace-pre-line">
                     {listing.generatedEmail}
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* Generated Flyers - Grid Layout */}
+            {listing.generatedFlyers && listing.generatedFlyers.length > 0 && (
+              <div className="mb-12">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+                  <div className="mb-4 sm:mb-0">
+                    <h3 className="text-2xl font-bold text-brand-text-primary mb-2">Marketing Flyers</h3>
+                    <div className="flex items-center">
+                      <span className="bg-brand-secondary h-2 w-2 rounded-full mr-2"></span>
+                      <span className="text-sm font-medium text-brand-secondary">Generated ({listing.generatedFlyers.length} flyer{listing.generatedFlyers.length > 1 ? 's' : ''})</span>
+                    </div>
+                  </div>
+                  <Link to={`/listings/${listing.id}/generate/flyer`}>
+                    <Button 
+                      variant='edit' 
+                      leftIcon={<PencilSquareIcon className='h-4 w-4' />}
+                      size="md"
+                    >
+                      Create New Flyer
+                    </Button>
+                  </Link>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {listing.generatedFlyers.map((flyer, index) => (
+                    <div key={flyer.id} className="bg-brand-panel border border-brand-border rounded-lg overflow-hidden shadow-xl">
+                      <div className="relative">
+                        <img 
+                          src={flyer.imageUrl} 
+                          alt={`Marketing Flyer ${index + 1}`} 
+                          className="w-full h-64 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                          onClick={() => {
+                            // Create a download link
+                            const link = document.createElement('a');
+                            link.href = flyer.imageUrl;
+                            link.download = `flyer-${listing.address.replace(/[^a-z0-9]/gi, '-').toLowerCase()}-${index + 1}.png`;
+                            link.click();
+                          }}
+                        />
+                        <div className="absolute top-3 left-3 bg-brand-primary text-white text-xs px-2 py-1 rounded-full font-medium">
+                          Template {index + 1}
+                        </div>
+                        <div className="absolute bottom-3 right-3 bg-black/60 text-white text-xs px-2 py-1 rounded-full">
+                          Click to Download
+                        </div>
+                      </div>
+                      <div className="p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-semibold text-brand-text-primary">Flyer {index + 1}</h4>
+                          <span className="text-xs text-brand-text-tertiary">
+                            {new Date(flyer.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <div className="flex items-center space-x-2 mb-3">
+                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: flyer.customization.primaryColor }}></div>
+                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: flyer.customization.secondaryColor }}></div>
+                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: flyer.customization.accentColor }}></div>
+                          <span className="text-xs text-brand-text-tertiary">Color Scheme</span>
+                        </div>
+                        {flyer.customization.customText && (
+                          <p className="text-sm text-brand-text-secondary italic">"{flyer.customization.customText}"</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}

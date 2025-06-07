@@ -11,6 +11,34 @@ export interface ListingImage {
   name?: string; // original file name, optional
 }
 
+export interface FlyerTemplate {
+  id: string;
+  name: string;
+  category: 'modern' | 'classic' | 'luxury' | 'minimal';
+  thumbnail: string;
+  description: string;
+}
+
+export interface FlyerCustomization {
+  template: string;
+  primaryColor: string;
+  secondaryColor: string;
+  accentColor: string;
+  fontFamily: string;
+  logoUrl?: string;
+  agentPhoto?: string;
+  customText?: string;
+  backgroundImage?: string;
+}
+
+export interface GeneratedFlyer {
+  id: string;
+  templateId: string;
+  customization: FlyerCustomization;
+  imageUrl: string;
+  createdAt: string;
+}
+
 export interface Listing {
   id: string;
   userId: string;
@@ -36,6 +64,8 @@ export interface Listing {
     prompt?: string;
     createdAt?: string;
   }[];
+  // For Flyer Generator
+  generatedFlyers?: GeneratedFlyer[];
 }
 
 export type AuthFormMode = 'login' | 'signup';
