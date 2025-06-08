@@ -181,6 +181,52 @@ Write ONLY the punchy, engaging X post content that fits within 280 characters. 
     return this.cleanAIResponse(response, 'social');
   }
 
+  async generateAdCopy(listing: Listing, platform: string, objective: string): Promise<{ headline: string; body: string; cta: string }> {
+    const prompt = `Create ad copy for a real estate listing for a ${platform} campaign with the objective of "${objective}".
+    The property is located at ${listing.address} and is priced at $${listing.price.toLocaleString()}.
+    It has ${listing.bedrooms} bedrooms, ${listing.bathrooms} bathrooms, and is ${listing.squareFootage} sqft.
+    Key Features include: ${listing.keyFeatures}.
+
+    Your response MUST be a raw JSON object with three keys: "headline", "body", and "cta".
+    - "headline": A catchy headline, under 60 characters.
+    - "body": Engaging and persuasive text for the ad body.
+    - "cta": A short, clear call to action like "Learn More", "Sign Up", or "Contact Us".
+
+    Example format:
+    {
+      "headline": "Your Dream Home Awaits in Cityville!",
+      "body": "Discover this stunning 3-bed, 2-bath gem with a newly renovated kitchen. Perfect for families. Don't miss out on this prime location!",
+      "cta": "Schedule a Tour"
+    }
+
+    Now, generate the JSON for the current listing.`;
+
+    const response = await this.callOllama({
+      model: DEFAULT_MODEL,
+      prompt,
+      options: {
+        temperature: 0.7
+      }
+    });
+
+    try {
+      // Clean the response to ensure it's valid JSON
+      const jsonResponse = response.match(/\{[\s\S]*\}/);
+      if (jsonResponse) {
+        return JSON.parse(jsonResponse[0]);
+      }
+      throw new Error("No valid JSON found in AI response.");
+    } catch (e) {
+      console.error("Failed to parse ad copy JSON from Ollama:", e);
+      // Fallback in case of parsing failure
+      return {
+        headline: `Incredible Home at ${listing.address.split(',')[0]}`,
+        body: `Don't miss this amazing opportunity. Featuring: ${listing.keyFeatures}. Contact us today!`,
+        cta: "Learn More",
+      };
+    }
+  }
+
   private cleanAIResponse(response: string, contentType: string = 'general'): string {
     // Remove common AI companion text patterns
     let cleaned = response;

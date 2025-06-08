@@ -66,7 +66,7 @@ const App: React.FC = () => {
             element={user ? <FlyerGeneratorPage /> : <Navigate to="/login" />}
           />
           <Route
-            path="/listings/:id/generate/paid-ads"
+            path="/listings/:id/generate/paid-ad"
             element={user ? <PaidAdGeneratorPage /> : <Navigate to="/login" />}
           />
           <Route

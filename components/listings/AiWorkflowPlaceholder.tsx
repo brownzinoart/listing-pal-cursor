@@ -64,7 +64,6 @@ const ToolkitPlaceholder: React.FC<ToolkitPlaceholderProps> = ({ listing }) => {
       case 'email': return 'Professional email campaigns';
       case 'flyer': return 'Custom marketing flyers';
       case 'interior': return 'AI interior styling';
-      case 'ads': return 'Targeted social media advertising';
       default: return 'Generate content for your listing';
     }
   };
@@ -78,7 +77,6 @@ const ToolkitPlaceholder: React.FC<ToolkitPlaceholderProps> = ({ listing }) => {
     ...(listing.generatedEmail ? ['email'] : []),
     ...(listing.generatedRoomDesigns && listing.generatedRoomDesigns.length > 0 ? ['interior'] : []),
     ...(listing.generatedFlyers && listing.generatedFlyers.length > 0 ? ['flyer'] : []),
-    ...(listing.generatedAds && listing.generatedAds.length > 0 ? ['ads'] : []),
     // Add other generated content types as they become available
   ] : [];
 

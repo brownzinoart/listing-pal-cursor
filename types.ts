@@ -39,33 +39,6 @@ export interface GeneratedFlyer {
   createdAt: string;
 }
 
-export interface AdPlatform {
-  id: string;
-  name: string;
-  description: string;
-  maxCharacters: number;
-  imageAspectRatio: string;
-}
-
-export interface AdCopyStyle {
-  id: string;
-  name: string;
-  description: string;
-  tone: string;
-}
-
-export interface GeneratedAd {
-  id: string;
-  platform: string;
-  style: string;
-  headline: string;
-  body: string;
-  callToAction: string;
-  targetAudience: string;
-  imageUrl?: string;
-  createdAt: string;
-}
-
 export interface Listing {
   id: string;
   userId: string;
@@ -93,8 +66,14 @@ export interface Listing {
   }[];
   // For Flyer Generator
   generatedFlyers?: GeneratedFlyer[];
-  // For Paid Social Media Ads
-  generatedAds?: GeneratedAd[];
+  // Add a new field for generated ad copy
+  generatedAdCopy?: {
+    platform: string;
+    objective: string;
+    headline: string;
+    body: string;
+    cta: string;
+  }[];
 }
 
 export type AuthFormMode = 'login' | 'signup';

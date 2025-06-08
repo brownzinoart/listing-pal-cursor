@@ -76,12 +76,12 @@ export async function restyleRoom(
     if (!response.ok) {
       throw new Error(result.error || `API error: ${response.status}`);
     }
-    
+
     if (result.success && result.imageUrl) {
-      return {
-        success: true,
+    return {
+      success: true,
         imageUrl: result.imageUrl
-      };
+    };
     } else {
       throw new Error(result.error || 'No image received from API');
     }
@@ -188,11 +188,11 @@ export async function checkServiceHealth(): Promise<{
                !data.hasCloudinary ? 'Cloudinary not configured' : undefined
       };
     } else {
-      return {
+    return {
         available: false,
         apiType: 'paid',
         error: `Health check failed: ${response.status}`
-      };
+    };
     }
   } catch (error) {
     return {
