@@ -29,13 +29,13 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-brand-background">
+    <div className="min-h-screen flex flex-col bg-brand-background overflow-x-hidden">
       <Navbar />
-      <main className="flex-grow container mx-auto px-4 py-8">
+      <main className="flex-grow container mx-auto px-4 py-8 overflow-hidden">
         <Routes>
           <Route path="/" element={!user ? <LandingPage /> : <Navigate to="/dashboard" />} />
-          <Route path="/login" element={!user ? <LoginPage /> : <Navigate to="/dashboard" />} />
-          <Route path="/signup" element={!user ? <SignupPage /> : <Navigate to="/dashboard" />} />
+          <Route path="/login" element={!user ? <LoginPage /> : <Navigate to="/login" />} />
+          <Route path="/signup" element={!user ? <SignupPage /> : <Navigate to="/login" />} />
           
           <Route path="/dashboard" element={user ? <DashboardPage /> : <Navigate to="/login" />} />
           <Route path="/listings/new" element={user ? <ListingFormPage /> : <Navigate to="/login" />} />
@@ -77,8 +77,8 @@ const App: React.FC = () => {
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </main>
-      <footer className="bg-brand-panel text-center p-4 text-sm text-brand-text-secondary border-t border-brand-border">
-        &copy; {new Date().getFullYear()} ListingPal. All rights reserved.
+      <footer className="bg-brand-panel text-center p-4 text-sm text-brand-text-secondary border-t border-brand-border overflow-hidden">
+        <span className="break-words">&copy; {new Date().getFullYear()} ListingPal. All rights reserved.</span>
       </footer>
     </div>
   );

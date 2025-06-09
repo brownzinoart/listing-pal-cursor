@@ -15,7 +15,7 @@ const FormattedKeyFeatures: React.FC<{ content: string }> = ({ content }) => {
     // Safety check for content
     if (!content || typeof content !== 'string') {
       return (
-        <div className="text-brand-text-tertiary italic text-sm">
+        <div className="text-brand-text-tertiary italic text-sm break-words">
           No key features available
         </div>
       );
@@ -27,7 +27,7 @@ const FormattedKeyFeatures: React.FC<{ content: string }> = ({ content }) => {
       const sections = content.split('\n').filter(line => line && line.trim().length > 0);
       
       return (
-        <div className="space-y-4 max-h-80 overflow-y-auto">
+        <div className="space-y-4 max-h-80 overflow-y-auto overflow-x-hidden">
           {sections.map((line, index) => {
             try {
               const trimmed = line.trim();
@@ -36,7 +36,7 @@ const FormattedKeyFeatures: React.FC<{ content: string }> = ({ content }) => {
               if (trimmed.startsWith('**') && trimmed.endsWith('**') && trimmed.length > 4) {
                 const headerText = trimmed.slice(2, -2);
                 return (
-                  <h4 key={`header-${index}`} className="font-bold text-brand-text-primary text-sm mt-4 first:mt-0 uppercase tracking-wide">
+                  <h4 key={`header-${index}`} className="font-bold text-brand-text-primary text-sm mt-4 first:mt-0 uppercase tracking-wide break-words">
                     {headerText}
                   </h4>
                 );
@@ -46,9 +46,9 @@ const FormattedKeyFeatures: React.FC<{ content: string }> = ({ content }) => {
               if (trimmed.startsWith('•') && trimmed.length > 1) {
                 const bulletText = trimmed.slice(1).trim();
                 return (
-                  <div key={`bullet-${index}`} className="flex items-start space-x-2 ml-4">
-                    <span className="text-brand-secondary mt-1.5 text-xs">•</span>
-                    <span className="text-sm text-brand-text-secondary leading-relaxed">{bulletText}</span>
+                  <div key={`bullet-${index}`} className="flex items-start space-x-2 ml-4 overflow-hidden">
+                    <span className="text-brand-secondary mt-1.5 text-xs flex-shrink-0">•</span>
+                    <span className="text-sm text-brand-text-secondary leading-relaxed break-words">{bulletText}</span>
                   </div>
                 );
               }
@@ -56,7 +56,7 @@ const FormattedKeyFeatures: React.FC<{ content: string }> = ({ content }) => {
               // Regular text
               if (trimmed.length > 0) {
                 return (
-                  <p key={`text-${index}`} className="text-sm text-brand-text-secondary leading-relaxed">
+                  <p key={`text-${index}`} className="text-sm text-brand-text-secondary leading-relaxed break-words">
                     {trimmed}
                   </p>
                 );
@@ -79,16 +79,16 @@ const FormattedKeyFeatures: React.FC<{ content: string }> = ({ content }) => {
       
     if (features.length === 0) {
       return (
-        <div className="text-brand-text-tertiary italic text-sm">
+        <div className="text-brand-text-tertiary italic text-sm break-words">
           No key features listed
         </div>
       );
     }
 
     return (
-      <div className="flex flex-wrap items-start gap-1.5 max-h-60 overflow-y-auto">
+      <div className="flex flex-wrap items-start gap-1.5 max-h-60 overflow-y-auto overflow-x-hidden">
         {features.map((feature, index) => (
-          <span key={`feature-${index}`} className="inline-block bg-brand-border/50 text-brand-text-secondary text-xs px-2 py-1 rounded-full">
+          <span key={`feature-${index}`} className="inline-block bg-brand-border/50 text-brand-text-secondary text-xs px-2 py-1 rounded-full break-words">
             {feature}
           </span>
         ))}
@@ -98,7 +98,7 @@ const FormattedKeyFeatures: React.FC<{ content: string }> = ({ content }) => {
     console.error('FormattedKeyFeatures error:', error);
     // Fallback to simple text display
     return (
-      <div className="text-brand-text-secondary text-sm">
+      <div className="text-brand-text-secondary text-sm break-words">
         {content || 'No key features available'}
       </div>
     );
@@ -189,15 +189,13 @@ const ListingDetailPage: React.FC = () => {
   const primaryImage = listing.images && listing.images.length > 0 ? listing.images[currentImageIndex].url : null;
   const hasMultipleImages = listing.images && listing.images.length > 1;
 
-
-
   return (
-    <div className="min-h-screen bg-brand-background">
+    <div className="min-h-screen bg-brand-background overflow-hidden">
       {/* Header */}
-      <div className="bg-brand-background border-b border-brand-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="bg-brand-background border-b border-brand-border overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 overflow-hidden">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-4 min-w-0 flex-shrink-0">
               <Button 
                 variant="ghost" 
                 onClick={() => navigate('/dashboard')}
@@ -207,15 +205,15 @@ const ListingDetailPage: React.FC = () => {
                 Dashboard
               </Button>
             </div>
-            <div className="text-center flex-1">
-              <h1 className="text-2xl sm:text-3xl font-bold text-brand-text-primary">
+            <div className="text-center flex-1 min-w-0 overflow-hidden">
+              <h1 className="text-2xl sm:text-3xl font-bold text-brand-text-primary break-words">
                 {listing.address.split(',')[0]}
               </h1>
-              <p className="text-brand-text-secondary mt-1">
+              <p className="text-brand-text-secondary mt-1 break-words">
                 {listing.address.split(',').slice(1).join(',').trim()}
               </p>
             </div>
-            <div className="flex items-center justify-end">
+            <div className="flex items-center justify-end flex-shrink-0">
               <Link to={`/listings/${listing.id}/edit`}>
                 <Button 
                   variant="edit" 
@@ -230,14 +228,14 @@ const ListingDetailPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-hidden">
         {/* Property Gallery Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12 lg:h-[500px]">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 mb-12 overflow-hidden">
           
           {/* Left Column - Photo Gallery */}
-          <div className="space-y-4 flex flex-col h-full">
+          <div className="space-y-4 flex flex-col overflow-hidden">
             {/* Main Hero Image */}
-            <div className="relative flex-1 bg-gradient-to-br from-brand-primary to-brand-secondary rounded-lg overflow-hidden">
+            <div className="relative aspect-[4/3] sm:aspect-[16/10] lg:aspect-[4/3] bg-gradient-to-br from-brand-primary to-brand-secondary rounded-lg overflow-hidden">
               {primaryImage ? (
                 <>
                   <img 
@@ -247,26 +245,26 @@ const ListingDetailPage: React.FC = () => {
                   />
                   {hasMultipleImages && (
                     <>
-                      <button onClick={prevImage} className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/40 text-white p-2 rounded-full hover:bg-black/60 transition-all focus:outline-none">
-                          <ChevronLeftIcon className="h-6 w-6" />
+                      <button onClick={prevImage} className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 bg-black/40 text-white p-1.5 sm:p-2 rounded-full hover:bg-black/60 transition-all focus:outline-none">
+                          <ChevronLeftIcon className="h-4 w-4 sm:h-6 sm:w-6" />
                       </button>
-                      <button onClick={nextImage} className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/40 text-white p-2 rounded-full hover:bg-black/60 transition-all focus:outline-none">
-                          <ChevronRightIcon className="h-6 w-6" />
+                      <button onClick={nextImage} className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 bg-black/40 text-white p-1.5 sm:p-2 rounded-full hover:bg-black/60 transition-all focus:outline-none">
+                          <ChevronRightIcon className="h-4 w-4 sm:h-6 sm:w-6" />
                       </button>
-                      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/50 text-white text-xs px-2.5 py-1 rounded-full">
+                      <div className="absolute bottom-2 sm:bottom-3 left-1/2 -translate-x-1/2 bg-black/50 text-white text-xs px-2.5 py-1 rounded-full">
                         {currentImageIndex + 1} / {listing.images.length}
                       </div>
                     </>
                   )}
                 </>
               ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <div className="text-center text-white">
-                    <div className="w-20 h-20 bg-white/20 rounded-lg mx-auto mb-4 flex items-center justify-center">
-                      <BuildingOfficeIcon className="w-12 h-12" />
+                <div className="w-full h-full flex items-center justify-center overflow-hidden">
+                  <div className="text-center text-white px-4">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white/20 rounded-lg mx-auto mb-4 flex items-center justify-center">
+                      <BuildingOfficeIcon className="w-10 h-10 sm:w-12 sm:h-12" />
                     </div>
-                    <h3 className="text-xl font-medium">Main Property Image</h3>
-                    <p className="text-gray-300 text-sm mt-2">Upload photos to showcase this listing</p>
+                    <h3 className="text-lg sm:text-xl font-medium break-words">Main Property Image</h3>
+                    <p className="text-gray-300 text-sm mt-2 break-words">Upload photos to showcase this listing</p>
                   </div>
                 </div>
               )}
@@ -274,9 +272,9 @@ const ListingDetailPage: React.FC = () => {
 
             {/* Additional Photos Grid */}
             {listing.images && listing.images.length > 1 && (
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-2 sm:gap-3 overflow-hidden">
                 {listing.images.slice(1, 7).map((image, index) => (
-                  <div key={image.id} className="relative h-24 bg-brand-card rounded-lg overflow-hidden cursor-pointer hover:scale-105 transition-transform">
+                  <div key={image.id} className="relative aspect-square bg-brand-card rounded-lg overflow-hidden cursor-pointer hover:scale-105 transition-transform">
                     <img 
                       src={image.url} 
                       alt={`${listing.address} - Image ${index + 2}`}
@@ -284,8 +282,8 @@ const ListingDetailPage: React.FC = () => {
                       onClick={() => setCurrentImageIndex(index + 1)}
                     />
                     {index === 5 && listing.images.length > 7 && (
-                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                        <span className="text-white font-semibold">+{listing.images.length - 6}</span>
+                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center overflow-hidden">
+                        <span className="text-white font-semibold text-sm break-words">+{listing.images.length - 6}</span>
                       </div>
                     )}
                   </div>
@@ -295,47 +293,47 @@ const ListingDetailPage: React.FC = () => {
           </div>
 
           {/* Right Column - Property Details */}
-          <div className="space-y-6 h-fit">
-            <div className="bg-brand-panel border border-brand-border rounded-lg p-6 shadow-xl h-full flex flex-col">
-              <div className="space-y-4 flex-1">
-                <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4">
-                  <div className="flex-1 min-w-0">
-                    <h1 className="text-2xl lg:text-3xl font-bold text-brand-text-primary mb-2 break-words">{listing.address.split(',')[0]}</h1>
-                    <p className="text-brand-text-secondary text-base lg:text-lg break-words">{listing.address.split(',').slice(1).join(',').trim()}</p>
+          <div className="space-y-6 overflow-hidden">
+            <div className="bg-brand-panel border border-brand-border rounded-lg p-4 sm:p-6 shadow-xl overflow-hidden">
+              <div className="space-y-4 overflow-hidden">
+                <div className="flex flex-col gap-4 overflow-hidden">
+                  <div className="flex-1 min-w-0 overflow-hidden">
+                    <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-brand-text-primary mb-2 break-words">{listing.address.split(',')[0]}</h1>
+                    <p className="text-brand-text-secondary text-sm sm:text-base lg:text-lg break-words">{listing.address.split(',').slice(1).join(',').trim()}</p>
                   </div>
                   <div className="text-left lg:text-right flex-shrink-0">
-                    <div className="text-3xl lg:text-4xl font-bold text-brand-secondary">
+                    <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-brand-secondary break-words">
                       {formatPrice(listing.price)}
                     </div>
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 py-4 border-t border-b border-brand-border">
-                  <div className="text-center">
-                    <div className="text-xl lg:text-2xl font-bold text-brand-text-primary">{listing.bedrooms}</div>
-                    <div className="text-sm text-brand-text-secondary">Bedrooms</div>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 py-4 border-t border-b border-brand-border overflow-hidden">
+                  <div className="text-center min-w-0">
+                    <div className="text-lg sm:text-xl lg:text-2xl font-bold text-brand-text-primary break-words">{listing.bedrooms}</div>
+                    <div className="text-xs sm:text-sm text-brand-text-secondary break-words">Bedrooms</div>
                   </div>
-                  <div className="text-center">
-                    <div className="text-xl lg:text-2xl font-bold text-brand-text-primary">{listing.bathrooms}</div>
-                    <div className="text-sm text-brand-text-secondary">Bathrooms</div>
+                  <div className="text-center min-w-0">
+                    <div className="text-lg sm:text-xl lg:text-2xl font-bold text-brand-text-primary break-words">{listing.bathrooms}</div>
+                    <div className="text-xs sm:text-sm text-brand-text-secondary break-words">Bathrooms</div>
                   </div>
-                  <div className="text-center">
-                    <div className="text-xl lg:text-2xl font-bold text-brand-text-primary">{listing.squareFootage.toLocaleString()}</div>
-                    <div className="text-sm text-brand-text-secondary">Sq Ft</div>
+                  <div className="text-center min-w-0">
+                    <div className="text-lg sm:text-xl lg:text-2xl font-bold text-brand-text-primary break-words">{listing.squareFootage.toLocaleString()}</div>
+                    <div className="text-xs sm:text-sm text-brand-text-secondary break-words">Sq Ft</div>
                   </div>
-                  <div className="text-center">
-                    <div className="text-xl lg:text-2xl font-bold text-brand-text-primary">{listing.yearBuilt}</div>
-                    <div className="text-sm text-brand-text-secondary">Built</div>
+                  <div className="text-center min-w-0">
+                    <div className="text-lg sm:text-xl lg:text-2xl font-bold text-brand-text-primary break-words">{listing.yearBuilt}</div>
+                    <div className="text-xs sm:text-sm text-brand-text-secondary break-words">Built</div>
                   </div>
                 </div>
                 
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-brand-text-primary mb-3">Key Features</h3>
-                  <div className="text-brand-text-secondary leading-relaxed min-h-[60px]">
+                <div className="overflow-hidden">
+                  <h3 className="text-base sm:text-lg font-semibold text-brand-text-primary mb-3 break-words">Key Features</h3>
+                  <div className="text-brand-text-secondary leading-relaxed min-h-[60px] overflow-hidden">
                     {listing.keyFeatures && listing.keyFeatures.trim().length > 0 ? (
                       <FormattedKeyFeatures content={listing.keyFeatures} />
                     ) : (
-                      <div className="text-brand-text-tertiary italic text-sm">
+                      <div className="text-brand-text-tertiary italic text-sm break-words">
                         No key features listed. Add features to enhance your listing.
                       </div>
                     )}
@@ -348,19 +346,19 @@ const ListingDetailPage: React.FC = () => {
 
         {/* Generated Content Sections */}
         {(listing.generatedDescription || listing.generatedFacebookPost || listing.generatedInstagramCaption || listing.generatedXPost || listing.generatedEmail || (listing.generatedFlyers && listing.generatedFlyers.length > 0)) && (
-          <div className="mb-8">
+          <div className="mb-8 overflow-hidden">
             {/* Property Description - Full Width */}
             {listing.generatedDescription && (
-              <div className="mb-12">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-                  <div className="mb-4 sm:mb-0">
-                    <h3 className="text-2xl font-bold text-brand-text-primary mb-2">Property Description</h3>
+              <div className="mb-12 overflow-hidden">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 overflow-hidden">
+                  <div className="mb-4 sm:mb-0 min-w-0 flex-1">
+                    <h3 className="text-2xl font-bold text-brand-text-primary mb-2 break-words">Property Description</h3>
                     <div className="flex items-center">
                       <span className="bg-brand-secondary h-2 w-2 rounded-full mr-2"></span>
                       <span className="text-sm font-medium text-brand-secondary">Generated</span>
                     </div>
                   </div>
-                  <Link to={`/listings/${listing.id}/generate/description`}>
+                  <Link to={`/listings/${listing.id}/generate/description`} className="flex-shrink-0">
                     <Button 
                       variant='edit' 
                       leftIcon={<PencilSquareIcon className='h-4 w-4' />}
@@ -370,32 +368,32 @@ const ListingDetailPage: React.FC = () => {
                     </Button>
                   </Link>
                 </div>
-                <div className="bg-brand-panel border border-brand-border rounded-lg p-6 shadow-xl">
-                  <p className="text-brand-text-secondary leading-relaxed whitespace-pre-line">
+                <div className="bg-brand-panel border border-brand-border rounded-lg p-4 sm:p-6 shadow-xl overflow-hidden">
+                  <p className="text-brand-text-secondary leading-relaxed whitespace-pre-line break-words">
                     {listing.generatedDescription}
                   </p>
                 </div>
               </div>
             )}
 
-            {/* Social Media Posts - 3 Column Grid (Facebook, Instagram, X) */}
+            {/* Social Media Posts - Responsive Grid */}
             {(listing.generatedFacebookPost || listing.generatedInstagramCaption || listing.generatedXPost) && (
-              <div className="mb-12">
-                <h3 className="text-2xl font-bold text-brand-text-primary mb-6">Social Media Posts</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="mb-12 overflow-hidden">
+                <h3 className="text-2xl font-bold text-brand-text-primary mb-6 break-words">Social Media Posts</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 overflow-hidden">
                   
                   {/* Facebook Post */}
                   {listing.generatedFacebookPost && (
-                    <div className="space-y-4">
-                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between">
-                        <div className="mb-3 sm:mb-0 flex-1">
-                          <h4 className="font-semibold text-brand-text-primary text-lg">Facebook Post</h4>
+                    <div className="space-y-4 overflow-hidden">
+                      <div className="flex flex-col gap-3 overflow-hidden">
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-semibold text-brand-text-primary text-base sm:text-lg break-words">Facebook Post</h4>
                           <div className="flex items-center mt-1">
                             <span className="bg-brand-secondary h-2 w-2 rounded-full mr-2"></span>
                             <span className="text-xs font-medium text-brand-secondary">Generated</span>
                           </div>
                         </div>
-                        <Link to={`/listings/${listing.id}/generate/facebook-post`}>
+                        <Link to={`/listings/${listing.id}/generate/facebook-post`} className="flex-shrink-0">
                           <Button 
                             variant='edit' 
                             size='sm'
@@ -405,26 +403,28 @@ const ListingDetailPage: React.FC = () => {
                           </Button>
                         </Link>
                       </div>
-                      <SocialMediaMockup 
-                        content={listing.generatedFacebookPost} 
-                        listingImage={listing.images?.[0]?.url}
-                        platform="facebook" 
-                      />
+                      <div className="overflow-hidden">
+                        <SocialMediaMockup 
+                          content={listing.generatedFacebookPost} 
+                          listingImage={listing.images?.[0]?.url}
+                          platform="facebook" 
+                        />
+                      </div>
                     </div>
                   )}
 
                   {/* Instagram Post */}
                   {listing.generatedInstagramCaption && (
-                    <div className="space-y-4">
-                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between">
-                        <div className="mb-3 sm:mb-0 flex-1">
-                          <h4 className="font-semibold text-brand-text-primary text-lg">Instagram Post</h4>
+                    <div className="space-y-4 overflow-hidden">
+                      <div className="flex flex-col gap-3 overflow-hidden">
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-semibold text-brand-text-primary text-base sm:text-lg break-words">Instagram Post</h4>
                           <div className="flex items-center mt-1">
                             <span className="bg-brand-secondary h-2 w-2 rounded-full mr-2"></span>
                             <span className="text-xs font-medium text-brand-secondary">Generated</span>
                           </div>
                         </div>
-                        <Link to={`/listings/${listing.id}/generate/instagram-post`}>
+                        <Link to={`/listings/${listing.id}/generate/instagram-post`} className="flex-shrink-0">
                           <Button 
                             variant='edit' 
                             size='sm'
@@ -434,26 +434,28 @@ const ListingDetailPage: React.FC = () => {
                           </Button>
                         </Link>
                       </div>
-                      <SocialMediaMockup 
-                        content={listing.generatedInstagramCaption} 
-                        listingImage={listing.images?.[0]?.url}
-                        platform="instagram" 
-                      />
+                      <div className="overflow-hidden">
+                        <SocialMediaMockup 
+                          content={listing.generatedInstagramCaption} 
+                          listingImage={listing.images?.[0]?.url}
+                          platform="instagram" 
+                        />
+                      </div>
                     </div>
                   )}
 
                   {/* X (Twitter) Post */}
                   {listing.generatedXPost && (
-                    <div className="space-y-4">
-                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between">
-                        <div className="mb-3 sm:mb-0 flex-1">
-                          <h4 className="font-semibold text-brand-text-primary text-lg">X (Twitter) Post</h4>
+                    <div className="space-y-4 overflow-hidden">
+                      <div className="flex flex-col gap-3 overflow-hidden">
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-semibold text-brand-text-primary text-base sm:text-lg break-words">X (Twitter) Post</h4>
                           <div className="flex items-center mt-1">
                             <span className="bg-brand-secondary h-2 w-2 rounded-full mr-2"></span>
                             <span className="text-xs font-medium text-brand-secondary">Generated</span>
                           </div>
                         </div>
-                        <Link to={`/listings/${listing.id}/generate/x-post`}>
+                        <Link to={`/listings/${listing.id}/generate/x-post`} className="flex-shrink-0">
                           <Button 
                             variant='edit' 
                             size='sm'
@@ -463,11 +465,13 @@ const ListingDetailPage: React.FC = () => {
                           </Button>
                         </Link>
                       </div>
-                      <SocialMediaMockup 
-                        content={listing.generatedXPost} 
-                        listingImage={listing.images?.[0]?.url}
-                        platform="twitter" 
-                      />
+                      <div className="overflow-hidden">
+                        <SocialMediaMockup 
+                          content={listing.generatedXPost} 
+                          listingImage={listing.images?.[0]?.url}
+                          platform="twitter" 
+                        />
+                      </div>
                     </div>
                   )}
 
@@ -477,16 +481,16 @@ const ListingDetailPage: React.FC = () => {
 
             {/* Email Campaign - Full Width */}
             {listing.generatedEmail && (
-              <div className="mb-12">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-                  <div className="mb-4 sm:mb-0">
-                    <h3 className="text-2xl font-bold text-brand-text-primary mb-2">Email Campaign</h3>
+              <div className="mb-12 overflow-hidden">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 overflow-hidden">
+                  <div className="mb-4 sm:mb-0 min-w-0 flex-1">
+                    <h3 className="text-2xl font-bold text-brand-text-primary mb-2 break-words">Email Campaign</h3>
                     <div className="flex items-center">
                       <span className="bg-brand-secondary h-2 w-2 rounded-full mr-2"></span>
                       <span className="text-sm font-medium text-brand-secondary">Generated</span>
                     </div>
                   </div>
-                  <Link to={`/listings/${listing.id}/generate/email`}>
+                  <Link to={`/listings/${listing.id}/generate/email`} className="flex-shrink-0">
                     <Button 
                       variant='edit' 
                       leftIcon={<PencilSquareIcon className='h-4 w-4' />}
@@ -496,26 +500,26 @@ const ListingDetailPage: React.FC = () => {
                     </Button>
                   </Link>
                 </div>
-                <div className="bg-brand-panel border border-brand-border rounded-lg p-6 shadow-xl">
-                  <div className="text-brand-text-secondary leading-relaxed whitespace-pre-line">
+                <div className="bg-brand-panel border border-brand-border rounded-lg p-4 sm:p-6 shadow-xl overflow-hidden">
+                  <div className="text-brand-text-secondary leading-relaxed whitespace-pre-line break-words">
                     {listing.generatedEmail}
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Generated Flyers - Grid Layout */}
+            {/* Generated Flyers - Responsive Grid */}
             {listing.generatedFlyers && listing.generatedFlyers.length > 0 && (
-              <div className="mb-12">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-                  <div className="mb-4 sm:mb-0">
-                    <h3 className="text-2xl font-bold text-brand-text-primary mb-2">Marketing Flyers</h3>
+              <div className="mb-12 overflow-hidden">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 overflow-hidden">
+                  <div className="mb-4 sm:mb-0 min-w-0 flex-1">
+                    <h3 className="text-2xl font-bold text-brand-text-primary mb-2 break-words">Marketing Flyers</h3>
                     <div className="flex items-center">
                       <span className="bg-brand-secondary h-2 w-2 rounded-full mr-2"></span>
-                      <span className="text-sm font-medium text-brand-secondary">Generated ({listing.generatedFlyers.length} flyer{listing.generatedFlyers.length > 1 ? 's' : ''})</span>
+                      <span className="text-sm font-medium text-brand-secondary break-words">Generated ({listing.generatedFlyers.length} flyer{listing.generatedFlyers.length > 1 ? 's' : ''})</span>
                     </div>
                   </div>
-                  <Link to={`/listings/${listing.id}/generate/flyer`}>
+                  <Link to={`/listings/${listing.id}/generate/flyer`} className="flex-shrink-0">
                     <Button 
                       variant='edit' 
                       leftIcon={<PencilSquareIcon className='h-4 w-4' />}
@@ -525,14 +529,14 @@ const ListingDetailPage: React.FC = () => {
                     </Button>
                   </Link>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 overflow-hidden">
                   {listing.generatedFlyers.map((flyer, index) => (
                     <div key={flyer.id} className="bg-brand-panel border border-brand-border rounded-lg overflow-hidden shadow-xl">
-                      <div className="relative">
+                      <div className="relative overflow-hidden">
                         <img 
                           src={flyer.imageUrl} 
                           alt={`Marketing Flyer ${index + 1}`} 
-                          className="w-full h-64 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                          className="w-full aspect-[3/4] object-cover cursor-pointer hover:opacity-90 transition-opacity"
                           onClick={() => {
                             // Create a download link
                             const link = document.createElement('a');
@@ -541,28 +545,28 @@ const ListingDetailPage: React.FC = () => {
                             link.click();
                           }}
                         />
-                        <div className="absolute top-3 left-3 bg-brand-primary text-white text-xs px-2 py-1 rounded-full font-medium">
+                        <div className="absolute top-2 sm:top-3 left-2 sm:left-3 bg-brand-primary text-white text-xs px-2 py-1 rounded-full font-medium">
                           Template {index + 1}
                         </div>
-                        <div className="absolute bottom-3 right-3 bg-black/60 text-white text-xs px-2 py-1 rounded-full">
+                        <div className="absolute bottom-2 sm:bottom-3 right-2 sm:right-3 bg-black/60 text-white text-xs px-2 py-1 rounded-full">
                           Click to Download
                         </div>
                       </div>
-                      <div className="p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-semibold text-brand-text-primary">Flyer {index + 1}</h4>
-                          <span className="text-xs text-brand-text-tertiary">
+                      <div className="p-3 sm:p-4 overflow-hidden">
+                        <div className="flex items-center justify-between mb-2 overflow-hidden">
+                          <h4 className="font-semibold text-brand-text-primary text-sm sm:text-base break-words">Flyer {index + 1}</h4>
+                          <span className="text-xs text-brand-text-tertiary break-words">
                             {new Date(flyer.createdAt).toLocaleDateString()}
                           </span>
                         </div>
-                        <div className="flex items-center space-x-2 mb-3">
-                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: flyer.customization.primaryColor }}></div>
-                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: flyer.customization.secondaryColor }}></div>
-                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: flyer.customization.accentColor }}></div>
-                          <span className="text-xs text-brand-text-tertiary">Color Scheme</span>
+                        <div className="flex items-center space-x-2 mb-3 overflow-hidden">
+                          <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: flyer.customization.primaryColor }}></div>
+                          <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: flyer.customization.secondaryColor }}></div>
+                          <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: flyer.customization.accentColor }}></div>
+                          <span className="text-xs text-brand-text-tertiary break-words">Color Scheme</span>
                         </div>
                         {flyer.customization.customText && (
-                          <p className="text-sm text-brand-text-secondary italic">"{flyer.customization.customText}"</p>
+                          <p className="text-sm text-brand-text-secondary italic break-words">"{flyer.customization.customText}"</p>
                         )}
                       </div>
                     </div>
