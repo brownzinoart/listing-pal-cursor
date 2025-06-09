@@ -298,7 +298,7 @@ ${data.amenities.map(amenity =>
               className={`flex items-center space-x-2 py-4 border-b-2 font-medium text-sm transition-all duration-200 ${
                 activeTab === tab.id
                   ? 'border-brand-primary text-brand-primary'
-                  : 'border-transparent text-brand-text-tertiary hover:text-brand-text-secondary hover:border-brand-border'
+                  : 'border-transparent text-white hover:text-brand-text-primary hover:border-brand-border'
               }`}
             >
               {tab.icon}
@@ -321,7 +321,7 @@ ${data.amenities.map(amenity =>
                 className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 ${
                   addedSections.includes('overview')
                     ? 'bg-brand-secondary/20 text-brand-secondary cursor-not-allowed'
-                    : 'bg-brand-primary hover:bg-brand-primary/90 text-white hover:scale-[1.02]'
+                    : 'bg-gradient-to-r from-brand-primary to-brand-accent hover:from-brand-primary/90 hover:to-brand-accent/90 text-white hover:scale-[1.02] shadow-brand'
                 }`}
               >
                 {addedSections.includes('overview') ? (
@@ -374,9 +374,9 @@ ${data.amenities.map(amenity =>
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {data.highlights.map((highlight, index) => (
-                  <div key={index} className="flex items-start space-x-3 p-3 bg-brand-card border border-brand-border rounded-lg hover:shadow-brand hover:scale-[1.01] transform transition-all duration-200">
-                    <Heart className="w-5 h-5 text-brand-danger mt-0.5 flex-shrink-0" />
-                    <span className="text-sm text-brand-text-secondary">{highlight}</span>
+                  <div key={index} className="flex items-start space-x-3 p-3 bg-white border border-gray-200 rounded-lg hover:shadow-lg hover:scale-[1.01] transform transition-all duration-200">
+                    <Heart className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
+                    <span className="text-sm text-gray-700">{highlight}</span>
                   </div>
                 ))}
               </div>
@@ -389,21 +389,21 @@ ${data.amenities.map(amenity =>
                 Community Profile
               </h4>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="text-center p-4 bg-brand-card border border-brand-border rounded-lg hover:shadow-brand-md transition-all duration-200">
-                  <div className="text-2xl font-bold text-brand-text-primary">{data.demographics.medianAge}</div>
-                  <div className="text-sm text-brand-text-tertiary">Median Age</div>
+                <div className="text-center p-4 bg-white border border-gray-200 rounded-lg hover:shadow-lg transition-all duration-200">
+                  <div className="text-2xl font-bold text-gray-900">{data.demographics.medianAge}</div>
+                  <div className="text-sm text-gray-600">Median Age</div>
                 </div>
-                <div className="text-center p-4 bg-brand-card border border-brand-border rounded-lg hover:shadow-brand-md transition-all duration-200">
-                  <div className="text-2xl font-bold text-brand-secondary">${(data.demographics.medianIncome / 1000).toFixed(0)}k</div>
-                  <div className="text-sm text-brand-text-tertiary">Median Income</div>
+                <div className="text-center p-4 bg-white border border-gray-200 rounded-lg hover:shadow-lg transition-all duration-200">
+                  <div className="text-2xl font-bold text-green-600">${(data.demographics.medianIncome / 1000).toFixed(0)}k</div>
+                  <div className="text-sm text-gray-600">Median Income</div>
                 </div>
-                <div className="text-center p-4 bg-brand-card border border-brand-border rounded-lg hover:shadow-brand-md transition-all duration-200">
-                  <div className="text-2xl font-bold text-brand-primary">{data.demographics.familyFriendly}/10</div>
-                  <div className="text-sm text-brand-text-tertiary">Family Friendly</div>
+                <div className="text-center p-4 bg-white border border-gray-200 rounded-lg hover:shadow-lg transition-all duration-200">
+                  <div className="text-2xl font-bold text-blue-600">{data.demographics.familyFriendly}/10</div>
+                  <div className="text-sm text-gray-600">Family Friendly</div>
                 </div>
-                <div className="text-center p-4 bg-brand-card border border-brand-border rounded-lg hover:shadow-brand-md transition-all duration-200">
-                  <div className="text-2xl font-bold text-brand-accent">{data.demographics.diversityIndex}/10</div>
-                  <div className="text-sm text-brand-text-tertiary">Diversity Index</div>
+                <div className="text-center p-4 bg-white border border-gray-200 rounded-lg hover:shadow-lg transition-all duration-200">
+                  <div className="text-2xl font-bold text-purple-600">{data.demographics.diversityIndex}/10</div>
+                  <div className="text-sm text-gray-600">Diversity Index</div>
                 </div>
               </div>
             </div>
@@ -421,7 +421,7 @@ ${data.amenities.map(amenity =>
                 className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 ${
                   addedSections.includes('schools')
                     ? 'bg-brand-secondary/20 text-brand-secondary cursor-not-allowed'
-                    : 'bg-brand-primary hover:bg-brand-primary/90 text-white hover:scale-[1.02]'
+                    : 'bg-gradient-to-r from-brand-primary to-brand-accent hover:from-brand-primary/90 hover:to-brand-accent/90 text-white hover:scale-[1.02] shadow-brand'
                 }`}
               >
                 {addedSections.includes('schools') ? (
@@ -469,7 +469,7 @@ ${data.amenities.map(amenity =>
                 className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 ${
                   addedSections.includes('amenities')
                     ? 'bg-brand-secondary/20 text-brand-secondary cursor-not-allowed'
-                    : 'bg-brand-primary hover:bg-brand-primary/90 text-white hover:scale-[1.02]'
+                    : 'bg-gradient-to-r from-brand-primary to-brand-accent hover:from-brand-primary/90 hover:to-brand-accent/90 text-white hover:scale-[1.02] shadow-brand'
                 }`}
               >
                 {addedSections.includes('amenities') ? (
@@ -514,7 +514,7 @@ ${data.amenities.map(amenity =>
                 className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 ${
                   addedSections.includes('market')
                     ? 'bg-brand-secondary/20 text-brand-secondary cursor-not-allowed'
-                    : 'bg-brand-primary hover:bg-brand-primary/90 text-white hover:scale-[1.02]'
+                    : 'bg-gradient-to-r from-brand-primary to-brand-accent hover:from-brand-primary/90 hover:to-brand-accent/90 text-white hover:scale-[1.02] shadow-brand'
                 }`}
               >
                 {addedSections.includes('market') ? (
@@ -537,21 +537,21 @@ ${data.amenities.map(amenity =>
             </h4>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="text-center p-4 bg-brand-card border border-brand-border rounded-lg hover:shadow-brand-md transition-all duration-200">
-                <div className="text-2xl font-bold text-brand-text-primary">${(data.marketTrends.medianPrice / 1000).toFixed(0)}k</div>
-                <div className="text-sm text-brand-text-tertiary">Median Price</div>
+              <div className="text-center p-4 bg-white border border-gray-200 rounded-lg hover:shadow-lg transition-all duration-200">
+                <div className="text-2xl font-bold text-gray-900">${(data.marketTrends.medianPrice / 1000).toFixed(0)}k</div>
+                <div className="text-sm text-gray-600">Median Price</div>
               </div>
-              <div className="text-center p-4 bg-brand-secondary/10 border border-brand-secondary/20 rounded-lg hover:shadow-brand-md transition-all duration-200">
-                <div className="text-2xl font-bold text-brand-secondary">{data.marketTrends.priceChange}</div>
-                <div className="text-sm text-brand-text-tertiary">1-Year Change</div>
+              <div className="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg hover:shadow-lg transition-all duration-200">
+                <div className="text-2xl font-bold text-green-700">{data.marketTrends.priceChange}</div>
+                <div className="text-sm text-green-600">1-Year Change</div>
               </div>
-              <div className="text-center p-4 bg-brand-primary/10 border border-brand-primary/20 rounded-lg hover:shadow-brand-md transition-all duration-200">
-                <div className="text-2xl font-bold text-brand-primary">{data.marketTrends.daysOnMarket}</div>
-                <div className="text-sm text-brand-text-tertiary">Avg Days on Market</div>
+              <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg hover:shadow-lg transition-all duration-200">
+                <div className="text-2xl font-bold text-blue-700">{data.marketTrends.daysOnMarket}</div>
+                <div className="text-sm text-blue-600">Avg Days on Market</div>
               </div>
-              <div className="text-center p-4 bg-brand-warning/10 border border-brand-warning/20 rounded-lg hover:shadow-brand-md transition-all duration-200">
-                <div className="text-2xl font-bold text-brand-warning">{data.marketTrends.inventory}</div>
-                <div className="text-sm text-brand-text-tertiary">Inventory Level</div>
+              <div className="text-center p-4 bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200 rounded-lg hover:shadow-lg transition-all duration-200">
+                <div className="text-2xl font-bold text-orange-700">{data.marketTrends.inventory}</div>
+                <div className="text-sm text-orange-600">Inventory Level</div>
               </div>
             </div>
 
