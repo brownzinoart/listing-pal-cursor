@@ -544,6 +544,42 @@ export default function ListingFormPage() {
                           target: { name: 'keyFeatures', value: newFeatures }
                         } as React.ChangeEvent<HTMLTextAreaElement>);
                       }}
+                      onSectionRemove={(section, content) => {
+                        // Remove neighborhood content from key features
+                        const currentFeatures = formData.keyFeatures || '';
+                        const sectionHeader = `**NEIGHBORHOOD - ${section.toUpperCase()}**`;
+                        
+                        // Find and remove the section content
+                        const lines = currentFeatures.split('\n');
+                        const startIndex = lines.findIndex(line => line.trim() === sectionHeader);
+                        
+                        if (startIndex !== -1) {
+                          // Find the end of this section (next section or end of content)
+                          let endIndex = lines.length;
+                          for (let i = startIndex + 1; i < lines.length; i++) {
+                            if (lines[i].trim().startsWith('**') && lines[i].trim().endsWith('**')) {
+                              endIndex = i;
+                              break;
+                            }
+                          }
+                          
+                          // Remove the section content
+                          const newLines = [
+                            ...lines.slice(0, startIndex),
+                            ...lines.slice(endIndex)
+                          ];
+                          
+                          // Clean up extra empty lines
+                          const cleanedFeatures = newLines
+                            .join('\n')
+                            .replace(/\n\n\n+/g, '\n\n')
+                            .trim();
+                          
+                          handleInputChange({
+                            target: { name: 'keyFeatures', value: cleanedFeatures }
+                          } as React.ChangeEvent<HTMLTextAreaElement>);
+                        }
+                      }}
                       selectedSections={[]} // Initialize empty, will be managed by component
                       onSectionToggle={(sections) => {
                         // Handle section toggle for listing page display

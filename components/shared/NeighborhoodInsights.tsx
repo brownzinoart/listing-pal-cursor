@@ -143,6 +143,7 @@ interface NeighborhoodInsightsProps {
   address?: string;
   listingPrice?: number;
   onSectionAdd?: (section: string, content: string) => void;
+  onSectionRemove?: (section: string, content: string) => void;
   selectedSections?: string[];
   onSectionToggle?: (sections: string[]) => void;
 }
@@ -151,6 +152,7 @@ const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({
   address, 
   listingPrice, 
   onSectionAdd,
+  onSectionRemove,
   selectedSections = [],
   onSectionToggle 
 }) => {
@@ -158,6 +160,7 @@ const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState(mockNeighborhoodData);
   const [addedSections, setAddedSections] = useState<string[]>([]);
+  const [sectionContent, setSectionContent] = useState<Record<string, string>>({});
   const [showSectionManager, setShowSectionManager] = useState(false);
 
   // Fetch real neighborhood data when address changes
@@ -315,14 +318,23 @@ ${data.amenities.map(amenity =>
   const handleToggleSection = (tabId: string) => {
     if (addedSections.includes(tabId)) {
       // Remove section
+      const contentToRemove = sectionContent[tabId];
+      if (contentToRemove && onSectionRemove) {
+        onSectionRemove(tabId, contentToRemove);
+      }
       setAddedSections(prev => prev.filter(id => id !== tabId));
-      // You could also call an onSectionRemove callback here if needed
+      setSectionContent(prev => {
+        const newContent = { ...prev };
+        delete newContent[tabId];
+        return newContent;
+      });
     } else {
       // Add section
       const content = generateSectionContent(tabId);
       if (onSectionAdd) {
         onSectionAdd(tabId, content);
         setAddedSections(prev => [...prev, tabId]);
+        setSectionContent(prev => ({ ...prev, [tabId]: content }));
       }
     }
   };
