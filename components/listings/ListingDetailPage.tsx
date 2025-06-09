@@ -270,26 +270,58 @@ const ListingDetailPage: React.FC = () => {
               )}
             </div>
 
-            {/* Additional Photos Grid */}
-            {listing.images && listing.images.length > 1 && (
-              <div className="grid grid-cols-3 gap-2 sm:gap-3 overflow-hidden">
-                {listing.images.slice(1, 7).map((image, index) => (
-                  <div key={image.id} className="relative aspect-square bg-brand-card rounded-lg overflow-hidden cursor-pointer hover:scale-105 transition-transform">
+            {/* Horizontal Gallery Row */}
+            <div className="overflow-hidden">
+              <div className="flex gap-2 sm:gap-3 overflow-x-auto scrollbar-hide">
+                {/* Existing Images */}
+                {listing.images && listing.images.map((image, index) => (
+                  <div 
+                    key={image.id} 
+                    className={`relative flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 bg-brand-card rounded-lg overflow-hidden cursor-pointer transition-all ${
+                      index === currentImageIndex 
+                        ? 'ring-2 ring-brand-primary ring-offset-2 ring-offset-brand-background' 
+                        : 'hover:ring-1 hover:ring-brand-secondary'
+                    }`}
+                    onClick={() => setCurrentImageIndex(index)}
+                  >
                     <img 
                       src={image.url} 
-                      alt={`${listing.address} - Image ${index + 2}`}
+                      alt={`${listing.address} - Image ${index + 1}`}
                       className="w-full h-full object-cover"
-                      onClick={() => setCurrentImageIndex(index + 1)}
                     />
-                    {index === 5 && listing.images.length > 7 && (
-                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center overflow-hidden">
-                        <span className="text-white font-semibold text-sm break-words">+{listing.images.length - 6}</span>
+                    {index === currentImageIndex && (
+                      <div className="absolute inset-0 bg-brand-primary/20 flex items-center justify-center">
+                        <div className="w-2 h-2 bg-white rounded-full"></div>
                       </div>
                     )}
                   </div>
                 ))}
+                
+                {/* Add Image Button */}
+                <Link to={`/listings/${listing.id}/edit`} className="flex-shrink-0">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-brand-card border-2 border-dashed border-brand-border rounded-lg flex items-center justify-center cursor-pointer hover:border-brand-primary hover:bg-brand-primary/10 transition-all group">
+                    <div className="text-center">
+                      <PhotoIcon className="w-6 h-6 sm:w-8 sm:h-8 text-brand-text-tertiary group-hover:text-brand-primary mx-auto mb-1" />
+                      <span className="text-xs text-brand-text-tertiary group-hover:text-brand-primary">Add</span>
+                    </div>
+                  </div>
+                </Link>
               </div>
-            )}
+              
+              {/* No images state */}
+              {(!listing.images || listing.images.length === 0) && (
+                <div className="flex gap-2 sm:gap-3">
+                  <Link to={`/listings/${listing.id}/edit`} className="flex-shrink-0">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-brand-primary/20 border-2 border-dashed border-brand-primary rounded-lg flex items-center justify-center cursor-pointer hover:bg-brand-primary/30 transition-all group">
+                      <div className="text-center">
+                        <PhotoIcon className="w-6 h-6 sm:w-8 sm:h-8 text-brand-primary mx-auto mb-1" />
+                        <span className="text-xs text-brand-primary font-medium">Add Image</span>
+                      </div>
+                    </div>
+                  </Link>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Right Column - Property Details */}
@@ -346,16 +378,16 @@ const ListingDetailPage: React.FC = () => {
 
         {/* Generated Content Sections */}
         {(listing.generatedDescription || listing.generatedFacebookPost || listing.generatedInstagramCaption || listing.generatedXPost || listing.generatedEmail || (listing.generatedFlyers && listing.generatedFlyers.length > 0)) && (
-          <div className="mb-8 overflow-hidden">
-            {/* Property Description - Full Width */}
+          <div className="space-y-8 overflow-hidden">
+            {/* Property Description Section */}
             {listing.generatedDescription && (
-              <div className="mb-12 overflow-hidden">
+              <section className="bg-brand-panel border border-brand-border rounded-xl p-6 sm:p-8 shadow-xl overflow-hidden">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 overflow-hidden">
                   <div className="mb-4 sm:mb-0 min-w-0 flex-1">
                     <h3 className="text-2xl font-bold text-brand-text-primary mb-2 break-words">Property Description</h3>
                     <div className="flex items-center">
                       <span className="bg-brand-secondary h-2 w-2 rounded-full mr-2"></span>
-                      <span className="text-sm font-medium text-brand-secondary">Generated</span>
+                      <span className="text-sm font-medium text-brand-secondary">AI Generated</span>
                     </div>
                   </div>
                   <Link to={`/listings/${listing.id}/generate/description`} className="flex-shrink-0">
@@ -368,32 +400,35 @@ const ListingDetailPage: React.FC = () => {
                     </Button>
                   </Link>
                 </div>
-                <div className="bg-brand-panel border border-brand-border rounded-lg p-4 sm:p-6 shadow-xl overflow-hidden">
+                <div className="bg-brand-background/50 border border-brand-border/50 rounded-lg p-4 sm:p-6 overflow-hidden">
                   <p className="text-brand-text-secondary leading-relaxed whitespace-pre-line break-words">
                     {listing.generatedDescription}
                   </p>
                 </div>
-              </div>
+              </section>
             )}
 
-            {/* Social Media Posts - Responsive Grid */}
+            {/* Social Media Posts Section */}
             {(listing.generatedFacebookPost || listing.generatedInstagramCaption || listing.generatedXPost) && (
-              <div className="mb-12 overflow-hidden">
-                <h3 className="text-2xl font-bold text-brand-text-primary mb-6 break-words">Social Media Posts</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 overflow-hidden">
+              <section className="bg-brand-panel border border-brand-border rounded-xl p-6 sm:p-8 shadow-xl overflow-hidden">
+                <div className="mb-6">
+                  <h3 className="text-2xl font-bold text-brand-text-primary mb-2 break-words">Social Media Posts</h3>
+                  <div className="flex items-center">
+                    <span className="bg-brand-secondary h-2 w-2 rounded-full mr-2"></span>
+                    <span className="text-sm font-medium text-brand-secondary">AI Generated Content</span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 overflow-hidden">
                   
                   {/* Facebook Post */}
                   {listing.generatedFacebookPost && (
-                    <div className="space-y-4 overflow-hidden">
-                      <div className="flex flex-col gap-3 overflow-hidden">
+                    <div className="bg-brand-background/30 border border-brand-border/50 rounded-lg p-4 overflow-hidden">
+                      <div className="flex items-center justify-between mb-4 overflow-hidden">
                         <div className="min-w-0 flex-1">
-                          <h4 className="font-semibold text-brand-text-primary text-base sm:text-lg break-words">Facebook Post</h4>
-                          <div className="flex items-center mt-1">
-                            <span className="bg-brand-secondary h-2 w-2 rounded-full mr-2"></span>
-                            <span className="text-xs font-medium text-brand-secondary">Generated</span>
-                          </div>
+                          <h4 className="font-semibold text-brand-text-primary text-base break-words">Facebook Post</h4>
+                          <p className="text-xs text-brand-text-tertiary mt-1">Ready to share</p>
                         </div>
-                        <Link to={`/listings/${listing.id}/generate/facebook-post`} className="flex-shrink-0">
+                        <Link to={`/listings/${listing.id}/generate/facebook-post`} className="flex-shrink-0 ml-3">
                           <Button 
                             variant='edit' 
                             size='sm'
@@ -415,16 +450,13 @@ const ListingDetailPage: React.FC = () => {
 
                   {/* Instagram Post */}
                   {listing.generatedInstagramCaption && (
-                    <div className="space-y-4 overflow-hidden">
-                      <div className="flex flex-col gap-3 overflow-hidden">
+                    <div className="bg-brand-background/30 border border-brand-border/50 rounded-lg p-4 overflow-hidden">
+                      <div className="flex items-center justify-between mb-4 overflow-hidden">
                         <div className="min-w-0 flex-1">
-                          <h4 className="font-semibold text-brand-text-primary text-base sm:text-lg break-words">Instagram Post</h4>
-                          <div className="flex items-center mt-1">
-                            <span className="bg-brand-secondary h-2 w-2 rounded-full mr-2"></span>
-                            <span className="text-xs font-medium text-brand-secondary">Generated</span>
-                          </div>
+                          <h4 className="font-semibold text-brand-text-primary text-base break-words">Instagram Post</h4>
+                          <p className="text-xs text-brand-text-tertiary mt-1">Ready to share</p>
                         </div>
-                        <Link to={`/listings/${listing.id}/generate/instagram-post`} className="flex-shrink-0">
+                        <Link to={`/listings/${listing.id}/generate/instagram-post`} className="flex-shrink-0 ml-3">
                           <Button 
                             variant='edit' 
                             size='sm'
@@ -446,16 +478,13 @@ const ListingDetailPage: React.FC = () => {
 
                   {/* X (Twitter) Post */}
                   {listing.generatedXPost && (
-                    <div className="space-y-4 overflow-hidden">
-                      <div className="flex flex-col gap-3 overflow-hidden">
+                    <div className="bg-brand-background/30 border border-brand-border/50 rounded-lg p-4 overflow-hidden">
+                      <div className="flex items-center justify-between mb-4 overflow-hidden">
                         <div className="min-w-0 flex-1">
-                          <h4 className="font-semibold text-brand-text-primary text-base sm:text-lg break-words">X (Twitter) Post</h4>
-                          <div className="flex items-center mt-1">
-                            <span className="bg-brand-secondary h-2 w-2 rounded-full mr-2"></span>
-                            <span className="text-xs font-medium text-brand-secondary">Generated</span>
-                          </div>
+                          <h4 className="font-semibold text-brand-text-primary text-base break-words">X (Twitter) Post</h4>
+                          <p className="text-xs text-brand-text-tertiary mt-1">Ready to share</p>
                         </div>
-                        <Link to={`/listings/${listing.id}/generate/x-post`} className="flex-shrink-0">
+                        <Link to={`/listings/${listing.id}/generate/x-post`} className="flex-shrink-0 ml-3">
                           <Button 
                             variant='edit' 
                             size='sm'
@@ -476,18 +505,18 @@ const ListingDetailPage: React.FC = () => {
                   )}
 
                 </div>
-              </div>
+              </section>
             )}
 
-            {/* Email Campaign - Full Width */}
+            {/* Email Campaign Section */}
             {listing.generatedEmail && (
-              <div className="mb-12 overflow-hidden">
+              <section className="bg-brand-panel border border-brand-border rounded-xl p-6 sm:p-8 shadow-xl overflow-hidden">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 overflow-hidden">
                   <div className="mb-4 sm:mb-0 min-w-0 flex-1">
                     <h3 className="text-2xl font-bold text-brand-text-primary mb-2 break-words">Email Campaign</h3>
                     <div className="flex items-center">
                       <span className="bg-brand-secondary h-2 w-2 rounded-full mr-2"></span>
-                      <span className="text-sm font-medium text-brand-secondary">Generated</span>
+                      <span className="text-sm font-medium text-brand-secondary">AI Generated</span>
                     </div>
                   </div>
                   <Link to={`/listings/${listing.id}/generate/email`} className="flex-shrink-0">
@@ -500,23 +529,25 @@ const ListingDetailPage: React.FC = () => {
                     </Button>
                   </Link>
                 </div>
-                <div className="bg-brand-panel border border-brand-border rounded-lg p-4 sm:p-6 shadow-xl overflow-hidden">
+                <div className="bg-brand-background/50 border border-brand-border/50 rounded-lg p-4 sm:p-6 overflow-hidden">
                   <div className="text-brand-text-secondary leading-relaxed whitespace-pre-line break-words">
                     {listing.generatedEmail}
                   </div>
                 </div>
-              </div>
+              </section>
             )}
 
-            {/* Generated Flyers - Responsive Grid */}
+            {/* Marketing Flyers Section */}
             {listing.generatedFlyers && listing.generatedFlyers.length > 0 && (
-              <div className="mb-12 overflow-hidden">
+              <section className="bg-brand-panel border border-brand-border rounded-xl p-6 sm:p-8 shadow-xl overflow-hidden">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 overflow-hidden">
                   <div className="mb-4 sm:mb-0 min-w-0 flex-1">
                     <h3 className="text-2xl font-bold text-brand-text-primary mb-2 break-words">Marketing Flyers</h3>
                     <div className="flex items-center">
                       <span className="bg-brand-secondary h-2 w-2 rounded-full mr-2"></span>
-                      <span className="text-sm font-medium text-brand-secondary break-words">Generated ({listing.generatedFlyers.length} flyer{listing.generatedFlyers.length > 1 ? 's' : ''})</span>
+                      <span className="text-sm font-medium text-brand-secondary break-words">
+                        {listing.generatedFlyers.length} flyer{listing.generatedFlyers.length > 1 ? 's' : ''} generated
+                      </span>
                     </div>
                   </div>
                   <Link to={`/listings/${listing.id}/generate/flyer`} className="flex-shrink-0">
@@ -531,7 +562,7 @@ const ListingDetailPage: React.FC = () => {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 overflow-hidden">
                   {listing.generatedFlyers.map((flyer, index) => (
-                    <div key={flyer.id} className="bg-brand-panel border border-brand-border rounded-lg overflow-hidden shadow-xl">
+                    <div key={flyer.id} className="bg-brand-background/30 border border-brand-border/50 rounded-lg overflow-hidden">
                       <div className="relative overflow-hidden">
                         <img 
                           src={flyer.imageUrl} 
@@ -572,69 +603,76 @@ const ListingDetailPage: React.FC = () => {
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
-
-            {/* Interior Redesigns - Full Width */}
-            {listing.generatedRoomDesigns && listing.generatedRoomDesigns.length > 0 && (
-              <div className="mb-12">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-                  <div className="mb-4 sm:mb-0">
-                    <h3 className="text-2xl font-bold text-brand-text-primary mb-2">Interior Reimagined</h3>
-                    <div className="flex items-center">
-                      <span className="bg-brand-secondary h-2 w-2 rounded-full mr-2"></span>
-                      <span className="text-sm font-medium text-brand-secondary">Generated ({listing.generatedRoomDesigns.length} design{listing.generatedRoomDesigns.length > 1 ? 's' : ''})</span>
-                    </div>
-                  </div>
-                  <Link to={`/listings/${listing.id}/interior-reimagined`}>
-                    <Button 
-                      variant='edit' 
-                      leftIcon={<PencilSquareIcon className='h-4 w-4' />}
-                      size="md"
-                    >
-                      Create New Design
-                    </Button>
-                  </Link>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {listing.generatedRoomDesigns.map((design, index) => {
-                    const styleName = AI_DESIGN_STYLES.find(s => s.id === design.styleId)?.name || 'Unknown Style';
-                    return (
-                      <div key={index} className="bg-brand-panel border border-brand-border rounded-lg overflow-hidden shadow-xl">
-                        <div className="relative">
-                          <img 
-                            src={design.redesignedImageUrl} 
-                            alt={`Room redesign ${index + 1}`} 
-                            className="w-full h-48 object-cover"
-                          />
-                          <div className="absolute top-3 right-3 bg-brand-primary text-white text-xs px-2 py-1 rounded-full font-medium">
-                            {styleName}
-                          </div>
-                        </div>
-                        <div className="p-4">
-                          <div className="flex items-center justify-between">
-                            <h4 className="font-semibold text-brand-text-primary">Design {index + 1}</h4>
-                            <span className="text-xs text-brand-text-tertiary">
-                              {new Date(design.createdAt || Date.now()).toLocaleDateString()}
-                            </span>
-                          </div>
-                          {design.prompt && (
-                            <p className="text-sm text-brand-text-secondary mt-2 line-clamp-2">{design.prompt}</p>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+              </section>
             )}
           </div>
         )}
 
-        {/* Content Generation Tools */}
-        <div className="mb-8">
-          <AiWorkflowPlaceholder listing={listing} />
-        </div>
+        {/* Interior Redesigns Section */}
+        {listing.generatedRoomDesigns && listing.generatedRoomDesigns.length > 0 && (
+          <section className="bg-brand-panel border border-brand-border rounded-xl p-6 sm:p-8 shadow-xl overflow-hidden">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 overflow-hidden">
+              <div className="mb-4 sm:mb-0 min-w-0 flex-1">
+                <h3 className="text-2xl font-bold text-brand-text-primary mb-2 break-words">Interior Reimagined</h3>
+                <div className="flex items-center">
+                  <span className="bg-brand-secondary h-2 w-2 rounded-full mr-2"></span>
+                  <span className="text-sm font-medium text-brand-secondary break-words">
+                    {listing.generatedRoomDesigns.length} design{listing.generatedRoomDesigns.length > 1 ? 's' : ''} generated
+                  </span>
+                </div>
+              </div>
+              <Link to={`/listings/${listing.id}/ai/room-redesign`} className="flex-shrink-0">
+                <Button 
+                  variant='edit' 
+                  leftIcon={<PencilSquareIcon className='h-4 w-4' />}
+                  size="md"
+                >
+                  Create New Design
+                </Button>
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 overflow-hidden">
+              {listing.generatedRoomDesigns.map((design, index) => {
+                const styleName = AI_DESIGN_STYLES.find(s => s.id === design.styleId)?.name || 'Unknown Style';
+                return (
+                  <div key={index} className="bg-brand-background/30 border border-brand-border/50 rounded-lg overflow-hidden">
+                    <div className="relative overflow-hidden">
+                      <img 
+                        src={design.redesignedImageUrl} 
+                        alt={`Room redesign ${index + 1}`} 
+                        className="w-full aspect-[4/3] object-cover"
+                      />
+                      <div className="absolute top-2 sm:top-3 right-2 sm:right-3 bg-brand-primary text-white text-xs px-2 py-1 rounded-full font-medium">
+                        {styleName}
+                      </div>
+                    </div>
+                    <div className="p-3 sm:p-4 overflow-hidden">
+                      <div className="flex items-center justify-between mb-2 overflow-hidden">
+                        <h4 className="font-semibold text-brand-text-primary text-sm sm:text-base break-words">Design {index + 1}</h4>
+                        <span className="text-xs text-brand-text-tertiary break-words">
+                          {new Date(design.createdAt || Date.now()).toLocaleDateString()}
+                        </span>
+                      </div>
+                      {design.prompt && (
+                        <p className="text-sm text-brand-text-secondary break-words" style={{
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden'
+                        }}>{design.prompt}</p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+      </div>
+
+      {/* Content Generation Tools */}
+      <div className="bg-brand-panel border border-brand-border rounded-xl p-6 sm:p-8 shadow-xl overflow-hidden">
+        <AiWorkflowPlaceholder listing={listing} />
       </div>
     </div>
   );
