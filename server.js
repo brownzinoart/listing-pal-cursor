@@ -378,6 +378,32 @@ app.post('/api/test-design', async (req, res) => {
     }
 });
 
+// Location Context API endpoint
+app.post('/api/listings/context', async (req, res) => {
+  try {
+    const { address } = req.body;
+    
+    if (!address || address.length < 15) {
+      return res.status(400).json({ error: 'Valid address required' });
+    }
+
+    // Import the service (would be at top in real implementation)
+    const { LocationContextService } = await import('./services/locationContextService.js');
+    const contextService = new LocationContextService();
+    
+    // Fetch comprehensive location data
+    const contextData = await contextService.getAllLocationContext(address);
+    
+    res.json(contextData);
+  } catch (error) {
+    console.error('Location context API error:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch location context',
+      details: error.message 
+    });
+  }
+});
+
 // Serve React app for all other routes
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'dist', 'index.html'));
