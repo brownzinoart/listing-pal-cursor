@@ -5,6 +5,8 @@ import { useAuth } from "../../contexts/AuthContext";
 import * as listingService from "../../services/listingService";
 import Button from "../shared/Button";
 import AddressAutocomplete from "../shared/AddressAutocomplete";
+import { LocationContextWidget } from './LocationContextWidget';
+import { ContextCard } from '../../types/locationContext';
 
 // Define form data type to match new structure
 type FormData = {
@@ -33,9 +35,11 @@ export default function ListingFormPage() {
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
   const [isFetching, setIsFetching] = useState(false);
+  const [selectedContextCards, setSelectedContextCards] = useState<ContextCard[]>([]);
+  const [contextInsightsAdded, setContextInsightsAdded] = useState(false);
+  const [contextError, setContextError] = useState<string | null>(null);
 
   const isEditing = !!listingId;
-
 
   const [formData, setFormData] = useState<FormData>({
     address: "",
@@ -170,7 +174,109 @@ export default function ListingFormPage() {
     }));
   };
 
+  const handleContextSelection = (cards: ContextCard[]) => {
+    try {
+      setSelectedContextCards(cards);
+      setContextError(null);
+      
+      if (cards.length > 0) {
+        appendContextToDescription(cards);
+        setContextInsightsAdded(true);
+      } else {
+        removeContextFromDescription();
+        setContextInsightsAdded(false);
+      }
+    } catch (error) {
+      setContextError('Failed to update listing with context data');
+      console.error('Context integration error:', error);
+    }
+  };
 
+  const appendContextToDescription = (cards: ContextCard[]) => {
+    // Get the base description without any previous context
+    const baseDescription = getBaseDescription();
+    
+    // Format the context insights
+    const contextSection = formatContextForListing(cards);
+    
+    // Combine base description with context
+    const enhancedDescription = baseDescription + contextSection;
+    
+    setFormData(prev => ({
+      ...prev,
+      keyFeatures: enhancedDescription
+    }));
+  };
+
+  const formatContextForListing = (cards: ContextCard[]): string => {
+    if (cards.length === 0) return '';
+    
+    const sections = [];
+    
+    // Group cards by category for better organization
+    const groupedCards = cards.reduce((acc, card) => {
+      if (!acc[card.category]) acc[card.category] = [];
+      acc[card.category].push(card);
+      return acc;
+    }, {} as Record<string, ContextCard[]>);
+    
+    // Add neighborhood highlights header
+    sections.push('\n\n🏘️ NEIGHBORHOOD HIGHLIGHTS');
+    
+    // Add each category
+    Object.entries(groupedCards).forEach(([category, categoryCards]) => {
+      const categoryTitle = getCategoryTitle(category);
+      sections.push(`\n\n${categoryTitle}:`);
+      
+      categoryCards.forEach(card => {
+        sections.push(`• ${card.marketingCopy}`);
+      });
+    });
+    
+    return sections.join('\n');
+  };
+
+  const getCategoryTitle = (category: string): string => {
+    const titles: Record<string, string> = {
+      location: '📍 LOCATION & WALKABILITY',
+      community: '👥 DEMOGRAPHICS & COMMUNITY',
+      amenities: '🏪 LOCAL AMENITIES',
+      education: '🎓 SCHOOLS & EDUCATION',
+      transportation: '🚌 TRANSIT & TRANSPORTATION'
+    };
+    return titles[category] || category.toUpperCase();
+  };
+
+  const getBaseDescription = (): string => {
+    // Remove any existing context section from description
+    const currentDescription = formData.keyFeatures || '';
+    const contextStartIndex = currentDescription.indexOf('🏘️ NEIGHBORHOOD HIGHLIGHTS');
+    
+    if (contextStartIndex === -1) {
+      return currentDescription;
+    }
+    
+    return currentDescription.substring(0, contextStartIndex).trim();
+  };
+
+  const removeContextFromDescription = () => {
+    const baseDescription = getBaseDescription();
+    setFormData(prev => ({
+      ...prev,
+      keyFeatures: baseDescription
+    }));
+  };
+
+  const isValidAddressForContext = (address: string): boolean => {
+    // Check if address is substantial enough to fetch context
+    return address.length > 15 && 
+           address.includes(',') && 
+           (!!address.match(/\d{5}/) || // Has zip code
+            address.toLowerCase().includes('ny') ||
+            address.toLowerCase().includes('ca') ||
+            address.toLowerCase().includes('tx') ||
+            address.toLowerCase().includes('fl'));
+  };
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -209,7 +315,17 @@ export default function ListingFormPage() {
          price: formData.price,
          keyFeatures: formData.keyFeatures,
          images: uploadedImages.map((url, index) => ({ url, name: `Image ${index + 1}` })),
-         userId: user.id
+         userId: user.id,
+         // 10. SAVE HANDLING - Track context usage
+         contextInsights: {
+           used: contextInsightsAdded,
+           selectedCards: selectedContextCards.map(card => ({
+             id: card.id,
+             title: card.title,
+             category: card.category
+           })),
+           addedAt: new Date().toISOString()
+         }
        };
 
       let listing;
@@ -285,6 +401,54 @@ export default function ListingFormPage() {
                   />
                 </div>
               </div>
+
+              {/* 5. JSX - Location Context Widget Integration */}
+              {isValidAddressForContext(formData.address) && (
+                <div className="space-y-4">
+                  {/* Visual separator */}
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-brand-border" />
+                    </div>
+                    <div className="relative flex justify-center text-sm">
+                      <span className="px-2 bg-brand-panel text-brand-text-secondary">Enhance with neighborhood data</span>
+                    </div>
+                  </div>
+                  
+                  {/* Location Context Widget */}
+                  <LocationContextWidget
+                    address={formData.address}
+                    onContextSelect={handleContextSelection}
+                    className="mt-6"
+                  />
+                  
+                  {/* Selected count feedback */}
+                  {selectedContextCards.length > 0 && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                      <div className="flex items-center space-x-2">
+                        <svg className="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span className="text-green-800 font-medium">
+                          {selectedContextCards.length} neighborhood insight{selectedContextCards.length === 1 ? '' : 's'} added to listing
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Error display */}
+                  {contextError && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                      <div className="flex items-center space-x-2">
+                        <svg className="h-5 w-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className="text-red-800 text-sm">{contextError}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Property Details Row 1 */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -403,16 +567,32 @@ export default function ListingFormPage() {
                 </div>
               </div>
 
-              {/* Key Features */}
-              <div>
-                <label className="block text-brand-text-secondary text-sm font-medium mb-3">Key Features</label>
+              {/* Key Features with Context Preview */}
+              <div className="space-y-2">
+                <label htmlFor="keyFeatures" className="block text-brand-text-secondary text-sm font-medium">
+                  Key Features
+                  {contextInsightsAdded && (
+                    <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      + Neighborhood insights
+                    </span>
+                  )}
+                </label>
                 <textarea 
+                  id="keyFeatures"
                   name="keyFeatures"
                   placeholder="Updated kitchen, hardwood floors, two-car garage, swimming pool..." 
                   className="w-full bg-brand-input-bg border-0 text-brand-text-primary placeholder-brand-text-tertiary rounded-xl px-4 py-4 text-base focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all duration-200 min-h-[120px] resize-none"
                   value={formData.keyFeatures}
                   onChange={handleInputChange}
                 />
+                
+                {/* Character count with context awareness */}
+                <div className="flex justify-between text-xs text-brand-text-tertiary">
+                  <span>
+                    {contextInsightsAdded ? 'Base description + neighborhood insights' : 'Property description'}
+                  </span>
+                  <span>{formData.keyFeatures.length} characters</span>
+                </div>
               </div>
 
               {/* Image Upload */}
