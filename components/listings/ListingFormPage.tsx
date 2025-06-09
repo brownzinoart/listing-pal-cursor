@@ -6,6 +6,7 @@ import * as listingService from "../../services/listingService";
 import Button from "../shared/Button";
 import AddressAutocomplete from "../shared/AddressAutocomplete";
 import { LocationContextWidget } from './LocationContextWidget';
+import NeighborhoodInsights from '../shared/NeighborhoodInsights';
 import { ContextCard } from '../../types/locationContext';
 
 
@@ -528,14 +529,11 @@ export default function ListingFormPage() {
                     </div>
                   </div>
                   
-                  {/* Isolated container for Location Context Widget */}
+                  {/* Isolated container for Neighborhood Insights */}
                   <div className="relative w-full overflow-hidden">
-                    <LocationContextWidget
+                    <NeighborhoodInsights
                       address={formData.address}
-                      latitude={formData.latitude}
-                      longitude={formData.longitude}
-                      onContextSelect={handleContextSelection}
-                      className="w-full"
+                      listingPrice={formData.price ? (typeof formData.price === 'string' ? parseInt(formData.price) : formData.price) : undefined}
                     />
                   </div>
                   
