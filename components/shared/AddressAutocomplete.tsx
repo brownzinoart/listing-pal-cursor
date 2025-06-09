@@ -17,6 +17,90 @@ interface PlacePrediction {
   };
 }
 
+// Mock data that represents real addresses
+const mockAddresses: PlacePrediction[] = [
+  {
+    description: "123 Main Street, New York, NY 10001, USA",
+    place_id: "1",
+    structured_formatting: {
+      main_text: "123 Main Street",
+      secondary_text: "New York, NY 10001, USA"
+    }
+  },
+  {
+    description: "456 Oak Avenue, Los Angeles, CA 90210, USA", 
+    place_id: "2",
+    structured_formatting: {
+      main_text: "456 Oak Avenue",
+      secondary_text: "Los Angeles, CA 90210, USA"
+    }
+  },
+  {
+    description: "789 Pine Road, Austin, TX 78701, USA",
+    place_id: "3", 
+    structured_formatting: {
+      main_text: "789 Pine Road",
+      secondary_text: "Austin, TX 78701, USA"
+    }
+  },
+  {
+    description: "321 Elm Street, Miami, FL 33101, USA",
+    place_id: "4",
+    structured_formatting: {
+      main_text: "321 Elm Street", 
+      secondary_text: "Miami, FL 33101, USA"
+    }
+  },
+  {
+    description: "555 Broadway, New York, NY 10012, USA",
+    place_id: "5",
+    structured_formatting: {
+      main_text: "555 Broadway",
+      secondary_text: "New York, NY 10012, USA"
+    }
+  },
+  {
+    description: "888 Market Street, San Francisco, CA 94102, USA",
+    place_id: "6",
+    structured_formatting: {
+      main_text: "888 Market Street",
+      secondary_text: "San Francisco, CA 94102, USA"
+    }
+  },
+  {
+    description: "999 First Avenue, Seattle, WA 98101, USA",
+    place_id: "7",
+    structured_formatting: {
+      main_text: "999 First Avenue",
+      secondary_text: "Seattle, WA 98101, USA"
+    }
+  },
+  {
+    description: "777 Second Street, Boston, MA 02101, USA",
+    place_id: "8",
+    structured_formatting: {
+      main_text: "777 Second Street",
+      secondary_text: "Boston, MA 02101, USA"
+    }
+  },
+  {
+    description: "100 Apex Drive, Apex, NC 27502, USA",
+    place_id: "9",
+    structured_formatting: {
+      main_text: "100 Apex Drive",
+      secondary_text: "Apex, NC 27502, USA"
+    }
+  },
+  {
+    description: "200 Raleigh Street, Raleigh, NC 27601, USA",
+    place_id: "10",
+    structured_formatting: {
+      main_text: "200 Raleigh Street",
+      secondary_text: "Raleigh, NC 27601, USA"
+    }
+  }
+];
+
 const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
   value,
   placeholder = "Start typing an address...",
@@ -31,176 +115,101 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
   
   const inputRef = useRef<HTMLInputElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout>();
-  const abortControllerRef = useRef<AbortController>();
 
   useEffect(() => {
     setInputValue(value);
   }, [value]);
 
-  // Mock data that represents real addresses
-  const mockAddresses: PlacePrediction[] = [
-    {
-      description: "123 Main Street, New York, NY 10001, USA",
-      place_id: "1",
-      structured_formatting: {
-        main_text: "123 Main Street",
-        secondary_text: "New York, NY 10001, USA"
-      }
-    },
-    {
-      description: "456 Oak Avenue, Los Angeles, CA 90210, USA", 
-      place_id: "2",
-      structured_formatting: {
-        main_text: "456 Oak Avenue",
-        secondary_text: "Los Angeles, CA 90210, USA"
-      }
-    },
-    {
-      description: "789 Pine Road, Austin, TX 78701, USA",
-      place_id: "3", 
-      structured_formatting: {
-        main_text: "789 Pine Road",
-        secondary_text: "Austin, TX 78701, USA"
-      }
-    },
-    {
-      description: "321 Elm Street, Miami, FL 33101, USA",
-      place_id: "4",
-      structured_formatting: {
-        main_text: "321 Elm Street", 
-        secondary_text: "Miami, FL 33101, USA"
-      }
-    },
-    {
-      description: "555 Broadway, New York, NY 10012, USA",
-      place_id: "5",
-      structured_formatting: {
-        main_text: "555 Broadway",
-        secondary_text: "New York, NY 10012, USA"
-      }
-    },
-    {
-      description: "888 Market Street, San Francisco, CA 94102, USA",
-      place_id: "6",
-      structured_formatting: {
-        main_text: "888 Market Street",
-        secondary_text: "San Francisco, CA 94102, USA"
-      }
-    },
-    {
-      description: "999 First Avenue, Seattle, WA 98101, USA",
-      place_id: "7",
-      structured_formatting: {
-        main_text: "999 First Avenue",
-        secondary_text: "Seattle, WA 98101, USA"
-      }
-    },
-    {
-      description: "777 Second Street, Boston, MA 02101, USA",
-      place_id: "8",
-      structured_formatting: {
-        main_text: "777 Second Street",
-        secondary_text: "Boston, MA 02101, USA"
-      }
+  // Simplified search function
+  const performSearch = useCallback((query: string) => {
+    console.log('🔍 Performing search for:', query);
+    
+    if (query.length < 2) {
+      console.log('❌ Query too short');
+      setSuggestions([]);
+      setShowSuggestions(false);
+      setIsLoading(false);
+      return;
     }
-  ];
+
+    setIsLoading(true);
+    
+    // Filter suggestions
+    const filtered = mockAddresses.filter(suggestion => 
+      suggestion.description.toLowerCase().includes(query.toLowerCase()) ||
+      suggestion.structured_formatting.main_text.toLowerCase().includes(query.toLowerCase()) ||
+      suggestion.structured_formatting.secondary_text.toLowerCase().includes(query.toLowerCase())
+    );
+    
+    console.log('✅ Found suggestions:', filtered.length);
+    console.log('📋 Suggestions:', filtered.map(s => s.structured_formatting.main_text));
+    
+    // Simulate API delay
+    setTimeout(() => {
+      setSuggestions(filtered);
+      setShowSuggestions(filtered.length > 0);
+      setSelectedIndex(-1);
+      setIsLoading(false);
+    }, 200);
+  }, []);
 
   // Debounced search function
   const debouncedSearch = useCallback((query: string) => {
-    // Clear previous timeout
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
 
-    // Abort previous request
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-
-    if (query.length < 2) {
-      setSuggestions([]);
-      setShowSuggestions(false);
-      return;
-    }
-
-    timeoutRef.current = setTimeout(async () => {
-      setIsLoading(true);
-      
-      try {
-        abortControllerRef.current = new AbortController();
-        
-        // Filter mock suggestions based on query
-        const filteredSuggestions = mockAddresses.filter(suggestion => 
-          suggestion.description.toLowerCase().includes(query.toLowerCase()) ||
-          suggestion.structured_formatting.main_text.toLowerCase().includes(query.toLowerCase()) ||
-          suggestion.structured_formatting.secondary_text.toLowerCase().includes(query.toLowerCase())
-        );
-
-        // Simulate API delay for realistic feel
-        await new Promise(resolve => setTimeout(resolve, 200));
-        
-        setSuggestions(filteredSuggestions);
-        setShowSuggestions(filteredSuggestions.length > 0);
-        setSelectedIndex(-1);
-      } catch (error) {
-        if (error && typeof error === 'object' && 'name' in error && error.name !== 'AbortError') {
-          console.error('Autocomplete error:', error);
-          setSuggestions([]);
-          setShowSuggestions(false);
-        }
-      } finally {
-        setIsLoading(false);
-      }
+    timeoutRef.current = setTimeout(() => {
+      performSearch(query);
     }, 300);
-  }, [mockAddresses]);
+  }, [performSearch]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
+    console.log('📝 Input changed:', newValue);
     setInputValue(newValue);
     debouncedSearch(newValue);
   };
 
   const handleSuggestionClick = async (suggestion: PlacePrediction) => {
+    console.log('🎯 Selected suggestion:', suggestion.description);
     setInputValue(suggestion.description);
     setSuggestions([]);
     setShowSuggestions(false);
     
     // Generate realistic coordinates based on city
-    try {
-      const cityCoordinates: { [key: string]: { lat: number; lng: number } } = {
-        'new york': { lat: 40.7128, lng: -74.0060 },
-        'los angeles': { lat: 34.0522, lng: -118.2437 },
-        'austin': { lat: 30.2672, lng: -97.7431 },
-        'miami': { lat: 25.7617, lng: -80.1918 },
-        'san francisco': { lat: 37.7749, lng: -122.4194 },
-        'seattle': { lat: 47.6062, lng: -122.3321 },
-        'boston': { lat: 42.3601, lng: -71.0589 },
-        'chicago': { lat: 41.8781, lng: -87.6298 }
-      };
-      
-      const city = suggestion.structured_formatting.secondary_text.toLowerCase();
-      let coordinates = { lat: 39.8283, lng: -98.5795 }; // Default center US
-      
-      for (const [cityName, coords] of Object.entries(cityCoordinates)) {
-        if (city.includes(cityName)) {
-          coordinates = {
-            lat: coords.lat + (Math.random() - 0.5) * 0.01, // Small random offset
-            lng: coords.lng + (Math.random() - 0.5) * 0.01
-          };
-          break;
-        }
+    const cityCoordinates: { [key: string]: { lat: number; lng: number } } = {
+      'new york': { lat: 40.7128, lng: -74.0060 },
+      'los angeles': { lat: 34.0522, lng: -118.2437 },
+      'austin': { lat: 30.2672, lng: -97.7431 },
+      'miami': { lat: 25.7617, lng: -80.1918 },
+      'san francisco': { lat: 37.7749, lng: -122.4194 },
+      'seattle': { lat: 47.6062, lng: -122.3321 },
+      'boston': { lat: 42.3601, lng: -71.0589 },
+      'chicago': { lat: 41.8781, lng: -87.6298 },
+      'apex': { lat: 35.7321, lng: -78.8503 },
+      'raleigh': { lat: 35.7796, lng: -78.6382 },
+      'nc': { lat: 35.7596, lng: -79.0193 }
+    };
+    
+    const city = suggestion.structured_formatting.secondary_text.toLowerCase();
+    let coordinates = { lat: 39.8283, lng: -98.5795 }; // Default center US
+    
+    for (const [cityName, coords] of Object.entries(cityCoordinates)) {
+      if (city.includes(cityName)) {
+        coordinates = {
+          lat: coords.lat + (Math.random() - 0.5) * 0.01,
+          lng: coords.lng + (Math.random() - 0.5) * 0.01
+        };
+        break;
       }
-      
-      onAddressSelect(suggestion.description, coordinates.lat, coordinates.lng);
-    } catch (error) {
-      console.error('Error getting place details:', error);
-      onAddressSelect(suggestion.description);
     }
+    
+    onAddressSelect(suggestion.description, coordinates.lat, coordinates.lng);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (!showSuggestions || suggestions.length === 0) {
-      // If no suggestions but user presses Enter, allow manual entry
       if (e.key === 'Enter' && inputValue.trim().length > 5) {
         e.preventDefault();
         handleManualEntry();
@@ -253,7 +262,10 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
         'seattle': { lat: 47.6062, lng: -122.3321 },
         'boston': { lat: 42.3601, lng: -71.0589 },
         'denver': { lat: 39.7392, lng: -104.9903 },
-        'san francisco': { lat: 37.7749, lng: -122.4194 }
+        'san francisco': { lat: 37.7749, lng: -122.4194 },
+        'apex': { lat: 35.7321, lng: -78.8503 },
+        'raleigh': { lat: 35.7796, lng: -78.6382 },
+        'nc': { lat: 35.7596, lng: -79.0193 }
       };
       
       const inputLower = inputValue.toLowerCase();
@@ -282,6 +294,7 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
   };
 
   const handleFocus = () => {
+    console.log('🎯 Input focused, current value:', inputValue);
     if (suggestions.length > 0) {
       setShowSuggestions(true);
     } else if (inputValue.length >= 2) {
@@ -317,6 +330,13 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
           </div>
         )}
       </div>
+
+      {/* Debug info */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="text-xs text-gray-500 mt-1">
+          🐛 Debug: {suggestions.length} suggestions, showing: {showSuggestions ? 'yes' : 'no'}, loading: {isLoading ? 'yes' : 'no'}
+        </div>
+      )}
 
       {/* Manual entry button */}
       {!showSuggestions && !isLoading && inputValue.trim().length > 5 && (
