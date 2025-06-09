@@ -7,6 +7,7 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { v4 as uuidv4 } from 'uuid';
 import { v2 as cloudinary } from 'cloudinary';
+import { createRequire } from 'module';
 
 // ES module __dirname equivalent
 const __filename = fileURLToPath(import.meta.url);
@@ -15,6 +16,9 @@ const __dirname = path.dirname(__filename);
 // Load environment variables from multiple sources
 dotenv.config({ path: './cloudinary.env' });
 dotenv.config(); // Load from .env file
+
+// Create require function for CommonJS modules
+const require = createRequire(import.meta.url);
 
 const app = express();
 
@@ -160,6 +164,16 @@ class Decor8AIService {
 }
 
 const decor8ai = new Decor8AIService(DECOR8AI_API_KEY);
+
+// Initialize Gemini AI Content Generation Service
+let GeminiService;
+try {
+  const { GeminiService: GeminiServiceClass } = await import('./services/geminiService.js');
+  GeminiService = new GeminiServiceClass();
+  console.log('✅ Gemini AI service initialized');
+} catch (error) {
+  console.log('⚠️ Gemini AI service not available:', error.message);
+}
 
 // Interior design endpoint - DRAG & DROP READY!
 app.post('/api/redesign', upload.single('image'), async (req, res) => {
@@ -307,16 +321,24 @@ app.get('/api/debug/env', (req, res) => {
 // Health check endpoint
 app.get('/api/health', (req, res) => {
     const hasCloudinary = !!process.env.CLOUDINARY_CLOUD_NAME;
+    const hasGemini = !!GeminiService && !!process.env.GEMINI_API_KEY;
     
     res.json({ 
         status: 'healthy', 
         hasApiToken: !!DECOR8AI_API_KEY,
         hasCloudinary: hasCloudinary,
+        hasGemini: hasGemini,
         provider: 'Decor8AI',
+        aiContentGeneration: hasGemini ? 'Gemini AI' : 'Not configured',
         features: {
             dragAndDrop: hasCloudinary,
             urlBased: true,
-            fileUpload: hasCloudinary
+            fileUpload: hasCloudinary,
+            contentGeneration: hasGemini,
+            propertyDescriptions: hasGemini,
+            socialMediaPosts: hasGemini,
+            emailCampaigns: hasGemini,
+            flyerContent: hasGemini
         },
         timestamp: new Date().toISOString()
     });
@@ -437,6 +459,220 @@ app.post('/api/listings/context', async (req, res) => {
     console.error('❌ Location context API error:', error);
     res.status(500).json({ 
       error: 'Failed to fetch location context',
+      details: error.message 
+    });
+  }
+});
+
+
+
+// Property description generation endpoint
+app.post('/api/listings/generate-description', async (req, res) => {
+  try {
+    if (!GeminiService) {
+      return res.status(500).json({ 
+        error: 'Gemini AI service not available. Please check GEMINI_API_KEY in .env file.' 
+      });
+    }
+
+    const { propertyData, style = 'professional' } = req.body;
+
+    // Validate required fields
+    if (!propertyData || !propertyData.address) {
+      return res.status(400).json({ 
+        error: 'Property data with address is required' 
+      });
+    }
+
+    console.log('Generating description for:', propertyData.address, 'in', style, 'style');
+
+    const description = await GeminiService.generatePropertyDescription(propertyData, style);
+
+    res.json({
+      success: true,
+      description: description.trim(),
+      style: style,
+      generatedAt: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('Description generation error:', error);
+    res.status(500).json({ 
+      error: 'Failed to generate property description',
+      details: error.message 
+    });
+  }
+});
+
+// Social media content generation endpoint
+app.post('/api/listings/generate-social', async (req, res) => {
+  try {
+    if (!GeminiService) {
+      return res.status(500).json({ 
+        error: 'Gemini AI service not available. Please check GEMINI_API_KEY in .env file.' 
+      });
+    }
+
+    const { propertyData, platform, style = 'professional' } = req.body;
+
+    if (!propertyData || !platform) {
+      return res.status(400).json({ 
+        error: 'Property data and platform are required' 
+      });
+    }
+
+    const validPlatforms = ['facebook', 'instagram', 'linkedin', 'twitter'];
+    if (!validPlatforms.includes(platform)) {
+      return res.status(400).json({ 
+        error: 'Invalid platform. Must be one of: ' + validPlatforms.join(', ')
+      });
+    }
+
+    console.log('Generating', platform, 'content in', style, 'style');
+
+    const content = await GeminiService.generateSocialMediaContent(propertyData, platform, style);
+
+    res.json({
+      success: true,
+      content: content.trim(),
+      platform: platform,
+      style: style,
+      generatedAt: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('Social media generation error:', error);
+    res.status(500).json({ 
+      error: `Failed to generate ${req.body.platform} content`,
+      details: error.message 
+    });
+  }
+});
+
+// Email campaign generation endpoint
+app.post('/api/listings/generate-email', async (req, res) => {
+  try {
+    if (!GeminiService) {
+      return res.status(500).json({ 
+        error: 'Gemini AI service not available. Please check GEMINI_API_KEY in .env file.' 
+      });
+    }
+
+    const { propertyData, style = 'professional' } = req.body;
+
+    if (!propertyData) {
+      return res.status(400).json({ 
+        error: 'Property data is required' 
+      });
+    }
+
+    console.log('Generating email content in', style, 'style');
+
+    const emailContent = await GeminiService.generateEmailContent(propertyData, style);
+
+    res.json({
+      success: true,
+      content: emailContent.trim(),
+      style: style,
+      generatedAt: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('Email generation error:', error);
+    res.status(500).json({ 
+      error: 'Failed to generate email content',
+      details: error.message 
+    });
+  }
+});
+
+// Flyer content generation endpoint
+app.post('/api/listings/generate-flyer', async (req, res) => {
+  try {
+    if (!GeminiService) {
+      return res.status(500).json({ 
+        error: 'Gemini AI service not available. Please check GEMINI_API_KEY in .env file.' 
+      });
+    }
+
+    const { propertyData, style = 'professional' } = req.body;
+
+    if (!propertyData) {
+      return res.status(400).json({ 
+        error: 'Property data is required' 
+      });
+    }
+
+    console.log('Generating flyer content in', style, 'style');
+
+    const flyerContent = await GeminiService.generateFlyerContent(propertyData, style);
+
+    res.json({
+      success: true,
+      content: flyerContent.trim(),
+      style: style,
+      generatedAt: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('Flyer generation error:', error);
+    res.status(500).json({ 
+      error: 'Failed to generate flyer content',
+      details: error.message 
+    });
+  }
+});
+
+// Batch content generation endpoint
+app.post('/api/listings/generate-all-content', async (req, res) => {
+  try {
+    if (!GeminiService) {
+      return res.status(500).json({ 
+        error: 'Gemini AI service not available. Please check GEMINI_API_KEY in .env file.' 
+      });
+    }
+
+    const { propertyData, style = 'professional', platforms = ['facebook', 'instagram', 'linkedin'] } = req.body;
+
+    if (!propertyData) {
+      return res.status(400).json({ 
+        error: 'Property data is required' 
+      });
+    }
+
+    console.log('Generating all content for:', propertyData.address);
+
+    // Generate all content in parallel
+    const [description, socialContent, flyerContent, emailContent] = await Promise.all([
+      GeminiService.generatePropertyDescription(propertyData, style),
+      Promise.all(platforms.map(async platform => ({
+        platform,
+        content: await GeminiService.generateSocialMediaContent(propertyData, platform, style)
+      }))),
+      GeminiService.generateFlyerContent(propertyData, style),
+      GeminiService.generateEmailContent(propertyData, style)
+    ]);
+
+    // Format social content as object
+    const socialContentObj = {};
+    socialContent.forEach(({ platform, content }) => {
+      socialContentObj[platform] = content.trim();
+    });
+
+    res.json({
+      success: true,
+      description: description.trim(),
+      socialContent: socialContentObj,
+      flyerContent: flyerContent.trim(),
+      emailContent: emailContent.trim(),
+      style: style,
+      generatedAt: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('Batch generation error:', error);
+    res.status(500).json({ 
+      error: 'Failed to generate content',
       details: error.message 
     });
   }

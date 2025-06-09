@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
 import * as listingService from '../../../services/listingService';
-import { ollamaService } from '../../../services/ollamaService';
+import { ContentGenerationService } from '../../../services/contentGenerationService';
 import { Listing } from '../../../types';
 import { DESCRIPTION_STYLES, DescriptionStyleId, TOOLKIT_TOOLS } from '../../../constants';
 import Button from '../../shared/Button';
@@ -18,6 +18,15 @@ import {
   CheckIcon
 } from '@heroicons/react/24/outline';
 import { SparklesIcon as SparklesSolidIcon } from '@heroicons/react/24/solid';
+
+// Map UI style IDs to backend style values
+const styleMapping: Record<DescriptionStyleId, string> = {
+  'professional': 'professional',
+  'luxury': 'luxury',
+  'family-friendly': 'family-friendly',
+  'modern': 'modern',
+  'investment': 'investment'
+};
 
 const ListingDescriptionGeneratorPage: React.FC = () => {
   const { id: listingId } = useParams<{ id: string }>();
@@ -96,14 +105,35 @@ const ListingDescriptionGeneratorPage: React.FC = () => {
     setGeneratedDescription('Generating your content...');
     
     try {
-      const selectedStyleData = DESCRIPTION_STYLES.find(s => s.id === selectedStyle);
-      const aiDescription = await ollamaService.generatePropertyDescription(listing, selectedStyleData?.name || 'Professional');
-      setGeneratedDescription(aiDescription);
+      // Convert listing to PropertyData format
+      const propertyData = ContentGenerationService.formatPropertyData({
+        address: listing.address,
+        price: `$${listing.price.toLocaleString()}`,
+        bedrooms: listing.bedrooms,
+        bathrooms: listing.bathrooms,
+        squareFootage: listing.squareFootage,
+        propertyType: listing.propertyType || 'Residential',
+        keyFeatures: listing.keyFeatures ? listing.keyFeatures.split('\n').filter(f => f.trim()) : [],
+        yearBuilt: listing.yearBuilt,
+        // Add any other available fields from the listing
+      });
+
+      // Map UI style to backend style
+      const backendStyle = styleMapping[selectedStyle] || 'professional';
+      
+      console.log('Generating description with style:', backendStyle);
+      console.log('Property data:', propertyData);
+
+      const response = await ContentGenerationService.generateDescription(propertyData, backendStyle as any);
+      
+      if (response.success && response.description) {
+        setGeneratedDescription(response.description);
+      } else {
+        throw new Error(response.error || 'Failed to generate description');
+      }
     } catch (error) {
       console.error('Generation error:', error);
       // Fallback to mock generation
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
       const mockDescription = `Welcome to this stunning ${listing.bedrooms}-bedroom, ${listing.bathrooms}-bathroom home located at ${listing.address}. Spanning ${listing.squareFootage} square feet, this ${listing.yearBuilt} property offers ${listing.keyFeatures}. Priced at $${listing.price.toLocaleString()}, this home represents excellent value in today's market.`;
       setGeneratedDescription(mockDescription);
     } finally {

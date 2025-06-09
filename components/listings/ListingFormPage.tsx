@@ -5,6 +5,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import * as listingService from "../../services/listingService";
 import Button from "../shared/Button";
 import AddressAutocomplete from "../shared/AddressAutocomplete";
+import SimpleAddressInput from "../shared/SimpleAddressInput";
 import { LocationContextWidget } from './LocationContextWidget';
 import { ContextCard } from '../../types/locationContext';
 
@@ -389,12 +390,15 @@ export default function ListingFormPage() {
               <div className="space-y-6">
                 <div>
                   <label className="block text-brand-text-secondary text-sm font-medium mb-3">Property Address</label>
-                  <AddressAutocomplete
+                  <SimpleAddressInput
                     value={formData.address}
-                    placeholder="Start typing the property address..."
+                    placeholder="Enter the full property address (e.g., 123 Main Street, New York, NY 10001)"
                     onAddressSelect={handleAddressSelect}
                     className="bg-brand-input-bg border-0 text-brand-text-primary placeholder-brand-text-tertiary rounded-xl px-4 py-4 text-base focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all duration-200"
                   />
+                  <p className="text-xs text-brand-text-secondary mt-2">
+                    💡 <strong>Temporary mode:</strong> Please type the complete address including city, state, and ZIP code. Google autocomplete will be restored soon.
+                  </p>
                 </div>
               </div>
 
