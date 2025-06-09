@@ -4,9 +4,9 @@ import { ArrowLeftIcon as ArrowLeft, DocumentIcon as Save, ArrowUpTrayIcon as Up
 import { useAuth } from "../../contexts/AuthContext";
 import * as listingService from "../../services/listingService";
 import Button from "../shared/Button";
-import AddressAutocomplete from "../shared/AddressAutocomplete";
 import { LocationContextWidget } from './LocationContextWidget';
 import { ContextCard } from '../../types/locationContext';
+import { LocationContextDebug } from './LocationContextDebug';
 
 // Define form data type to match new structure
 type FormData = {
@@ -156,23 +156,7 @@ export default function ListingFormPage() {
     }
   };
 
-  const handleAddressSelect = (address: string, lat: number = 0, lng: number = 0) => {
-    console.log('Selected address:', address, 'Latitude:', lat, 'Longitude:', lng);
-    
-    // Parse the address to populate individual fields
-    const addressParts = address.split(',').map(part => part.trim());
-    
-    setFormData(prev => ({
-      ...prev,
-      address: address,
-      latitude: lat,
-      longitude: lng,
-      streetAddress: addressParts[0] || "",
-      city: addressParts[1] || "",
-      state: addressParts[2] || "",
-      zipCode: addressParts[3] || ""
-    }));
-  };
+
 
   const handleContextSelection = (cards: ContextCard[]) => {
     try {
@@ -377,6 +361,9 @@ export default function ListingFormPage() {
           </p>
         </div>
 
+        {/* DEBUG: Temporary debug component - remove after testing */}
+        <LocationContextDebug />
+        
         <div className="bg-brand-panel rounded-2xl shadow-2xl border border-brand-border">
           <div className="p-8 border-b border-brand-border">
             <h2 className="text-2xl font-semibold text-brand-text-primary">Property Information</h2>
@@ -389,16 +376,20 @@ export default function ListingFormPage() {
                 </div>
               )}
 
-              {/* Address Search */}
+              {/* Address Search - Simplified for Testing */}
               <div className="space-y-6">
                 <div>
                   <label className="block text-brand-text-secondary text-sm font-medium mb-3">Property Address</label>
-                  <AddressAutocomplete
+                  <input
+                    type="text"
                     value={formData.address}
-                    placeholder="Start typing the property address..."
-                    onAddressSelect={handleAddressSelect}
-                    className="bg-brand-input-bg border-0 text-brand-text-primary placeholder-brand-text-tertiary rounded-xl px-4 py-4 text-base focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all duration-200"
+                    onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
+                    placeholder="Enter full address (e.g., 123 Main Street, New York, NY 10001)"
+                    className="w-full bg-brand-input-bg border-0 text-brand-text-primary placeholder-brand-text-tertiary rounded-xl px-4 py-4 text-base focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all duration-200"
                   />
+                  <p className="text-xs text-brand-text-tertiary mt-2">
+                    Include comma and state/zip for best results (e.g., "123 Main St, New York, NY 10001")
+                  </p>
                 </div>
               </div>
 
