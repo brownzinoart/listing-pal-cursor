@@ -28,6 +28,7 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [inputValue, setInputValue] = useState(value);
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [searchAttempted, setSearchAttempted] = useState(false);
   
   const inputRef = useRef<HTMLInputElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout>();
@@ -46,10 +47,12 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
       setSuggestions([]);
       setShowSuggestions(false);
       setIsLoading(false);
+      setSearchAttempted(false);
       return;
     }
 
     setIsLoading(true);
+    setSearchAttempted(true);
     
     try {
       // Abort previous request
@@ -251,15 +254,10 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
         )}
       </div>
 
-      {/* Debug info */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="text-xs text-gray-500 mt-1">
-          🐛 Debug: {suggestions.length} suggestions, showing: {showSuggestions ? 'yes' : 'no'}, loading: {isLoading ? 'yes' : 'no'}
-        </div>
-      )}
 
-      {/* Manual entry button */}
-      {!showSuggestions && !isLoading && inputValue.trim().length > 5 && (
+
+      {/* Manual entry button - only show when search was performed but no suggestions found */}
+      {!isLoading && inputValue.trim().length > 5 && suggestions.length === 0 && !showSuggestions && searchAttempted && (
         <div className="mt-2">
           <button
             type="button"
