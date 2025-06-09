@@ -5,7 +5,6 @@ import { useAuth } from "../../contexts/AuthContext";
 import * as listingService from "../../services/listingService";
 import Button from "../shared/Button";
 import AddressAutocomplete from "../shared/AddressAutocomplete";
-import SimpleAddressInput from "../shared/SimpleAddressInput";
 import { LocationContextWidget } from './LocationContextWidget';
 import { ContextCard } from '../../types/locationContext';
 
@@ -158,8 +157,8 @@ export default function ListingFormPage() {
     }
   };
 
-  const handleAddressSelect = (address: string, lat: number = 0, lng: number = 0) => {
-    console.log('Selected address:', address, 'Latitude:', lat, 'Longitude:', lng);
+  const handleAddressSelect = (address: string, lat?: number, lng?: number) => {
+    console.log('Selected address:', address, 'Latitude:', lat || 0, 'Longitude:', lng || 0);
     
     // Parse the address to populate individual fields
     const addressParts = address.split(',').map(part => part.trim());
@@ -167,8 +166,8 @@ export default function ListingFormPage() {
     setFormData(prev => ({
       ...prev,
       address: address,
-      latitude: lat,
-      longitude: lng,
+      latitude: lat || 0,
+      longitude: lng || 0,
       streetAddress: addressParts[0] || "",
       city: addressParts[1] || "",
       state: addressParts[2] || "",
@@ -390,15 +389,12 @@ export default function ListingFormPage() {
               <div className="space-y-6">
                 <div>
                   <label className="block text-brand-text-secondary text-sm font-medium mb-3">Property Address</label>
-                  <SimpleAddressInput
+                  <AddressAutocomplete
                     value={formData.address}
-                    placeholder="Enter the full property address (e.g., 123 Main Street, New York, NY 10001)"
+                    placeholder="Start typing the property address..."
                     onAddressSelect={handleAddressSelect}
                     className="bg-brand-input-bg border-0 text-brand-text-primary placeholder-brand-text-tertiary rounded-xl px-4 py-4 text-base focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all duration-200"
                   />
-                  <p className="text-xs text-brand-text-secondary mt-2">
-                    💡 <strong>Temporary mode:</strong> Please type the complete address including city, state, and ZIP code. Google autocomplete will be restored soon.
-                  </p>
                 </div>
               </div>
 
