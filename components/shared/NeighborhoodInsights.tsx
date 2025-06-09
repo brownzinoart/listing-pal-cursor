@@ -13,7 +13,9 @@ import {
   Plus,
   Check,
   Settings,
-  X
+  X,
+  AlertCircle,
+  Search
 } from 'lucide-react';
 
 // Mock data - replace with your actual API calls
@@ -50,7 +52,17 @@ const mockNeighborhoodData = {
     "Growing arts and culture scene",
     "Easy access to downtown (15 min)",
     "Low crime rate - 40% below national average"
-  ]
+  ],
+  dataAvailability: {
+    schools: true,
+    amenities: true,
+    overview: true,
+    market: true
+  },
+  dataSources: {
+    schools: 'real',
+    amenities: 'real'
+  }
 };
 
 interface ScoreCardProps {
@@ -139,6 +151,27 @@ const AmenityCard: React.FC<AmenityCardProps> = ({ amenity }) => (
   </div>
 );
 
+// Empty state component for when no data is available
+const EmptyStateCard: React.FC<{ 
+  title: string; 
+  description: string; 
+  icon: React.ReactNode; 
+  showGenericNote?: boolean; 
+}> = ({ title, description, icon, showGenericNote = true }) => (
+  <div className="flex flex-col items-center justify-center p-8 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg text-center">
+    <div className="mb-4 p-3 bg-gray-100 rounded-full">
+      {icon}
+    </div>
+    <h3 className="text-lg font-medium text-gray-900 mb-2">{title}</h3>
+    <p className="text-sm text-gray-600 max-w-sm mb-3">{description}</p>
+    {showGenericNote && (
+      <p className="text-xs text-gray-500 max-w-sm">
+        💡 You can still research and add general information about this category to your listing manually.
+      </p>
+    )}
+  </div>
+);
+
 interface NeighborhoodInsightsProps {
   address?: string;
   listingPrice?: number;
@@ -188,7 +221,7 @@ const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({
       console.log('✅ NeighborhoodInsights received real data:', contextData);
       
       // Transform the real data to match our component's expected format
-      const transformedData = transformContextDataToNeighborhoodData(contextData);
+      const transformedData = await transformContextDataToNeighborhoodData(contextData);
       setData(transformedData);
     } catch (error) {
       console.error('❌ Error fetching neighborhood data:', error);
@@ -198,21 +231,71 @@ const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({
     }
   };
 
-  const transformContextDataToNeighborhoodData = (contextData: any) => {
+    const generateAIFallbackData = async (address: string, missingDataTypes: string[]) => {
+    try {
+      const response = await fetch('/api/generate-content', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt: `Generate realistic neighborhood insights for the address: ${address}
+
+Please provide information for these missing data categories: ${missingDataTypes.join(', ')}
+
+For schools (if missing): Provide 2-3 typical schools that would be found in this area, with realistic names, ratings (1-10), distances, and school types (Elementary, Middle, High).
+
+For amenities (if missing): Provide 4-6 typical businesses/amenities that would be found near this address, including restaurants, grocery stores, and local services. Include realistic names, categories, distances, and appropriate icons.
+
+Return the response in this exact JSON format:
+{
+  "schools": [{"name": "...", "rating": 8, "distance": "0.5 miles", "type": "Elementary"}],
+  "amenities": [{"name": "...", "category": "Restaurant", "distance": "0.3 miles", "icon": "🍽️"}],
+  "insights": ["Insight 1", "Insight 2", "Insight 3"]
+}
+
+Base your suggestions on typical businesses and schools that would be found in this geographic area and neighborhood type.`,
+          contentType: 'neighborhood-insights'
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        // Parse the AI response - it should return JSON
+        try {
+          const aiData = JSON.parse(result.content);
+          return aiData;
+        } catch (parseError) {
+          console.warn('Could not parse AI response as JSON:', result.content);
+          return null;
+        }
+      }
+    } catch (error) {
+      console.warn('AI fallback failed:', error);
+    }
+    return null;
+  };
+
+  const transformContextDataToNeighborhoodData = async (contextData: any) => {
     // Extract real data from context cards and transform to our format
-    const schools = contextData.cards
-      ?.find((card: any) => card.id === 'schools')
-      ?.fullData?.map((school: any) => ({
-        name: school.name,
-        rating: school.rating || 8,
-        distance: '0.5 miles', // Calculate from geometry if available
-        type: 'Public'
-      })) || mockNeighborhoodData.schools;
+    const schoolsCard = contextData.cards?.find((card: any) => card.id === 'schools');
+    const hasRealSchools = schoolsCard?.fullData && schoolsCard.fullData.length > 0;
+    let schools = hasRealSchools 
+      ? schoolsCard.fullData.map((school: any) => ({
+          name: school.name,
+          rating: school.rating || 8,
+          distance: '0.5 miles', // Calculate from geometry if available
+          type: 'Public'
+        }))
+      : [];
 
     const amenities: { name: string; category: string; distance: string; icon: string; }[] = [];
+    let hasRealAmenities = false;
+    
     // Extract restaurants
     const restaurantCard = contextData.cards?.find((card: any) => card.id === 'dining');
-    if (restaurantCard?.fullData) {
+    if (restaurantCard?.fullData && restaurantCard.fullData.length > 0) {
+      hasRealAmenities = true;
       restaurantCard.fullData.slice(0, 4).forEach((restaurant: any) => {
         amenities.push({
           name: restaurant.name,
@@ -225,7 +308,8 @@ const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({
     
     // Extract shopping
     const shoppingCard = contextData.cards?.find((card: any) => card.id === 'shopping');
-    if (shoppingCard?.fullData) {
+    if (shoppingCard?.fullData && shoppingCard.fullData.length > 0) {
+      hasRealAmenities = true;
       shoppingCard.fullData.slice(0, 2).forEach((store: any) => {
         amenities.push({
           name: store.name,
@@ -236,21 +320,65 @@ const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({
       });
     }
 
-    // Use real demographic data if available, otherwise use enhanced mock data
-    const demographics = contextData.cards?.find((card: any) => card.id === 'demographics')?.fullData || mockNeighborhoodData.demographics;
+    // Use AI fallback for missing data
+    const missingDataTypes = [];
+    if (!hasRealSchools) missingDataTypes.push('schools');
+    if (!hasRealAmenities) missingDataTypes.push('amenities');
+
+    let aiEnhancedHighlights: string[] = [];
+    
+    if (missingDataTypes.length > 0 && address) {
+      const aiData = await generateAIFallbackData(address, missingDataTypes);
+      if (aiData) {
+        // Use AI-generated schools if real data is missing
+        if (!hasRealSchools && aiData.schools) {
+          schools = aiData.schools;
+        }
+        
+        // Use AI-generated amenities if real data is missing
+        if (!hasRealAmenities && aiData.amenities) {
+          amenities.push(...aiData.amenities);
+        }
+
+        // Use AI-generated insights
+        if (aiData.insights) {
+          aiEnhancedHighlights = aiData.insights;
+        }
+      }
+    }
+
+    // Track data availability for each section (including AI-enhanced)
+    const dataAvailability = {
+      schools: hasRealSchools || schools.length > 0,
+      amenities: hasRealAmenities || amenities.length > 0,
+      overview: true, // Always available (uses walk scores, etc.)
+      market: true   // Always available (uses demographic data)
+    };
+
+    // Track data sources for display badges
+    const dataSources = {
+      schools: hasRealSchools ? 'real' : (schools.length > 0 ? 'ai' : 'none'),
+      amenities: hasRealAmenities ? 'real' : (amenities.length > 0 ? 'ai' : 'none')
+    };
 
     return {
       ...mockNeighborhoodData, // Start with mock as base
-      schools: schools.length > 0 ? schools : mockNeighborhoodData.schools,
-      amenities: amenities.length > 0 ? amenities : mockNeighborhoodData.amenities,
-      demographics,
-      // Enhanced highlights based on real data
-      highlights: [
-        contextData.cards?.length > 0 ? `${contextData.cards.length} local amenities identified` : "Vibrant neighborhood with local charm",
-        schools.length > 0 ? `${schools.length} schools nearby with good ratings` : "Quality educational options available",
-        amenities.length > 0 ? `${amenities.length} restaurants and shops within walking distance` : "Convenient local dining and shopping",
-        "Growing community with modern amenities",
-        "Easy access to transportation and services"
+      schools,
+      amenities,
+      demographics: contextData.cards?.find((card: any) => card.id === 'demographics')?.fullData || mockNeighborhoodData.demographics,
+      dataAvailability, // Add this to track what data is real
+      dataSources, // Track whether data is real or AI-generated
+      // Enhanced highlights based on real data and AI insights
+      highlights: aiEnhancedHighlights.length > 0 ? aiEnhancedHighlights : [
+        hasRealSchools ? `${schools.length} schools nearby with verified ratings` : 
+          schools.length > 0 ? `${schools.length} local schools identified` : "School information not available",
+        hasRealAmenities ? `${amenities.length} restaurants and shops within walking distance` : 
+          amenities.length > 0 ? `${amenities.length} local businesses and amenities nearby` : "Local business data not available", 
+        "Walkability and transportation analysis available",
+        "Market trends and demographics available",
+        (hasRealSchools || hasRealAmenities) ? "Real-time neighborhood data integrated" : 
+          (schools.length > 0 || amenities.length > 0) ? "AI-enhanced neighborhood insights provided" :
+          "Limited neighborhood data - consider visiting the area for firsthand insights"
       ]
     };
   };
@@ -521,8 +649,11 @@ ${data.amenities.map(amenity =>
               <h3 className="text-xl font-bold text-brand-text-primary">Schools</h3>
               <button
                 onClick={() => handleToggleSection('schools')}
+                disabled={!data.dataAvailability?.schools && !addedSections.includes('schools')}
                 className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 ${
-                  addedSections.includes('schools')
+                  !data.dataAvailability?.schools && !addedSections.includes('schools')
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : addedSections.includes('schools')
                     ? 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white hover:scale-[1.02] shadow-brand'
                     : 'bg-gradient-to-r from-brand-primary to-brand-accent hover:from-brand-primary/90 hover:to-brand-accent/90 text-white hover:scale-[1.02] shadow-brand'
                 }`}
@@ -532,27 +663,47 @@ ${data.amenities.map(amenity =>
                     <X className="w-4 h-4" />
                     <span>Remove Section</span>
                   </>
-                ) : (
+                ) : data.dataAvailability?.schools ? (
                   <>
                     <Plus className="w-4 h-4" />
                     <span>Add Section</span>
+                  </>
+                ) : (
+                  <>
+                    <AlertCircle className="w-4 h-4" />
+                    <span>No Data Available</span>
                   </>
                 )}
               </button>
             </div>
 
-            <div className="flex items-center justify-between">
-              <h4 className="text-lg font-semibold text-brand-text-primary flex items-center">
-                <GraduationCap className="w-5 h-5 mr-2 text-brand-primary" />
-                Nearby Schools
-              </h4>
-              <span className="text-sm text-brand-text-tertiary">Ratings are out of 10</span>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {data.schools.map((school, index) => (
-                <SchoolCard key={index} school={school} />
-              ))}
-            </div>
+            {data.dataAvailability?.schools ? (
+              <>
+                <div className="flex items-center justify-between">
+                  <h4 className="text-lg font-semibold text-brand-text-primary flex items-center">
+                    <GraduationCap className="w-5 h-5 mr-2 text-brand-primary" />
+                    Nearby Schools
+                    {data.dataSources?.schools === 'ai' && (
+                      <span className="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full">
+                        AI Enhanced
+                      </span>
+                    )}
+                  </h4>
+                  <span className="text-sm text-brand-text-tertiary">Ratings are out of 10</span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {data.schools.map((school, index) => (
+                    <SchoolCard key={index} school={school} />
+                  ))}
+                </div>
+              </>
+            ) : (
+              <EmptyStateCard
+                title="No School Data Available"
+                description="We couldn't find detailed information about schools in this area. This might be a newer neighborhood or an area with limited data coverage."
+                icon={<Search className="w-6 h-6 text-gray-400" />}
+              />
+            )}
             <div className="mt-6 p-4 bg-brand-primary/10 border border-brand-primary/20 rounded-lg backdrop-blur-sm">
               <p className="text-sm text-brand-text-secondary">
                 <strong className="text-brand-primary">School District:</strong> This property is in an award-winning school district with a 95% graduation rate.
@@ -568,8 +719,11 @@ ${data.amenities.map(amenity =>
               <h3 className="text-xl font-bold text-brand-text-primary">Amenities</h3>
               <button
                 onClick={() => handleToggleSection('amenities')}
+                disabled={!data.dataAvailability?.amenities && !addedSections.includes('amenities')}
                 className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 ${
-                  addedSections.includes('amenities')
+                  !data.dataAvailability?.amenities && !addedSections.includes('amenities')
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : addedSections.includes('amenities')
                     ? 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white hover:scale-[1.02] shadow-brand'
                     : 'bg-gradient-to-r from-brand-primary to-brand-accent hover:from-brand-primary/90 hover:to-brand-accent/90 text-white hover:scale-[1.02] shadow-brand'
                 }`}
@@ -579,24 +733,44 @@ ${data.amenities.map(amenity =>
                     <X className="w-4 h-4" />
                     <span>Remove Section</span>
                   </>
-                ) : (
+                ) : data.dataAvailability?.amenities ? (
                   <>
                     <Plus className="w-4 h-4" />
                     <span>Add Section</span>
+                  </>
+                ) : (
+                  <>
+                    <AlertCircle className="w-4 h-4" />
+                    <span>No Data Available</span>
                   </>
                 )}
               </button>
             </div>
 
-            <h4 className="text-lg font-semibold text-brand-text-primary flex items-center">
-              <ShoppingCart className="w-5 h-5 mr-2 text-brand-secondary" />
-              Popular Nearby Amenities
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {data.amenities.map((amenity, index) => (
-                <AmenityCard key={index} amenity={amenity} />
-              ))}
-            </div>
+            {data.dataAvailability?.amenities ? (
+              <>
+                <h4 className="text-lg font-semibold text-brand-text-primary flex items-center">
+                  <ShoppingCart className="w-5 h-5 mr-2 text-brand-secondary" />
+                  Popular Nearby Amenities
+                  {data.dataSources?.amenities === 'ai' && (
+                    <span className="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full">
+                      AI Enhanced
+                    </span>
+                  )}
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {data.amenities.map((amenity, index) => (
+                    <AmenityCard key={index} amenity={amenity} />
+                  ))}
+                </div>
+              </>
+            ) : (
+              <EmptyStateCard
+                title="No Local Business Data Available"
+                description="We couldn't find detailed information about restaurants, shops, and other businesses in this area. This might be a rural area or one with limited data coverage."
+                icon={<Search className="w-6 h-6 text-gray-400" />}
+              />
+            )}
             <div className="mt-6 p-4 bg-brand-secondary/10 border border-brand-secondary/20 rounded-lg backdrop-blur-sm">
               <p className="text-sm text-brand-text-secondary">
                 <strong className="text-brand-secondary">Convenience:</strong> Everything you need is within walking distance, including grocery stores, cafes, and parks.
