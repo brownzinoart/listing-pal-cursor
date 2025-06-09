@@ -231,30 +231,60 @@ const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({
     }
   };
 
-    const generateAIFallbackData = async (address: string, missingDataTypes: string[]) => {
+    const generateAIFallbackData = async (address: string, currentData: any) => {
     try {
+      // Analyze what we have vs what we need
+      const hasSchools = currentData.schools && currentData.schools.length > 0;
+      const hasRestaurants = currentData.dining && currentData.dining.length > 0;
+      const hasShopping = currentData.shopping && currentData.shopping.length > 0;
+      const hasParks = currentData.parks && currentData.parks.length > 0;
+      const hasTransit = currentData.transit && currentData.transit.length > 0;
+
       const response = await fetch('/api/generate-content', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          prompt: `Generate realistic neighborhood insights for the address: ${address}
+          prompt: `Generate comprehensive neighborhood data for: ${address}
 
-Please provide information for these missing data categories: ${missingDataTypes.join(', ')}
+CURRENT DATA STATUS:
+- Schools: ${hasSchools ? 'AVAILABLE' : 'MISSING'}
+- Restaurants: ${hasRestaurants ? 'AVAILABLE' : 'MISSING'}  
+- Shopping: ${hasShopping ? 'AVAILABLE' : 'MISSING'}
+- Parks: ${hasParks ? 'AVAILABLE' : 'MISSING'}
+- Transit: ${hasTransit ? 'AVAILABLE' : 'MISSING'}
 
-For schools (if missing): Provide 2-3 typical schools that would be found in this area, with realistic names, ratings (1-10), distances, and school types (Elementary, Middle, High).
+INSTRUCTIONS:
+Generate realistic data ONLY for missing categories. Base suggestions on the specific geographic area and typical businesses/amenities found in this neighborhood type.
 
-For amenities (if missing): Provide 4-6 typical businesses/amenities that would be found near this address, including restaurants, grocery stores, and local services. Include realistic names, categories, distances, and appropriate icons.
+For MISSING schools: Provide 2-3 realistic schools with names that would exist in this area, ratings (1-10), distances, and types (Elementary/Middle/High).
 
-Return the response in this exact JSON format:
+For MISSING restaurants: Provide 4-6 diverse dining options including casual and upscale restaurants, cafes, and local favorites.
+
+For MISSING shopping: Provide 3-4 shopping venues including grocery stores, retail, and convenience options.
+
+For MISSING parks: Provide 2-3 recreational areas including parks, trails, or green spaces.
+
+For MISSING transit: Provide 2-3 public transportation options if applicable to this area.
+
+Return ONLY missing data in this exact JSON format:
 {
   "schools": [{"name": "...", "rating": 8, "distance": "0.5 miles", "type": "Elementary"}],
-  "amenities": [{"name": "...", "category": "Restaurant", "distance": "0.3 miles", "icon": "🍽️"}],
-  "insights": ["Insight 1", "Insight 2", "Insight 3"]
+  "restaurants": [{"name": "...", "category": "Restaurant", "distance": "0.3 miles", "icon": "🍽️", "rating": 4.2}],
+  "shopping": [{"name": "...", "category": "Grocery Store", "distance": "0.4 miles", "icon": "🛒", "rating": 4.1}],
+  "parks": [{"name": "...", "category": "Park", "distance": "0.6 miles", "icon": "🌳", "acres": 15}],
+  "transit": [{"name": "...", "category": "Bus Stop", "distance": "0.2 miles", "icon": "🚌", "walkTime": "3 min"}],
+  "walkability": {
+    "walkScore": 75,
+    "transitScore": 65,
+    "bikeScore": 70,
+    "description": "Most errands can be accomplished on foot"
+  },
+  "insights": ["Insight about neighborhood character", "Safety and community insight", "Lifestyle highlight"]
 }
 
-Base your suggestions on typical businesses and schools that would be found in this geographic area and neighborhood type.`,
+Include ONLY the categories that are MISSING. If all data is available, return empty object {}`,
           contentType: 'neighborhood-insights'
         }),
       });
@@ -320,29 +350,62 @@ Base your suggestions on typical businesses and schools that would be found in t
       });
     }
 
-    // Use AI fallback for missing data
-    const missingDataTypes = [];
-    if (!hasRealSchools) missingDataTypes.push('schools');
-    if (!hasRealAmenities) missingDataTypes.push('amenities');
-
+    // Use AI fallback for comprehensive missing data
     let aiEnhancedHighlights: string[] = [];
+    let aiWalkabilityData: any = null;
     
-    if (missingDataTypes.length > 0 && currentAddress) {
-      const aiData = await generateAIFallbackData(currentAddress, missingDataTypes);
+    // Check if we need AI enhancement
+    const needsAIEnhancement = !hasRealSchools || !hasRealAmenities;
+    
+    if (needsAIEnhancement && currentAddress) {
+      // Pass current real data so AI knows what's missing
+      const currentRealData = {
+        schools: hasRealSchools ? schools : [],
+        dining: hasRealAmenities ? contextData.cards?.find((c: any) => c.id === 'dining')?.fullData : [],
+        shopping: hasRealAmenities ? contextData.cards?.find((c: any) => c.id === 'shopping')?.fullData : [],
+        parks: contextData.cards?.find((c: any) => c.id === 'parks')?.fullData || [],
+        transit: contextData.cards?.find((c: any) => c.id === 'transit')?.fullData || []
+      };
+
+      const aiData = await generateAIFallbackData(currentAddress, currentRealData);
       if (aiData) {
-        // Use AI-generated schools if real data is missing
+        // Merge AI-generated schools if missing
         if (!hasRealSchools && aiData.schools) {
           schools = aiData.schools;
         }
         
-        // Use AI-generated amenities if real data is missing
-        if (!hasRealAmenities && aiData.amenities) {
-          amenities.push(...aiData.amenities);
+        // Merge AI-generated restaurants and shopping into amenities
+        if (!hasRealAmenities) {
+          if (aiData.restaurants) {
+            amenities.push(...aiData.restaurants);
+          }
+          if (aiData.shopping) {
+            amenities.push(...aiData.shopping);
+          }
+          if (aiData.parks) {
+            amenities.push(...aiData.parks.map((park: any) => ({
+              name: park.name,
+              category: 'Recreation',
+              distance: park.distance,
+              icon: park.icon || '🌳'
+            })));
+          }
+          if (aiData.transit) {
+            amenities.push(...aiData.transit.map((transit: any) => ({
+              name: transit.name,
+              category: 'Transit',
+              distance: transit.distance,
+              icon: transit.icon || '🚌'
+            })));
+          }
         }
 
-        // Use AI-generated insights
+        // Use AI-generated insights and walkability data
         if (aiData.insights) {
           aiEnhancedHighlights = aiData.insights;
+        }
+        if (aiData.walkability) {
+          aiWalkabilityData = aiData.walkability;
         }
       }
     }
@@ -368,13 +431,17 @@ Base your suggestions on typical businesses and schools that would be found in t
       demographics: contextData.cards?.find((card: any) => card.id === 'demographics')?.fullData || mockNeighborhoodData.demographics,
       dataAvailability, // Add this to track what data is real
       dataSources, // Track whether data is real or AI-generated
+      // Use AI walkability data if available, otherwise use mock
+      walkScore: aiWalkabilityData?.walkScore || mockNeighborhoodData.walkScore,
+      transitScore: aiWalkabilityData?.transitScore || mockNeighborhoodData.transitScore,
+      bikeScore: aiWalkabilityData?.bikeScore || mockNeighborhoodData.bikeScore,
       // Enhanced highlights based on real data and AI insights
       highlights: aiEnhancedHighlights.length > 0 ? aiEnhancedHighlights : [
         hasRealSchools ? `${schools.length} schools nearby with verified ratings` : 
           schools.length > 0 ? `${schools.length} local schools identified` : "School information not available",
         hasRealAmenities ? `${amenities.length} restaurants and shops within walking distance` : 
           amenities.length > 0 ? `${amenities.length} local businesses and amenities nearby` : "Local business data not available", 
-        "Walkability and transportation analysis available",
+        aiWalkabilityData ? aiWalkabilityData.description : "Walkability and transportation analysis available",
         "Market trends and demographics available",
         (hasRealSchools || hasRealAmenities) ? "Real-time neighborhood data integrated" : 
           (schools.length > 0 || amenities.length > 0) ? "AI-enhanced neighborhood insights provided" :
