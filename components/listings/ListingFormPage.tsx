@@ -534,6 +534,21 @@ export default function ListingFormPage() {
                     <NeighborhoodInsights
                       address={formData.address}
                       listingPrice={formData.price ? (typeof formData.price === 'string' ? parseInt(formData.price) : formData.price) : undefined}
+                      onSectionAdd={(section, content) => {
+                        // Add neighborhood content to key features for AI generation
+                        const currentFeatures = formData.keyFeatures || '';
+                        const newFeatures = currentFeatures + (currentFeatures ? '\n\n' : '') + 
+                          `**NEIGHBORHOOD - ${section.toUpperCase()}**\n${content}`;
+                        
+                        handleInputChange({
+                          target: { name: 'keyFeatures', value: newFeatures }
+                        } as React.ChangeEvent<HTMLTextAreaElement>);
+                      }}
+                      selectedSections={[]} // Initialize empty, will be managed by component
+                      onSectionToggle={(sections) => {
+                        // Handle section toggle for listing page display
+                        console.log('Selected sections for listing page:', sections);
+                      }}
                     />
                   </div>
                   

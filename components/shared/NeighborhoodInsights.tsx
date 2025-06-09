@@ -9,7 +9,11 @@ import {
   Car,
   Sun,
   TrendingUp,
-  Star
+  Star,
+  Plus,
+  Check,
+  Settings,
+  X
 } from 'lucide-react';
 
 // Mock data - replace with your actual API calls
@@ -57,31 +61,31 @@ interface ScoreCardProps {
 }
 
 const ScoreCard: React.FC<ScoreCardProps> = ({ title, score, icon, description }) => (
-  <div className="bg-brand-card border border-brand-border rounded-lg p-4 hover:shadow-brand-md hover:scale-[1.02] transform transition-all duration-200 cursor-pointer">
+  <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-lg hover:scale-[1.02] transform transition-all duration-200 cursor-pointer">
     <div className="flex items-center justify-between mb-3">
       <div className="flex items-center space-x-2">
-        {icon}
-        <span className="text-sm font-medium text-brand-text-secondary">{title}</span>
+        <span className="text-gray-600">{icon}</span>
+        <span className="text-sm font-medium text-gray-700">{title}</span>
       </div>
       <div className={`text-2xl font-bold ${
-        score >= 80 ? 'text-brand-secondary' : 
-        score >= 60 ? 'text-brand-warning' : 
-        'text-brand-danger'
+        score >= 80 ? 'text-green-600' : 
+        score >= 60 ? 'text-yellow-600' : 
+        'text-red-600'
       }`}>
         {score}
       </div>
     </div>
-    <div className="w-full bg-brand-background rounded-full h-2 mb-2">
+    <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
       <div 
         className={`h-2 rounded-full transition-all duration-300 ${
-          score >= 80 ? 'bg-brand-secondary' : 
-          score >= 60 ? 'bg-brand-warning' : 
-          'bg-brand-danger'
+          score >= 80 ? 'bg-green-500' : 
+          score >= 60 ? 'bg-yellow-500' : 
+          'bg-red-500'
         }`}
         style={{ width: `${score}%` }}
       ></div>
     </div>
-    <p className="text-xs text-brand-text-tertiary">{description}</p>
+    <p className="text-xs text-gray-600">{description}</p>
   </div>
 );
 
@@ -95,21 +99,21 @@ interface SchoolCardProps {
 }
 
 const SchoolCard: React.FC<SchoolCardProps> = ({ school }) => (
-  <div className="bg-brand-card border border-brand-border rounded-lg p-4 hover:shadow-brand-md hover:scale-[1.01] transform transition-all duration-200">
+  <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-lg hover:scale-[1.01] transform transition-all duration-200">
     <div className="flex items-start justify-between mb-3">
       <div className="flex-1">
-        <h4 className="font-medium text-brand-text-primary">{school.name}</h4>
-        <p className="text-sm text-brand-text-tertiary">{school.type} • {school.distance}</p>
+        <h4 className="font-medium text-gray-900">{school.name}</h4>
+        <p className="text-sm text-gray-600">{school.type} • {school.distance}</p>
       </div>
-      <div className="flex items-center space-x-1 bg-brand-primary/20 px-2 py-1 rounded-full">
-        <Star className="w-3 h-3 text-brand-primary" />
-        <span className="text-sm font-bold text-brand-primary">{school.rating}</span>
-        <span className="text-xs text-brand-text-secondary">/10</span>
+      <div className="flex items-center space-x-1 bg-blue-100 px-2 py-1 rounded-full">
+        <Star className="w-3 h-3 text-blue-600" />
+        <span className="text-sm font-bold text-blue-800">{school.rating}</span>
+        <span className="text-xs text-blue-600">/10</span>
       </div>
     </div>
-    <div className="w-full bg-brand-background rounded-full h-1.5">
+    <div className="w-full bg-gray-200 rounded-full h-1.5">
       <div 
-        className="bg-brand-primary h-1.5 rounded-full transition-all duration-300" 
+        className="bg-blue-500 h-1.5 rounded-full transition-all duration-300" 
         style={{ width: `${school.rating * 10}%` }}
       ></div>
     </div>
@@ -126,11 +130,11 @@ interface AmenityCardProps {
 }
 
 const AmenityCard: React.FC<AmenityCardProps> = ({ amenity }) => (
-  <div className="flex items-center space-x-3 p-3 bg-brand-card border border-brand-border rounded-lg hover:shadow-brand hover:bg-brand-panel transition-all duration-200">
+  <div className="flex items-center space-x-3 p-3 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-all duration-200">
     <span className="text-2xl">{amenity.icon}</span>
     <div className="flex-1 min-w-0">
-      <p className="font-medium text-brand-text-primary truncate">{amenity.name}</p>
-      <p className="text-sm text-brand-text-tertiary">{amenity.category} • {amenity.distance}</p>
+      <p className="font-medium text-gray-900 truncate">{amenity.name}</p>
+      <p className="text-sm text-gray-600">{amenity.category} • {amenity.distance}</p>
     </div>
   </div>
 );
@@ -138,12 +142,23 @@ const AmenityCard: React.FC<AmenityCardProps> = ({ amenity }) => (
 interface NeighborhoodInsightsProps {
   address?: string;
   listingPrice?: number;
+  onSectionAdd?: (section: string, content: string) => void;
+  selectedSections?: string[];
+  onSectionToggle?: (sections: string[]) => void;
 }
 
-const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({ address, listingPrice }) => {
+const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({ 
+  address, 
+  listingPrice, 
+  onSectionAdd,
+  selectedSections = [],
+  onSectionToggle 
+}) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState(mockNeighborhoodData);
+  const [addedSections, setAddedSections] = useState<string[]>([]);
+  const [showSectionManager, setShowSectionManager] = useState(false);
 
   // In a real app, you'd fetch this data based on the address
   useEffect(() => {
@@ -157,6 +172,73 @@ const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({ address, li
     { id: 'amenities', label: 'Amenities', icon: <ShoppingCart className="w-4 h-4" /> },
     { id: 'market', label: 'Market', icon: <Wallet className="w-4 h-4" /> }
   ];
+
+  // Section content generators
+  const generateSectionContent = (tabId: string): string => {
+    switch (tabId) {
+      case 'overview':
+        return `**WALKABILITY & TRANSPORTATION**
+• Walk Score: ${data.walkScore}/100 - Most errands can be accomplished on foot
+• Transit Score: ${data.transitScore}/100 - Good public transportation options  
+• Bike Score: ${data.bikeScore}/100 - Very bikeable with good infrastructure
+
+**NEIGHBORHOOD HIGHLIGHTS**
+${data.highlights.map(h => `• ${h}`).join('\n')}
+
+**COMMUNITY PROFILE**
+• Median Age: ${data.demographics.medianAge} years
+• Median Income: $${(data.demographics.medianIncome / 1000).toFixed(0)}k annually
+• Family Friendly Rating: ${data.demographics.familyFriendly}/10
+• Diversity Index: ${data.demographics.diversityIndex}/10`;
+
+      case 'schools':
+        return `**NEARBY SCHOOLS**
+${data.schools.map(school => 
+  `• ${school.name} (${school.type}) - ${school.rating}/10 rating, ${school.distance}`
+).join('\n')}
+
+**SCHOOL DISTRICT**
+• Award-winning school district with 95% graduation rate
+• Highly rated educational programs and facilities`;
+
+      case 'amenities':
+        return `**LOCAL AMENITIES**
+${data.amenities.map(amenity => 
+  `• ${amenity.name} (${amenity.category}) - ${amenity.distance}`
+).join('\n')}
+
+**CONVENIENCE**
+• Everything you need within walking distance including grocery stores, cafes, and parks`;
+
+      case 'market':
+        return `**MARKET ANALYSIS**
+• Neighborhood Median Price: $${(data.marketTrends.medianPrice / 1000).toFixed(0)}k
+• 1-Year Price Change: ${data.marketTrends.priceChange}
+• Average Days on Market: ${data.marketTrends.daysOnMarket} days
+• Inventory Level: ${data.marketTrends.inventory}
+
+**INVESTMENT APPEAL**
+• Strong market fundamentals with steady appreciation
+• Desirable neighborhood with high demand`;
+
+      default:
+        return '';
+    }
+  };
+
+  const handleAddSection = (tabId: string) => {
+    const content = generateSectionContent(tabId);
+    if (onSectionAdd) {
+      onSectionAdd(tabId, content);
+      setAddedSections(prev => [...prev, tabId]);
+    }
+  };
+
+  const handleSectionManagerToggle = (sections: string[]) => {
+    if (onSectionToggle) {
+      onSectionToggle(sections);
+    }
+  };
 
   if (loading) {
     return (
@@ -176,11 +258,34 @@ const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({ address, li
     <div className="bg-brand-card border border-brand-border rounded-xl overflow-hidden shadow-brand-lg">
       {/* Header */}
       <div className="bg-gradient-to-r from-brand-primary/20 to-brand-accent/20 px-6 py-4 border-b border-brand-border backdrop-blur-sm">
-        <h3 className="text-xl font-bold text-brand-text-primary mb-1 flex items-center">
-          <Building className="w-6 h-6 mr-2 text-brand-primary" />
-          Neighborhood Insights
-        </h3>
-        <p className="text-sm text-brand-text-secondary">Discover what makes this area special</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-xl font-bold text-brand-text-primary mb-1 flex items-center">
+              <Building className="w-6 h-6 mr-2 text-brand-primary" />
+              Neighborhood Insights
+            </h3>
+            <p className="text-sm text-brand-text-secondary">Discover what makes this area special</p>
+          </div>
+          
+          {/* Section Manager */}
+          {addedSections.length > 0 && (
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2">
+                <Check className="w-4 h-4 text-brand-secondary" />
+                <span className="text-sm text-brand-text-secondary">
+                  {addedSections.length} section{addedSections.length === 1 ? '' : 's'} added
+                </span>
+              </div>
+              <button
+                onClick={() => setShowSectionManager(true)}
+                className="flex items-center space-x-1 px-3 py-1 bg-brand-primary/20 hover:bg-brand-primary/30 rounded-full transition-colors text-sm text-brand-primary"
+              >
+                <Settings className="w-4 h-4" />
+                <span>Manage</span>
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Tab Navigation */}
@@ -207,6 +312,32 @@ const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({ address, li
       <div className="p-6 bg-brand-panel/30">
         {activeTab === 'overview' && (
           <div className="space-y-6">
+            {/* Tab Header with Add Section Button */}
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-brand-text-primary">Overview</h3>
+              <button
+                onClick={() => handleAddSection('overview')}
+                disabled={addedSections.includes('overview')}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 ${
+                  addedSections.includes('overview')
+                    ? 'bg-brand-secondary/20 text-brand-secondary cursor-not-allowed'
+                    : 'bg-brand-primary hover:bg-brand-primary/90 text-white hover:scale-[1.02]'
+                }`}
+              >
+                {addedSections.includes('overview') ? (
+                  <>
+                    <Check className="w-4 h-4" />
+                    <span>Added to Listing</span>
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-4 h-4" />
+                    <span>Add Section</span>
+                  </>
+                )}
+              </button>
+            </div>
+
             {/* Walkability Scores */}
             <div>
               <h4 className="text-lg font-semibold text-brand-text-primary mb-4 flex items-center">
@@ -281,6 +412,32 @@ const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({ address, li
 
         {activeTab === 'schools' && (
           <div className="space-y-4">
+            {/* Tab Header with Add Section Button */}
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-brand-text-primary">Schools</h3>
+              <button
+                onClick={() => handleAddSection('schools')}
+                disabled={addedSections.includes('schools')}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 ${
+                  addedSections.includes('schools')
+                    ? 'bg-brand-secondary/20 text-brand-secondary cursor-not-allowed'
+                    : 'bg-brand-primary hover:bg-brand-primary/90 text-white hover:scale-[1.02]'
+                }`}
+              >
+                {addedSections.includes('schools') ? (
+                  <>
+                    <Check className="w-4 h-4" />
+                    <span>Added to Listing</span>
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-4 h-4" />
+                    <span>Add Section</span>
+                  </>
+                )}
+              </button>
+            </div>
+
             <div className="flex items-center justify-between">
               <h4 className="text-lg font-semibold text-brand-text-primary flex items-center">
                 <GraduationCap className="w-5 h-5 mr-2 text-brand-primary" />
@@ -303,6 +460,32 @@ const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({ address, li
 
         {activeTab === 'amenities' && (
           <div className="space-y-4">
+            {/* Tab Header with Add Section Button */}
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-brand-text-primary">Amenities</h3>
+              <button
+                onClick={() => handleAddSection('amenities')}
+                disabled={addedSections.includes('amenities')}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 ${
+                  addedSections.includes('amenities')
+                    ? 'bg-brand-secondary/20 text-brand-secondary cursor-not-allowed'
+                    : 'bg-brand-primary hover:bg-brand-primary/90 text-white hover:scale-[1.02]'
+                }`}
+              >
+                {addedSections.includes('amenities') ? (
+                  <>
+                    <Check className="w-4 h-4" />
+                    <span>Added to Listing</span>
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-4 h-4" />
+                    <span>Add Section</span>
+                  </>
+                )}
+              </button>
+            </div>
+
             <h4 className="text-lg font-semibold text-brand-text-primary flex items-center">
               <ShoppingCart className="w-5 h-5 mr-2 text-brand-secondary" />
               Popular Nearby Amenities
@@ -322,6 +505,32 @@ const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({ address, li
 
         {activeTab === 'market' && (
           <div className="space-y-6">
+            {/* Tab Header with Add Section Button */}
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-brand-text-primary">Market Analysis</h3>
+              <button
+                onClick={() => handleAddSection('market')}
+                disabled={addedSections.includes('market')}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 ${
+                  addedSections.includes('market')
+                    ? 'bg-brand-secondary/20 text-brand-secondary cursor-not-allowed'
+                    : 'bg-brand-primary hover:bg-brand-primary/90 text-white hover:scale-[1.02]'
+                }`}
+              >
+                {addedSections.includes('market') ? (
+                  <>
+                    <Check className="w-4 h-4" />
+                    <span>Added to Listing</span>
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-4 h-4" />
+                    <span>Add Section</span>
+                  </>
+                )}
+              </button>
+            </div>
+
             <h4 className="text-lg font-semibold text-brand-text-primary flex items-center">
               <TrendingUp className="w-5 h-5 mr-2 text-brand-warning" />
               Market Analysis
@@ -377,6 +586,67 @@ const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({ address, li
           </div>
         )}
       </div>
+
+      {/* Section Manager Overlay */}
+      {showSectionManager && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-brand-card border border-brand-border rounded-xl max-w-md w-full p-6 shadow-brand-xl">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-bold text-brand-text-primary">Manage Sections</h3>
+              <button
+                onClick={() => setShowSectionManager(false)}
+                className="p-1 hover:bg-brand-panel rounded transition-colors"
+              >
+                <X className="w-5 h-5 text-brand-text-tertiary" />
+              </button>
+            </div>
+
+            <p className="text-sm text-brand-text-secondary mb-4">
+              Select which neighborhood sections to display on your listing page:
+            </p>
+
+            <div className="space-y-3">
+              {tabs.map((tab) => (
+                <label key={tab.id} className="flex items-center space-x-3 p-3 bg-brand-panel rounded-lg hover:bg-brand-background transition-colors cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selectedSections.includes(tab.id)}
+                    onChange={(e) => {
+                      const newSections = e.target.checked
+                        ? [...selectedSections, tab.id]
+                        : selectedSections.filter(s => s !== tab.id);
+                      handleSectionManagerToggle(newSections);
+                    }}
+                    className="w-4 h-4 text-brand-primary border-brand-border rounded focus:ring-brand-primary focus:ring-2"
+                  />
+                  <div className="flex items-center space-x-2 flex-1">
+                    {tab.icon}
+                    <span className="text-brand-text-primary font-medium">{tab.label}</span>
+                  </div>
+                  {addedSections.includes(tab.id) && (
+                    <div className="flex items-center space-x-1 text-xs text-brand-secondary">
+                      <Check className="w-3 h-3" />
+                      <span>Added</span>
+                    </div>
+                  )}
+                </label>
+              ))}
+            </div>
+
+            <div className="mt-6 flex items-center justify-between">
+              <span className="text-sm text-brand-text-tertiary">
+                {selectedSections.length} of {tabs.length} sections selected
+              </span>
+              <button
+                onClick={() => setShowSectionManager(false)}
+                className="px-4 py-2 bg-brand-primary hover:bg-brand-primary/90 text-white rounded-lg transition-colors"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
