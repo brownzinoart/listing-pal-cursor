@@ -387,7 +387,7 @@ const ListingDetailPage: React.FC = () => {
                     <h3 className="text-2xl font-bold text-brand-text-primary mb-2 break-words">Property Description</h3>
                     <div className="flex items-center">
                       <span className="bg-brand-secondary h-2 w-2 rounded-full mr-2"></span>
-                      <span className="text-sm font-medium text-brand-secondary">AI Generated</span>
+                      <span className="text-sm font-medium text-brand-secondary">Generated</span>
                     </div>
                   </div>
                   <Link to={`/listings/${listing.id}/generate/description`} className="flex-shrink-0">
@@ -415,7 +415,7 @@ const ListingDetailPage: React.FC = () => {
                   <h3 className="text-2xl font-bold text-brand-text-primary mb-2 break-words">Social Media Posts</h3>
                   <div className="flex items-center">
                     <span className="bg-brand-secondary h-2 w-2 rounded-full mr-2"></span>
-                    <span className="text-sm font-medium text-brand-secondary">AI Generated Content</span>
+                    <span className="text-sm font-medium text-brand-secondary">Generated</span>
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 overflow-hidden">
@@ -439,11 +439,25 @@ const ListingDetailPage: React.FC = () => {
                         </Link>
                       </div>
                       <div className="overflow-hidden">
-                        <SocialMediaMockup 
-                          content={listing.generatedFacebookPost} 
-                          listingImage={listing.images?.[0]?.url}
-                          platform="facebook" 
-                        />
+                        <div className="bg-white rounded-lg border border-gray-200 p-3 space-y-3">
+                          <div className="flex items-center space-x-2">
+                            <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                              <span className="text-white text-xs font-bold">RE</span>
+                            </div>
+                            <div>
+                              <p className="font-semibold text-gray-900 text-sm">Real Estate Agent</p>
+                              <p className="text-gray-500 text-xs">Just now</p>
+                            </div>
+                          </div>
+                          <p className="text-gray-800 text-sm break-words">{listing.generatedFacebookPost}</p>
+                          {listing.images?.[0]?.url && (
+                            <img 
+                              src={listing.images[0].url} 
+                              alt="Property" 
+                              className="w-full aspect-video object-cover rounded border"
+                            />
+                          )}
+                        </div>
                       </div>
                     </div>
                   )}
@@ -467,11 +481,22 @@ const ListingDetailPage: React.FC = () => {
                         </Link>
                       </div>
                       <div className="overflow-hidden">
-                        <SocialMediaMockup 
-                          content={listing.generatedInstagramCaption} 
-                          listingImage={listing.images?.[0]?.url}
-                          platform="instagram" 
-                        />
+                        <div className="bg-white rounded-lg border border-gray-200 p-3 space-y-3">
+                          <div className="flex items-center space-x-2">
+                            <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                              <span className="text-white text-xs font-bold">RE</span>
+                            </div>
+                            <span className="font-semibold text-gray-900 text-sm">@realestate_agent</span>
+                          </div>
+                          {listing.images?.[0]?.url && (
+                            <img 
+                              src={listing.images[0].url} 
+                              alt="Property" 
+                              className="w-full aspect-square object-cover rounded border"
+                            />
+                          )}
+                          <p className="text-gray-800 text-sm break-words">{listing.generatedInstagramCaption}</p>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -495,11 +520,25 @@ const ListingDetailPage: React.FC = () => {
                         </Link>
                       </div>
                       <div className="overflow-hidden">
-                        <SocialMediaMockup 
-                          content={listing.generatedXPost} 
-                          listingImage={listing.images?.[0]?.url}
-                          platform="twitter" 
-                        />
+                        <div className="bg-white rounded-lg border border-gray-200 p-3 space-y-3">
+                          <div className="flex items-center space-x-2">
+                            <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center">
+                              <span className="text-white text-xs font-bold">RE</span>
+                            </div>
+                            <div>
+                              <span className="font-semibold text-gray-900 text-sm">@realestate_pro</span>
+                              <span className="text-gray-500 text-sm ml-2">• 2h</span>
+                            </div>
+                          </div>
+                          <p className="text-gray-800 text-sm break-words">{listing.generatedXPost}</p>
+                          {listing.images?.[0]?.url && (
+                            <img 
+                              src={listing.images[0].url} 
+                              alt="Property" 
+                              className="w-full aspect-video object-cover rounded border"
+                            />
+                          )}
+                        </div>
                       </div>
                     </div>
                   )}
@@ -516,7 +555,7 @@ const ListingDetailPage: React.FC = () => {
                     <h3 className="text-2xl font-bold text-brand-text-primary mb-2 break-words">Email Campaign</h3>
                     <div className="flex items-center">
                       <span className="bg-brand-secondary h-2 w-2 rounded-full mr-2"></span>
-                      <span className="text-sm font-medium text-brand-secondary">AI Generated</span>
+                      <span className="text-sm font-medium text-brand-secondary">Generated</span>
                     </div>
                   </div>
                   <Link to={`/listings/${listing.id}/generate/email`} className="flex-shrink-0">
@@ -567,7 +606,7 @@ const ListingDetailPage: React.FC = () => {
                         <img 
                           src={flyer.imageUrl} 
                           alt={`Marketing Flyer ${index + 1}`} 
-                          className="w-full aspect-[3/4] object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                          className="w-full aspect-[4/3] object-cover cursor-pointer hover:opacity-90 transition-opacity"
                           onClick={() => {
                             // Create a download link
                             const link = document.createElement('a');
@@ -605,73 +644,14 @@ const ListingDetailPage: React.FC = () => {
                 </div>
               </section>
             )}
-          </div>
-        )}
 
-        {/* Interior Redesigns Section */}
-        {listing.generatedRoomDesigns && listing.generatedRoomDesigns.length > 0 && (
-          <section className="bg-brand-panel border border-brand-border rounded-xl p-6 sm:p-8 shadow-xl overflow-hidden">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 overflow-hidden">
-              <div className="mb-4 sm:mb-0 min-w-0 flex-1">
-                <h3 className="text-2xl font-bold text-brand-text-primary mb-2 break-words">Interior Reimagined</h3>
-                <div className="flex items-center">
-                  <span className="bg-brand-secondary h-2 w-2 rounded-full mr-2"></span>
-                  <span className="text-sm font-medium text-brand-secondary break-words">
-                    {listing.generatedRoomDesigns.length} design{listing.generatedRoomDesigns.length > 1 ? 's' : ''} generated
-                  </span>
-                </div>
-              </div>
-              <Link to={`/listings/${listing.id}/ai/room-redesign`} className="flex-shrink-0">
-                <Button 
-                  variant='edit' 
-                  leftIcon={<PencilSquareIcon className='h-4 w-4' />}
-                  size="md"
-                >
-                  Create New Design
-                </Button>
-              </Link>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 overflow-hidden">
-              {listing.generatedRoomDesigns.map((design, index) => {
-                const styleName = AI_DESIGN_STYLES.find(s => s.id === design.styleId)?.name || 'Unknown Style';
-                return (
-                  <div key={index} className="bg-brand-background/30 border border-brand-border/50 rounded-lg overflow-hidden">
-                    <div className="relative overflow-hidden">
-                      <img 
-                        src={design.redesignedImageUrl} 
-                        alt={`Room redesign ${index + 1}`} 
-                        className="w-full aspect-[4/3] object-cover"
-                      />
-                      <div className="absolute top-2 sm:top-3 right-2 sm:right-3 bg-brand-primary text-white text-xs px-2 py-1 rounded-full font-medium">
-                        {styleName}
-                      </div>
-                    </div>
-                    <div className="p-3 sm:p-4 overflow-hidden">
-                      <div className="flex items-center justify-between mb-2 overflow-hidden">
-                        <h4 className="font-semibold text-brand-text-primary text-sm sm:text-base break-words">Design {index + 1}</h4>
-                        <span className="text-xs text-brand-text-tertiary break-words">
-                          {new Date(design.createdAt || Date.now()).toLocaleDateString()}
-                        </span>
-                      </div>
-                      {design.prompt && (
-                        <p className="text-sm text-brand-text-secondary break-words" style={{
-                          display: '-webkit-box',
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: 'vertical',
-                          overflow: 'hidden'
-                        }}>{design.prompt}</p>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
+            
+          </div>
         )}
       </div>
 
       {/* Content Generation Tools */}
-      <div className="bg-brand-panel border border-brand-border rounded-xl p-6 sm:p-8 shadow-xl overflow-hidden">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <AiWorkflowPlaceholder listing={listing} />
       </div>
     </div>
