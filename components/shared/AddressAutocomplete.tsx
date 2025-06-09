@@ -273,23 +273,23 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
 
       {/* Suggestions dropdown */}
       {showSuggestions && suggestions.length > 0 && (
-        <div className="absolute z-50 w-full mt-1 bg-brand-panel border border-brand-border rounded-xl shadow-2xl max-h-60 overflow-y-auto">
+        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-2xl max-h-60 overflow-y-auto">
           {suggestions.map((suggestion, index) => (
             <button
               key={suggestion.place_id}
               type="button"
               onClick={() => handleSuggestionClick(suggestion)}
-              className={`w-full px-4 py-3 text-left hover:bg-brand-input-bg transition-colors border-b border-brand-border last:border-b-0 first:rounded-t-xl last:rounded-b-xl ${
-                index === selectedIndex ? 'bg-brand-input-bg' : ''
+              className={`w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0 first:rounded-t-xl last:rounded-b-xl ${
+                index === selectedIndex ? 'bg-gray-50' : ''
               }`}
             >
               <div className="flex items-start space-x-3">
-                <MapPin className="w-4 h-4 text-brand-text-tertiary mt-1 flex-shrink-0" />
+                <MapPin className="w-4 h-4 text-gray-500 mt-1 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-brand-text-primary truncate">
+                  <div className="text-sm font-medium text-gray-900 truncate">
                     {suggestion.structured_formatting.main_text}
                   </div>
-                  <div className="text-xs text-brand-text-secondary truncate">
+                  <div className="text-xs text-gray-600 truncate">
                     {suggestion.structured_formatting.secondary_text}
                   </div>
                 </div>
@@ -301,9 +301,9 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
 
       {/* No results message with manual entry option */}
       {showSuggestions && suggestions.length === 0 && !isLoading && inputValue.length >= 2 && (
-        <div className="absolute z-50 w-full mt-1 bg-brand-panel border border-brand-border rounded-xl shadow-2xl">
+        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-2xl">
           <div className="px-4 py-3">
-            <div className="text-sm text-brand-text-tertiary text-center mb-2">
+            <div className="text-sm text-gray-600 text-center mb-2">
               No matching addresses found
             </div>
             {inputValue.length > 5 && (
@@ -317,13 +317,6 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
             )}
           </div>
         </div>
-      )}
-
-      {/* Helper text */}
-      {!inputValue && (
-        <p className="text-xs text-brand-text-secondary mt-1">
-          💡 Start typing any address - powered by Google Places API
-        </p>
       )}
     </div>
   );
