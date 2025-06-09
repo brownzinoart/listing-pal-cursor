@@ -29,10 +29,11 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
   const [inputValue, setInputValue] = useState(value);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [searchAttempted, setSearchAttempted] = useState(false);
+  const [lastSearchHadResults, setLastSearchHadResults] = useState(false);
   
   const inputRef = useRef<HTMLInputElement>(null);
-  const timeoutRef = useRef<NodeJS.Timeout>();
-  const abortControllerRef = useRef<AbortController>();
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     setInputValue(value);
@@ -48,6 +49,7 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
       setShowSuggestions(false);
       setIsLoading(false);
       setSearchAttempted(false);
+      setLastSearchHadResults(false);
       return;
     }
 
@@ -80,21 +82,25 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
         
         setSuggestions(predictions);
         setShowSuggestions(predictions.length > 0);
+        setLastSearchHadResults(predictions.length > 0);
         setSelectedIndex(-1);
       } else if (data.error) {
         console.error('❌ Backend API error:', data.error);
         setSuggestions([]);
         setShowSuggestions(false);
+        setLastSearchHadResults(false);
       } else {
         console.log('⚠️ No predictions found or API error:', data.status);
         setSuggestions([]);
         setShowSuggestions(false);
+        setLastSearchHadResults(false);
       }
     } catch (error: any) {
       if (error.name !== 'AbortError') {
         console.error('❌ Google Places API error:', error);
         setSuggestions([]);
         setShowSuggestions(false);
+        setLastSearchHadResults(false);
       }
     } finally {
       setIsLoading(false);
@@ -257,7 +263,11 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
 
 
       {/* Manual entry button - only show when search was performed but no suggestions found */}
-      {!isLoading && inputValue.trim().length > 5 && suggestions.length === 0 && !showSuggestions && searchAttempted && (
+      {!isLoading && 
+       inputValue.trim().length > 5 && 
+       searchAttempted && 
+       !lastSearchHadResults && 
+       !showSuggestions && (
         <div className="mt-2">
           <button
             type="button"
