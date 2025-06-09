@@ -221,13 +221,13 @@ export default function ListingFormPage() {
       return acc;
     }, {} as Record<string, ContextCard[]>);
     
-    // Add neighborhood highlights header
-    sections.push('\n\n🏘️ NEIGHBORHOOD HIGHLIGHTS');
+    // Add neighborhood highlights header (clean, no extra spaces)
+    sections.push('\n\n**NEIGHBORHOOD HIGHLIGHTS**');
     
     // Add each category
     Object.entries(groupedCards).forEach(([category, categoryCards]) => {
       const categoryTitle = getCategoryTitle(category);
-      sections.push(`\n\n${categoryTitle}:`);
+      sections.push(`\n\n**${categoryTitle}**`);
       
       categoryCards.forEach(card => {
         sections.push(`• ${card.marketingCopy}`);
@@ -239,11 +239,11 @@ export default function ListingFormPage() {
 
   const getCategoryTitle = (category: string): string => {
     const titles: Record<string, string> = {
-      location: '📍 LOCATION & WALKABILITY',
-      community: '👥 DEMOGRAPHICS & COMMUNITY',
-      amenities: '🏪 LOCAL AMENITIES',
-      education: '🎓 SCHOOLS & EDUCATION',
-      transportation: '🚌 TRANSIT & TRANSPORTATION'
+      location: 'LOCATION & WALKABILITY',
+      community: 'DEMOGRAPHICS & COMMUNITY',
+      amenities: 'LOCAL AMENITIES',
+      education: 'SCHOOLS & EDUCATION',
+      transportation: 'TRANSIT & TRANSPORTATION'
     };
     return titles[category] || category.toUpperCase();
   };
@@ -251,7 +251,7 @@ export default function ListingFormPage() {
   const getBaseDescription = (): string => {
     // Remove any existing context section from description
     const currentDescription = formData.keyFeatures || '';
-    const contextStartIndex = currentDescription.indexOf('🏘️ NEIGHBORHOOD HIGHLIGHTS');
+    const contextStartIndex = currentDescription.indexOf('**NEIGHBORHOOD HIGHLIGHTS**');
     
     if (contextStartIndex === -1) {
       return currentDescription;
@@ -270,13 +270,8 @@ export default function ListingFormPage() {
 
   const isValidAddressForContext = (address: string): boolean => {
     // Check if address is substantial enough to fetch context
-    return address.length > 15 && 
-           address.includes(',') && 
-           (!!address.match(/\d{5}/) || // Has zip code
-            address.toLowerCase().includes('ny') ||
-            address.toLowerCase().includes('ca') ||
-            address.toLowerCase().includes('tx') ||
-            address.toLowerCase().includes('fl'));
+    return address.length > 10 && 
+           address.includes(',');
   };
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -403,54 +398,6 @@ export default function ListingFormPage() {
                 </div>
               </div>
 
-              {/* 5. JSX - Location Context Widget Integration */}
-              {isValidAddressForContext(formData.address) && (
-                <div className="space-y-4">
-                  {/* Visual separator */}
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-brand-border" />
-                    </div>
-                    <div className="relative flex justify-center text-sm">
-                      <span className="px-2 bg-brand-panel text-brand-text-secondary">Enhance with neighborhood data</span>
-                    </div>
-                  </div>
-                  
-                  {/* Location Context Widget */}
-                  <LocationContextWidget
-                    address={formData.address}
-                    onContextSelect={handleContextSelection}
-                    className="mt-6"
-                  />
-                  
-                  {/* Selected count feedback */}
-                  {selectedContextCards.length > 0 && (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                      <div className="flex items-center space-x-2">
-                        <svg className="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        <span className="text-green-800 font-medium">
-                          {selectedContextCards.length} neighborhood insight{selectedContextCards.length === 1 ? '' : 's'} added to listing
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Error display */}
-                  {contextError && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                      <div className="flex items-center space-x-2">
-                        <svg className="h-5 w-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span className="text-red-800 text-sm">{contextError}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
               {/* Property Details Row 1 */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
@@ -568,8 +515,60 @@ export default function ListingFormPage() {
                 </div>
               </div>
 
+              {/* 5. JSX - Location Context Widget Integration - Positioned Under Property Details */}
+              {isValidAddressForContext(formData.address) && (
+                <div className="relative w-full overflow-hidden rounded-xl border border-brand-border bg-brand-panel p-6 my-8">
+                  {/* Visual separator */}
+                  <div className="relative mb-6">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-brand-border" />
+                    </div>
+                    <div className="relative flex justify-center text-sm">
+                      <span className="px-3 bg-brand-panel text-brand-text-secondary font-medium">✨ Enhance with neighborhood insights</span>
+                    </div>
+                  </div>
+                  
+                  {/* Isolated container for Location Context Widget */}
+                  <div className="relative w-full overflow-hidden">
+                    <LocationContextWidget
+                      address={formData.address}
+                      latitude={formData.latitude}
+                      longitude={formData.longitude}
+                      onContextSelect={handleContextSelection}
+                      className="w-full"
+                    />
+                  </div>
+                  
+                  {/* Selected count feedback - branded */}
+                  {selectedContextCards.length > 0 && (
+                    <div className="bg-gradient-to-r from-brand-primary/10 to-brand-accent/10 border border-brand-primary/30 rounded-xl p-4 mt-6">
+                      <div className="flex items-center space-x-2">
+                        <svg className="h-5 w-5 text-brand-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span className="text-brand-text-primary font-medium">
+                          {selectedContextCards.length} neighborhood insight{selectedContextCards.length === 1 ? '' : 's'} added to listing
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Error display - branded */}
+                  {contextError && (
+                    <div className="bg-brand-card border border-brand-danger/30 rounded-xl p-4 mt-6">
+                      <div className="flex items-center space-x-2">
+                        <svg className="h-5 w-5 text-brand-danger" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className="text-brand-text-primary text-sm">{contextError}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Key Features with Context Preview */}
-              <div className="space-y-2">
+              <div className="space-y-2 mt-8">
                 <label htmlFor="keyFeatures" className="block text-brand-text-secondary text-sm font-medium">
                   Key Features
                   {contextInsightsAdded && (
@@ -655,7 +654,6 @@ export default function ListingFormPage() {
                   type="button" 
                   variant="secondary" 
                   onClick={handleBack}
-                  className="text-brand-text-secondary hover:text-brand-text-primary hover:bg-brand-panel px-8 py-3 border border-brand-border hover:border-brand-border rounded-xl transition-all duration-200"
                 >
                   Cancel
                 </Button>
@@ -663,19 +661,9 @@ export default function ListingFormPage() {
                   type="submit" 
                   variant="primary"
                   isLoading={isSubmitting}
-                  className="bg-gradient-to-r from-brand-primary to-brand-accent hover:opacity-90 text-white px-10 py-3 shadow-xl border-0 rounded-xl transition-all duration-200 font-medium"
+                  leftIcon={!isSubmitting ? <Save className="h-5 w-5" /> : undefined}
                 >
-                  {isSubmitting ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="h-5 w-5 mr-2" />
-                      {isEditing ? "Update" : "Save"} Listing
-                    </>
-                  )}
+                  {isSubmitting ? "Saving..." : `${isEditing ? "Update" : "Save"} Listing`}
                 </Button>
               </div>
             </form>

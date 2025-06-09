@@ -20,9 +20,9 @@ const Navbar: React.FC = () => {
         <div className="flex items-center justify-between h-16">
           <Link 
             to={user ? "/dashboard" : "/"} 
-            className="flex items-center text-2xl font-bold text-brand-text-primary hover:text-brand-primary transition-colors"
+            className="flex items-center text-2xl font-bold text-brand-text-primary hover:bg-gradient-to-r hover:from-brand-primary hover:to-brand-accent hover:bg-clip-text hover:text-transparent transition-all duration-300"
           >
-            <BuildingStorefrontIcon className="h-7 w-7 mr-2 text-brand-primary" />
+            <BuildingStorefrontIcon className="h-7 w-7 mr-2 text-brand-primary hover:bg-gradient-to-r hover:from-brand-primary hover:to-brand-accent hover:bg-clip-text hover:text-transparent transition-all duration-300" />
             {APP_NAME}
           </Link>
           <div className="flex items-center space-x-3">

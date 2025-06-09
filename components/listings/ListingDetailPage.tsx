@@ -9,6 +9,102 @@ import SocialMediaMockup from './generation/SocialMediaMockups';
 import Button from '../shared/Button';
 import { ArrowLeftIcon, PencilSquareIcon, PhotoIcon, ChevronLeftIcon, ChevronRightIcon, BuildingOfficeIcon } from '@heroicons/react/24/solid';
 
+// Component to format key features with markdown-style rendering
+const FormattedKeyFeatures: React.FC<{ content: string }> = ({ content }) => {
+  try {
+    // Safety check for content
+    if (!content || typeof content !== 'string') {
+      return (
+        <div className="text-brand-text-tertiary italic text-sm">
+          No key features available
+        </div>
+      );
+    }
+
+    // Check if content contains neighborhood highlights (new format)
+    if (content.includes('**NEIGHBORHOOD HIGHLIGHTS**')) {
+      // Parse markdown-style content with error handling
+      const sections = content.split('\n').filter(line => line && line.trim().length > 0);
+      
+      return (
+        <div className="space-y-4 max-h-80 overflow-y-auto">
+          {sections.map((line, index) => {
+            try {
+              const trimmed = line.trim();
+              
+              // Bold headers like **NEIGHBORHOOD HIGHLIGHTS**
+              if (trimmed.startsWith('**') && trimmed.endsWith('**') && trimmed.length > 4) {
+                const headerText = trimmed.slice(2, -2);
+                return (
+                  <h4 key={`header-${index}`} className="font-bold text-brand-text-primary text-sm mt-4 first:mt-0 uppercase tracking-wide">
+                    {headerText}
+                  </h4>
+                );
+              }
+              
+              // Bullet points
+              if (trimmed.startsWith('•') && trimmed.length > 1) {
+                const bulletText = trimmed.slice(1).trim();
+                return (
+                  <div key={`bullet-${index}`} className="flex items-start space-x-2 ml-4">
+                    <span className="text-brand-secondary mt-1.5 text-xs">•</span>
+                    <span className="text-sm text-brand-text-secondary leading-relaxed">{bulletText}</span>
+                  </div>
+                );
+              }
+              
+              // Regular text
+              if (trimmed.length > 0) {
+                return (
+                  <p key={`text-${index}`} className="text-sm text-brand-text-secondary leading-relaxed">
+                    {trimmed}
+                  </p>
+                );
+              }
+              
+              return null;
+            } catch (lineError) {
+              console.warn('Error rendering line:', line, lineError);
+              return null;
+            }
+          }).filter(Boolean)}
+        </div>
+      );
+    }
+    
+    // Legacy format - comma-separated features with error handling
+    const features = content.split(',')
+      .map(feat => feat?.trim())
+      .filter(feat => feat && feat.length > 0);
+      
+    if (features.length === 0) {
+      return (
+        <div className="text-brand-text-tertiary italic text-sm">
+          No key features listed
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex flex-wrap items-start gap-1.5 max-h-60 overflow-y-auto">
+        {features.map((feature, index) => (
+          <span key={`feature-${index}`} className="inline-block bg-brand-border/50 text-brand-text-secondary text-xs px-2 py-1 rounded-full">
+            {feature}
+          </span>
+        ))}
+      </div>
+    );
+  } catch (error) {
+    console.error('FormattedKeyFeatures error:', error);
+    // Fallback to simple text display
+    return (
+      <div className="text-brand-text-secondary text-sm">
+        {content || 'No key features available'}
+      </div>
+    );
+  }
+};
+
 const ListingDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
@@ -235,11 +331,9 @@ const ListingDetailPage: React.FC = () => {
                 
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold text-brand-text-primary mb-3">Key Features</h3>
-                  <div className="text-brand-text-secondary leading-relaxed min-h-[60px] flex flex-wrap items-start">
-                    {listing.keyFeatures && listing.keyFeatures.split(',').map(feat => feat.trim()).filter(feat => feat.length > 0).length > 0 ? (
-                      listing.keyFeatures.split(',').map(feat => feat.trim()).filter(feat => feat.length > 0).map((feature, index) => (
-                        <span key={index} className="inline-block bg-brand-border/50 text-brand-text-secondary text-xs px-2 py-1 rounded-full mr-1.5 mb-1.5">{feature}</span>
-                      ))
+                  <div className="text-brand-text-secondary leading-relaxed min-h-[60px]">
+                    {listing.keyFeatures && listing.keyFeatures.trim().length > 0 ? (
+                      <FormattedKeyFeatures content={listing.keyFeatures} />
                     ) : (
                       <div className="text-brand-text-tertiary italic text-sm">
                         No key features listed. Add features to enhance your listing.

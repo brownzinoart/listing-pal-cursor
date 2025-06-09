@@ -32,11 +32,11 @@ const Button: React.FC<ButtonProps> = ({
   switch (variant) {
     case 'primary':
       variantStyle = `
-        bg-gradient-to-r from-brand-primary to-brand-primary/90 text-white font-semibold
-        hover:from-brand-primary/90 hover:to-brand-primary hover:shadow-lg hover:shadow-brand-primary/25
+        bg-gradient-to-r from-brand-primary to-brand-accent text-white font-semibold
+        hover:opacity-90 shadow-lg hover:shadow-xl
         focus:ring-brand-primary focus:ring-opacity-50
         active:shadow-md transform hover:scale-[1.02]
-        border border-transparent
+        border border-transparent transition-all duration-300
       `;
       break;
     case 'secondary':
@@ -65,10 +65,11 @@ const Button: React.FC<ButtonProps> = ({
       break;
     case 'edit':
       variantStyle = `
-        bg-brand-panel/80 text-brand-text-primary border border-brand-border/60 font-medium
-        hover:bg-brand-primary hover:text-white hover:border-brand-primary hover:shadow-md hover:shadow-brand-primary/20
-        focus:ring-brand-primary focus:ring-opacity-40
+        bg-gradient-to-r from-brand-primary to-brand-accent text-white font-semibold
+        hover:opacity-90 shadow-lg hover:shadow-xl
+        focus:ring-brand-primary focus:ring-opacity-50
         transform hover:scale-[1.02] transition-all duration-300
+        border border-transparent
       `;
       break;
     case 'danger':
@@ -87,19 +88,19 @@ const Button: React.FC<ButtonProps> = ({
   let sizeStyle = '';
   switch (size) {
     case 'xs':
-      sizeStyle = 'py-1.5 px-3 text-xs gap-2';
+      sizeStyle = 'py-2 px-4 text-xs';
       break;
     case 'sm':
-      sizeStyle = 'py-2 px-4 text-sm gap-2';
+      sizeStyle = 'py-2 px-5 text-sm';
       break;
     case 'md':
-      sizeStyle = 'py-2.5 px-5 text-sm gap-2.5';
+      sizeStyle = 'py-3 px-6 text-sm';
       break;
     case 'lg':
-      sizeStyle = 'py-3 px-6 text-sm gap-3';
+      sizeStyle = 'py-3 px-6 text-sm';
       break;
     case 'xl':
-      sizeStyle = 'py-4 px-8 text-base gap-3';
+      sizeStyle = 'py-4 px-8 text-base';
       break;
   }
 
@@ -131,7 +132,7 @@ const Button: React.FC<ButtonProps> = ({
           {getLoadingSpinner()}
         </div>
       )}
-      <div className={`flex items-center ${isLoading ? 'opacity-0' : 'opacity-100'}`}>
+      <div className={`flex items-center gap-2 ${isLoading ? 'opacity-0' : 'opacity-100'}`}>
         {leftIcon && <span className="flex-shrink-0">{leftIcon}</span>}
         {children && <span className="flex-shrink-0">{children}</span>}
         {rightIcon && <span className="flex-shrink-0">{rightIcon}</span>}

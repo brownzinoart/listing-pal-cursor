@@ -12,8 +12,9 @@ import { v2 as cloudinary } from 'cloudinary';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load environment variables from cloudinary.env
+// Load environment variables from multiple sources
 dotenv.config({ path: './cloudinary.env' });
+dotenv.config(); // Load from .env file
 
 const app = express();
 
@@ -293,6 +294,16 @@ app.post('/api/redesign-url', async (req, res) => {
     }
 });
 
+// Debug endpoint to check environment variables
+app.get('/api/debug/env', (req, res) => {
+    res.json({
+        hasGoogleMapsKey: !!process.env.VITE_GOOGLE_MAPS_API_KEY,
+        googleMapsKeyLength: process.env.VITE_GOOGLE_MAPS_API_KEY?.length || 0,
+        hasCloudinary: !!process.env.CLOUDINARY_CLOUD_NAME,
+        hasDecor8AI: !!process.env.DECOR8AI_API_KEY
+    });
+});
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
     const hasCloudinary = !!process.env.CLOUDINARY_CLOUD_NAME;
@@ -378,30 +389,78 @@ app.post('/api/test-design', async (req, res) => {
     }
 });
 
-// Location Context API endpoint
+// Location Context API endpoint - Now with REAL DATA integration
 app.post('/api/listings/context', async (req, res) => {
   try {
-    const { address } = req.body;
+    const { address, latitude, longitude, lat, lng } = req.body;
+    // Support both parameter formats
+    const finalLat = latitude || lat;
+    const finalLng = longitude || lng;
     
-    if (!address || address.length < 15) {
-      return res.status(400).json({ error: 'Valid address required' });
+    if (!address || address.length < 10) {
+      return res.status(400).json({ error: 'Valid address required (minimum 10 characters)' });
     }
 
-    // Import the service (would be at top in real implementation)
-    const { LocationContextService } = await import('./services/locationContextService.js');
-    const contextService = new LocationContextService();
+    console.log(`🌍 Fetching REAL location data for: ${address}`);
     
-    // Fetch comprehensive location data
-    const contextData = await contextService.getAllLocationContext(address);
-    
-    res.json(contextData);
+    // Use real data service when coordinates are available
+    if (finalLat && finalLng && typeof finalLat === 'number' && typeof finalLng === 'number') {
+      console.log(`📍 Using coordinates: ${finalLat}, ${finalLng}`);
+      
+      // Import the real data service
+      const { realLocationDataService } = await import('./services/realLocationDataService.js');
+      
+      // Fetch real location data using coordinates
+      const locationData = await realLocationDataService.getLocationContext(address, finalLat, finalLng);
+      
+      // Transform to match expected format
+      const contextData = {
+        address: locationData.address,
+        coordinates: locationData.coordinates,
+        cards: locationData.cards,
+        categorizedCards: categorizecards(locationData.cards)
+      };
+      
+      console.log(`✅ Retrieved ${contextData.cards.length} real data cards`);
+      res.json(contextData);
+    } else {
+      // Fallback to mock service for addresses without coordinates
+      console.log('⚠️ No coordinates provided, using mock data service');
+      
+      const { LocationContextService } = await import('./services/locationContextService.js');
+      const contextService = new LocationContextService();
+      
+      const contextData = await contextService.getAllLocationContext(address);
+      res.json(contextData);
+    }
   } catch (error) {
-    console.error('Location context API error:', error);
+    console.error('❌ Location context API error:', error);
     res.status(500).json({ 
       error: 'Failed to fetch location context',
       details: error.message 
     });
   }
+});
+
+// Helper function to categorize cards
+function categorizecards(cards) {
+  return {
+    location: cards.filter(c => ['walkability', 'climate'].includes(c.id)),
+    community: cards.filter(c => ['demographics', 'safety'].includes(c.id)),
+    amenities: cards.filter(c => ['dining', 'shopping', 'parks', 'recreation'].includes(c.id)),
+    education: cards.filter(c => ['schools', 'libraries'].includes(c.id)),
+    transportation: cards.filter(c => ['transit', 'commute'].includes(c.id))
+  };
+}
+
+// Debug endpoint to check environment variables
+app.get('/api/debug/env', (req, res) => {
+    res.json({
+        hasGoogleMapsKey: !!process.env.VITE_GOOGLE_MAPS_API_KEY,
+        googleMapsKeyLength: process.env.VITE_GOOGLE_MAPS_API_KEY?.length || 0,
+        hasCloudinary: !!process.env.CLOUDINARY_CLOUD_NAME,
+        hasDecor8AI: !!process.env.DECOR8AI_API_KEY
+    });
 });
 
 // Serve React app for all other routes
