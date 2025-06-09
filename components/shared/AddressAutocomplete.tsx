@@ -98,6 +98,71 @@ const mockAddresses: PlacePrediction[] = [
       main_text: "200 Raleigh Street",
       secondary_text: "Raleigh, NC 27601, USA"
     }
+  },
+  // Add more realistic addresses for common searches
+  {
+    description: "9307 Reedybrook Crossing, Charlotte, NC 28277, USA",
+    place_id: "11",
+    structured_formatting: {
+      main_text: "9307 Reedybrook Crossing",
+      secondary_text: "Charlotte, NC 28277, USA"
+    }
+  },
+  {
+    description: "1234 Reedybrook Lane, Raleigh, NC 27612, USA",
+    place_id: "12",
+    structured_formatting: {
+      main_text: "1234 Reedybrook Lane",
+      secondary_text: "Raleigh, NC 27612, USA"
+    }
+  },
+  {
+    description: "5678 Brook Crossing Drive, Apex, NC 27539, USA",
+    place_id: "13",
+    structured_formatting: {
+      main_text: "5678 Brook Crossing Drive",
+      secondary_text: "Apex, NC 27539, USA"
+    }
+  },
+  {
+    description: "1111 Crossing Pointe Lane, Cary, NC 27519, USA",
+    place_id: "14",
+    structured_formatting: {
+      main_text: "1111 Crossing Pointe Lane",
+      secondary_text: "Cary, NC 27519, USA"
+    }
+  },
+  {
+    description: "2222 Ridge Brook Court, Durham, NC 27705, USA",
+    place_id: "15",
+    structured_formatting: {
+      main_text: "2222 Ridge Brook Court",
+      secondary_text: "Durham, NC 27705, USA"
+    }
+  },
+  {
+    description: "3333 Stone Brook Way, Chapel Hill, NC 27514, USA",
+    place_id: "16",
+    structured_formatting: {
+      main_text: "3333 Stone Brook Way",
+      secondary_text: "Chapel Hill, NC 27514, USA"
+    }
+  },
+  {
+    description: "4444 Creek Crossing Blvd, Wake Forest, NC 27587, USA",
+    place_id: "17",
+    structured_formatting: {
+      main_text: "4444 Creek Crossing Blvd",
+      secondary_text: "Wake Forest, NC 27587, USA"
+    }
+  },
+  {
+    description: "5555 Willow Brook Circle, Morrisville, NC 27560, USA",
+    place_id: "18",
+    structured_formatting: {
+      main_text: "5555 Willow Brook Circle",
+      secondary_text: "Morrisville, NC 27560, USA"
+    }
   }
 ];
 
