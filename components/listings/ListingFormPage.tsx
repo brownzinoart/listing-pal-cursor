@@ -3,13 +3,14 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { ArrowLeftIcon as ArrowLeft, DocumentIcon as Save, ArrowUpTrayIcon as Upload, XMarkIcon as X } from "@heroicons/react/24/outline";
 import { useAuth } from "../../contexts/AuthContext";
 import * as listingService from "../../services/listingService";
-import { Listing, ListingImage } from "../../types";
 import Button from "../shared/Button";
-import Input from "../shared/Input";
-import Textarea from "../shared/Textarea";
+import AddressAutocomplete from "../shared/AddressAutocomplete";
 
 // Define form data type to match new structure
 type FormData = {
+  address: string;
+  latitude: number;
+  longitude: number;
   streetAddress: string;
   city: string;
   state: string;
@@ -34,9 +35,12 @@ export default function ListingFormPage() {
   const [isFetching, setIsFetching] = useState(false);
 
   const isEditing = !!listingId;
-  const existingListing = isEditing ? null : null; // Will be set via useEffect
+
 
   const [formData, setFormData] = useState<FormData>({
+    address: "",
+    latitude: 0,
+    longitude: 0,
     streetAddress: "",
     city: "",
     state: "",
@@ -60,13 +64,16 @@ export default function ListingFormPage() {
             // Convert existing listing structure to new form structure
             const addressParts = listing.address.split(',').map(part => part.trim());
             setFormData({
+              address: listing.address,
+              latitude: 0, // TODO: Add lat/lng to existing listing type
+              longitude: 0, // TODO: Add lat/lng to existing listing type
               streetAddress: addressParts[0] || "",
               city: addressParts[1] || "",
               state: addressParts[2] || "",
               zipCode: addressParts[3] || "",
               price: listing.price,
               bedrooms: listing.bedrooms,
-                             bathrooms: typeof listing.bathrooms === 'string' ? parseFloat(listing.bathrooms) : listing.bathrooms,
+              bathrooms: typeof listing.bathrooms === 'string' ? parseFloat(listing.bathrooms) : listing.bathrooms,
               sqFt: listing.squareFootage,
               yearBuilt: listing.yearBuilt,
               propertyType: "Single Family", // Default since not in old structure
@@ -145,6 +152,26 @@ export default function ListingFormPage() {
     }
   };
 
+  const handleAddressSelect = (address: string, lat: number = 0, lng: number = 0) => {
+    console.log('Selected address:', address, 'Latitude:', lat, 'Longitude:', lng);
+    
+    // Parse the address to populate individual fields
+    const addressParts = address.split(',').map(part => part.trim());
+    
+    setFormData(prev => ({
+      ...prev,
+      address: address,
+      latitude: lat,
+      longitude: lng,
+      streetAddress: addressParts[0] || "",
+      city: addressParts[1] || "",
+      state: addressParts[2] || "",
+      zipCode: addressParts[3] || ""
+    }));
+  };
+
+
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
@@ -156,8 +183,8 @@ export default function ListingFormPage() {
     setIsSubmitting(true);
 
     // Validation
-    if (!formData.streetAddress.trim() || !formData.city.trim()) {
-      setFormError("Street address and city are required.");
+    if (!formData.address.trim()) {
+      setFormError("Property address is required. Please select an address from the autocomplete suggestions.");
       setIsSubmitting(false);
       return;
     }
@@ -168,8 +195,8 @@ export default function ListingFormPage() {
     }
 
     try {
-      // Convert form data back to original listing structure
-      const fullAddress = [formData.streetAddress, formData.city, formData.state, formData.zipCode]
+      // Use the selected address from Google Places
+      const fullAddress = formData.address || [formData.streetAddress, formData.city, formData.state, formData.zipCode]
         .filter(part => part.trim())
         .join(', ');
         
@@ -246,65 +273,15 @@ export default function ListingFormPage() {
                 </div>
               )}
 
-              {/* Address Fields */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Address Search */}
+              <div className="space-y-6">
                 <div>
-                  <label className="block text-brand-text-secondary text-sm font-medium mb-3">Street Address</label>
-                  <input 
-                    name="streetAddress"
-                    placeholder="123 Main Street" 
-                    value={formData.streetAddress}
-                    onChange={handleInputChange}
-                    className="w-full bg-brand-input-bg border-0 text-brand-text-primary placeholder-brand-text-tertiary rounded-xl px-4 py-4 text-base focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all duration-200"
-                  />
-                </div>
-                <div>
-                  <label className="block text-brand-text-secondary text-sm font-medium mb-3">City</label>
-                  <input 
-                    name="city"
-                    placeholder="San Francisco" 
-                    value={formData.city}
-                    onChange={handleInputChange}
-                    className="w-full bg-brand-input-bg border-0 text-brand-text-primary placeholder-brand-text-tertiary rounded-xl px-4 py-4 text-base focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all duration-200"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-brand-text-secondary text-sm font-medium mb-3">State</label>
-                  <div className="relative">
-                    <select 
-                      name="state"
-                      value={formData.state}
-                      onChange={(e) => handleSelectChange(e.target.name, e.target.value)}
-                      className="w-full bg-brand-input-bg border-0 text-brand-text-primary rounded-xl px-4 py-4 text-base focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all duration-200 appearance-none cursor-pointer"
-                    >
-                      <option value="" className="text-brand-text-tertiary">Select State</option>
-                      <option value="CA">California</option>
-                      <option value="NY">New York</option>
-                      <option value="TX">Texas</option>
-                      <option value="FL">Florida</option>
-                      <option value="WA">Washington</option>
-                      <option value="OR">Oregon</option>
-                      <option value="NV">Nevada</option>
-                      <option value="AZ">Arizona</option>
-                    </select>
-                    <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
-                      <svg className="w-5 h-5 text-brand-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-brand-text-secondary text-sm font-medium mb-3">ZIP Code</label>
-                  <input 
-                    name="zipCode"
-                    placeholder="94102" 
-                    value={formData.zipCode}
-                    onChange={handleInputChange}
-                    className="w-full bg-brand-input-bg border-0 text-brand-text-primary placeholder-brand-text-tertiary rounded-xl px-4 py-4 text-base focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all duration-200"
+                  <label className="block text-brand-text-secondary text-sm font-medium mb-3">Property Address</label>
+                  <AddressAutocomplete
+                    value={formData.address}
+                    placeholder="Start typing the property address..."
+                    onAddressSelect={handleAddressSelect}
+                    className="bg-brand-input-bg border-0 text-brand-text-primary placeholder-brand-text-tertiary rounded-xl px-4 py-4 text-base focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all duration-200"
                   />
                 </div>
               </div>

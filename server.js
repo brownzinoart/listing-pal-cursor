@@ -346,6 +346,7 @@ app.get('/api/styles', (req, res) => {
     });
 });
 
+
 // Test endpoint for public image URLs
 app.post('/api/test-design', async (req, res) => {
     try {

@@ -199,6 +199,8 @@ const AiRoomRedesignPage: React.FC = () => {
     };
   };
 
+
+
   const handleGenerateRedesign = async () => {
     if (!uploadedImageFile || !selectedDesignStyle || !selectedRoomType) {
       setError("Please upload an image, select a room type, and select a design style.");
@@ -455,6 +457,8 @@ const AiRoomRedesignPage: React.FC = () => {
               </div>
             </div>
           )}
+
+
         </div>
 
         {/* Advanced Options */}
