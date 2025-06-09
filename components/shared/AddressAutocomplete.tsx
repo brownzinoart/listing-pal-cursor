@@ -17,155 +17,6 @@ interface PlacePrediction {
   };
 }
 
-// Mock data that represents real addresses
-const mockAddresses: PlacePrediction[] = [
-  {
-    description: "123 Main Street, New York, NY 10001, USA",
-    place_id: "1",
-    structured_formatting: {
-      main_text: "123 Main Street",
-      secondary_text: "New York, NY 10001, USA"
-    }
-  },
-  {
-    description: "456 Oak Avenue, Los Angeles, CA 90210, USA", 
-    place_id: "2",
-    structured_formatting: {
-      main_text: "456 Oak Avenue",
-      secondary_text: "Los Angeles, CA 90210, USA"
-    }
-  },
-  {
-    description: "789 Pine Road, Austin, TX 78701, USA",
-    place_id: "3", 
-    structured_formatting: {
-      main_text: "789 Pine Road",
-      secondary_text: "Austin, TX 78701, USA"
-    }
-  },
-  {
-    description: "321 Elm Street, Miami, FL 33101, USA",
-    place_id: "4",
-    structured_formatting: {
-      main_text: "321 Elm Street", 
-      secondary_text: "Miami, FL 33101, USA"
-    }
-  },
-  {
-    description: "555 Broadway, New York, NY 10012, USA",
-    place_id: "5",
-    structured_formatting: {
-      main_text: "555 Broadway",
-      secondary_text: "New York, NY 10012, USA"
-    }
-  },
-  {
-    description: "888 Market Street, San Francisco, CA 94102, USA",
-    place_id: "6",
-    structured_formatting: {
-      main_text: "888 Market Street",
-      secondary_text: "San Francisco, CA 94102, USA"
-    }
-  },
-  {
-    description: "999 First Avenue, Seattle, WA 98101, USA",
-    place_id: "7",
-    structured_formatting: {
-      main_text: "999 First Avenue",
-      secondary_text: "Seattle, WA 98101, USA"
-    }
-  },
-  {
-    description: "777 Second Street, Boston, MA 02101, USA",
-    place_id: "8",
-    structured_formatting: {
-      main_text: "777 Second Street",
-      secondary_text: "Boston, MA 02101, USA"
-    }
-  },
-  {
-    description: "100 Apex Drive, Apex, NC 27502, USA",
-    place_id: "9",
-    structured_formatting: {
-      main_text: "100 Apex Drive",
-      secondary_text: "Apex, NC 27502, USA"
-    }
-  },
-  {
-    description: "200 Raleigh Street, Raleigh, NC 27601, USA",
-    place_id: "10",
-    structured_formatting: {
-      main_text: "200 Raleigh Street",
-      secondary_text: "Raleigh, NC 27601, USA"
-    }
-  },
-  // Add more realistic addresses for common searches
-  {
-    description: "9307 Reedybrook Crossing, Charlotte, NC 28277, USA",
-    place_id: "11",
-    structured_formatting: {
-      main_text: "9307 Reedybrook Crossing",
-      secondary_text: "Charlotte, NC 28277, USA"
-    }
-  },
-  {
-    description: "1234 Reedybrook Lane, Raleigh, NC 27612, USA",
-    place_id: "12",
-    structured_formatting: {
-      main_text: "1234 Reedybrook Lane",
-      secondary_text: "Raleigh, NC 27612, USA"
-    }
-  },
-  {
-    description: "5678 Brook Crossing Drive, Apex, NC 27539, USA",
-    place_id: "13",
-    structured_formatting: {
-      main_text: "5678 Brook Crossing Drive",
-      secondary_text: "Apex, NC 27539, USA"
-    }
-  },
-  {
-    description: "1111 Crossing Pointe Lane, Cary, NC 27519, USA",
-    place_id: "14",
-    structured_formatting: {
-      main_text: "1111 Crossing Pointe Lane",
-      secondary_text: "Cary, NC 27519, USA"
-    }
-  },
-  {
-    description: "2222 Ridge Brook Court, Durham, NC 27705, USA",
-    place_id: "15",
-    structured_formatting: {
-      main_text: "2222 Ridge Brook Court",
-      secondary_text: "Durham, NC 27705, USA"
-    }
-  },
-  {
-    description: "3333 Stone Brook Way, Chapel Hill, NC 27514, USA",
-    place_id: "16",
-    structured_formatting: {
-      main_text: "3333 Stone Brook Way",
-      secondary_text: "Chapel Hill, NC 27514, USA"
-    }
-  },
-  {
-    description: "4444 Creek Crossing Blvd, Wake Forest, NC 27587, USA",
-    place_id: "17",
-    structured_formatting: {
-      main_text: "4444 Creek Crossing Blvd",
-      secondary_text: "Wake Forest, NC 27587, USA"
-    }
-  },
-  {
-    description: "5555 Willow Brook Circle, Morrisville, NC 27560, USA",
-    place_id: "18",
-    structured_formatting: {
-      main_text: "5555 Willow Brook Circle",
-      secondary_text: "Morrisville, NC 27560, USA"
-    }
-  }
-];
-
 const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
   value,
   placeholder = "Start typing an address...",
@@ -180,14 +31,15 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
   
   const inputRef = useRef<HTMLInputElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout>();
+  const abortControllerRef = useRef<AbortController>();
 
   useEffect(() => {
     setInputValue(value);
   }, [value]);
 
-  // Simplified search function
-  const performSearch = useCallback((query: string) => {
-    console.log('🔍 Performing search for:', query);
+  // Real Google Places API search function (via backend proxy)
+  const performSearch = useCallback(async (query: string) => {
+    console.log('🔍 Searching Google Places for:', query);
     
     if (query.length < 2) {
       console.log('❌ Query too short');
@@ -199,23 +51,51 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
 
     setIsLoading(true);
     
-    // Filter suggestions
-    const filtered = mockAddresses.filter(suggestion => 
-      suggestion.description.toLowerCase().includes(query.toLowerCase()) ||
-      suggestion.structured_formatting.main_text.toLowerCase().includes(query.toLowerCase()) ||
-      suggestion.structured_formatting.secondary_text.toLowerCase().includes(query.toLowerCase())
-    );
-    
-    console.log('✅ Found suggestions:', filtered.length);
-    console.log('📋 Suggestions:', filtered.map(s => s.structured_formatting.main_text));
-    
-    // Simulate API delay
-    setTimeout(() => {
-      setSuggestions(filtered);
-      setShowSuggestions(filtered.length > 0);
-      setSelectedIndex(-1);
+    try {
+      // Abort previous request
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      abortControllerRef.current = new AbortController();
+
+      const url = `/api/places/autocomplete?input=${encodeURIComponent(query)}`;
+      
+      const response = await fetch(url, {
+        signal: abortControllerRef.current.signal
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.status === 'OK' && data.predictions) {
+        const predictions = data.predictions.slice(0, 8); // Limit to 8 suggestions
+        console.log('✅ Found Google Places suggestions:', predictions.length);
+        console.log('📋 Suggestions:', predictions.map((p: any) => p.structured_formatting.main_text));
+        
+        setSuggestions(predictions);
+        setShowSuggestions(predictions.length > 0);
+        setSelectedIndex(-1);
+      } else if (data.error) {
+        console.error('❌ Backend API error:', data.error);
+        setSuggestions([]);
+        setShowSuggestions(false);
+      } else {
+        console.log('⚠️ No predictions found or API error:', data.status);
+        setSuggestions([]);
+        setShowSuggestions(false);
+      }
+    } catch (error: any) {
+      if (error.name !== 'AbortError') {
+        console.error('❌ Google Places API error:', error);
+        setSuggestions([]);
+        setShowSuggestions(false);
+      }
+    } finally {
       setIsLoading(false);
-    }, 200);
+    }
   }, []);
 
   // Debounced search function
@@ -236,41 +116,43 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
     debouncedSearch(newValue);
   };
 
+  const getPlaceDetails = async (placeId: string): Promise<{ lat: number; lng: number } | null> => {
+    try {
+      console.log('🎯 Getting coordinates for place ID:', placeId);
+      const url = `/api/places/details?place_id=${placeId}`;
+      
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      if (data.status === 'OK' && data.result?.geometry?.location) {
+        const { lat, lng } = data.result.geometry.location;
+        console.log('✅ Got coordinates:', { lat, lng });
+        return { lat, lng };
+      } else {
+        console.warn('⚠️ Could not get place details:', data.status);
+        return null;
+      }
+    } catch (error) {
+      console.error('❌ Error getting place details:', error);
+      return null;
+    }
+  };
+
   const handleSuggestionClick = async (suggestion: PlacePrediction) => {
     console.log('🎯 Selected suggestion:', suggestion.description);
     setInputValue(suggestion.description);
     setSuggestions([]);
     setShowSuggestions(false);
     
-    // Generate realistic coordinates based on city
-    const cityCoordinates: { [key: string]: { lat: number; lng: number } } = {
-      'new york': { lat: 40.7128, lng: -74.0060 },
-      'los angeles': { lat: 34.0522, lng: -118.2437 },
-      'austin': { lat: 30.2672, lng: -97.7431 },
-      'miami': { lat: 25.7617, lng: -80.1918 },
-      'san francisco': { lat: 37.7749, lng: -122.4194 },
-      'seattle': { lat: 47.6062, lng: -122.3321 },
-      'boston': { lat: 42.3601, lng: -71.0589 },
-      'chicago': { lat: 41.8781, lng: -87.6298 },
-      'apex': { lat: 35.7321, lng: -78.8503 },
-      'raleigh': { lat: 35.7796, lng: -78.6382 },
-      'nc': { lat: 35.7596, lng: -79.0193 }
-    };
+    // Get coordinates from Google Places
+    const coordinates = await getPlaceDetails(suggestion.place_id);
     
-    const city = suggestion.structured_formatting.secondary_text.toLowerCase();
-    let coordinates = { lat: 39.8283, lng: -98.5795 }; // Default center US
-    
-    for (const [cityName, coords] of Object.entries(cityCoordinates)) {
-      if (city.includes(cityName)) {
-        coordinates = {
-          lat: coords.lat + (Math.random() - 0.5) * 0.01,
-          lng: coords.lng + (Math.random() - 0.5) * 0.01
-        };
-        break;
-      }
+    if (coordinates) {
+      onAddressSelect(suggestion.description, coordinates.lat, coordinates.lng);
+    } else {
+      // Fallback without coordinates
+      onAddressSelect(suggestion.description);
     }
-    
-    onAddressSelect(suggestion.description, coordinates.lat, coordinates.lng);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -316,35 +198,8 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
       setShowSuggestions(false);
       setSuggestions([]);
       
-      // Smart coordinate assignment based on common US cities
-      const cityCoordinates: { [key: string]: { lat: number; lng: number } } = {
-        'new york': { lat: 40.7128, lng: -74.0060 },
-        'los angeles': { lat: 34.0522, lng: -118.2437 },
-        'chicago': { lat: 41.8781, lng: -87.6298 },
-        'houston': { lat: 29.7604, lng: -95.3698 },
-        'austin': { lat: 30.2672, lng: -97.7431 },
-        'miami': { lat: 25.7617, lng: -80.1918 },
-        'seattle': { lat: 47.6062, lng: -122.3321 },
-        'boston': { lat: 42.3601, lng: -71.0589 },
-        'denver': { lat: 39.7392, lng: -104.9903 },
-        'san francisco': { lat: 37.7749, lng: -122.4194 },
-        'apex': { lat: 35.7321, lng: -78.8503 },
-        'raleigh': { lat: 35.7796, lng: -78.6382 },
-        'nc': { lat: 35.7596, lng: -79.0193 }
-      };
-      
-      const inputLower = inputValue.toLowerCase();
-      let coords = { lat: 39.8283, lng: -98.5795 }; // Default to center of US
-      
-      for (const [city, cityCoords] of Object.entries(cityCoordinates)) {
-        if (inputLower.includes(city)) {
-          coords = {
-            lat: cityCoords.lat + (Math.random() - 0.5) * 0.01,
-            lng: cityCoords.lng + (Math.random() - 0.5) * 0.01
-          };
-          break;
-        }
-      }
+      // For manual entry, provide default coordinates (center of US)
+      const coords = { lat: 39.8283, lng: -98.5795 };
       
       onAddressSelect(inputValue, coords.lat, coords.lng);
     }
@@ -467,7 +322,7 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
       {/* Helper text */}
       {!inputValue && (
         <p className="text-xs text-brand-text-secondary mt-1">
-          💡 Start typing or try: "123 Main", "456 Oak", "New York", "Austin"
+          💡 Start typing any address - powered by Google Places API
         </p>
       )}
     </div>

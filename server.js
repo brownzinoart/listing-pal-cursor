@@ -175,6 +175,83 @@ try {
   console.log('⚠️ Gemini AI service not available:', error.message);
 }
 
+// Google Places API proxy endpoints
+app.get('/api/places/autocomplete', async (req, res) => {
+    try {
+        const { input } = req.query;
+        const apiKey = process.env.VITE_GOOGLE_MAPS_API_KEY;
+        
+        if (!apiKey) {
+            return res.status(500).json({ 
+                error: 'Google Maps API key not configured' 
+            });
+        }
+        
+        if (!input || input.length < 2) {
+            return res.json({ predictions: [] });
+        }
+        
+        console.log('🔍 Google Places Autocomplete for:', input);
+        
+        const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(input)}&key=${apiKey}&types=address`;
+        
+        const response = await axios.get(url);
+        
+        if (response.data.status === 'OK') {
+            console.log('✅ Found', response.data.predictions.length, 'predictions');
+            res.json(response.data);
+        } else {
+            console.log('⚠️ Google Places API error:', response.data.status);
+            res.json({ predictions: [], status: response.data.status });
+        }
+    } catch (error) {
+        console.error('❌ Google Places Autocomplete error:', error.message);
+        res.status(500).json({ 
+            error: 'Failed to fetch address suggestions',
+            details: error.message 
+        });
+    }
+});
+
+app.get('/api/places/details', async (req, res) => {
+    try {
+        const { place_id } = req.query;
+        const apiKey = process.env.VITE_GOOGLE_MAPS_API_KEY;
+        
+        if (!apiKey) {
+            return res.status(500).json({ 
+                error: 'Google Maps API key not configured' 
+            });
+        }
+        
+        if (!place_id) {
+            return res.status(400).json({ 
+                error: 'place_id is required' 
+            });
+        }
+        
+        console.log('🎯 Getting place details for:', place_id);
+        
+        const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${place_id}&fields=geometry&key=${apiKey}`;
+        
+        const response = await axios.get(url);
+        
+        if (response.data.status === 'OK') {
+            console.log('✅ Got place details:', response.data.result.geometry.location);
+            res.json(response.data);
+        } else {
+            console.log('⚠️ Google Places Details API error:', response.data.status);
+            res.json({ result: null, status: response.data.status });
+        }
+    } catch (error) {
+        console.error('❌ Google Places Details error:', error.message);
+        res.status(500).json({ 
+            error: 'Failed to fetch place details',
+            details: error.message 
+        });
+    }
+});
+
 // Interior design endpoint - DRAG & DROP READY!
 app.post('/api/redesign', upload.single('image'), async (req, res) => {
     try {
