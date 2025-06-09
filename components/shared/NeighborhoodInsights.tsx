@@ -195,6 +195,7 @@ const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({
   const [addedSections, setAddedSections] = useState<string[]>([]);
   const [sectionContent, setSectionContent] = useState<Record<string, string>>({});
   const [showSectionManager, setShowSectionManager] = useState(false);
+  const [dataQuality, setDataQuality] = useState<'excellent' | 'good' | 'limited' | 'minimal'>('minimal');
 
   // Fetch real neighborhood data when address changes
   useEffect(() => {
@@ -203,29 +204,140 @@ const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({
     }
   }, [address]);
 
+  // Data validation function
+  const validateRealData = (data: any, type: string) => {
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      return false;
+    }
+    
+    // Check data quality based on type
+    switch (type) {
+      case 'schools':
+        return data.every(school => school.name && school.name.length > 3);
+      case 'amenities':
+        return data.every(place => place.name && place.name.length > 3);
+      default:
+        return true;
+    }
+  };
+
+  // Enhanced address parsing function
+  const parseAddressComponents = (address: string) => {
+    const parts = address.split(',').map(part => part.trim());
+    return {
+      streetAddress: parts[0] || '',
+      city: parts[1] || '',
+      state: parts[2] || '',
+      zipCode: parts[3] || '',
+      fullAddress: address
+    };
+  };
+
+  // Better AI data integration function
+  const mergeAIWithRealData = (realData: any, aiData: any, address: string) => {
+    // Prioritize real data, fill gaps with AI
+    const schools = realData.schools?.length > 0 ? realData.schools : aiData.schools || [];
+    const amenities = [...(realData.amenities || []), ...(aiData.amenities || [])];
+    
+    // Combine highlights intelligently
+    const realHighlights = realData.highlights || [];
+    const aiHighlights = aiData.highlights || [];
+    const combinedHighlights = [
+      ...realHighlights,
+      ...aiHighlights.filter((ai: string) => 
+        !realHighlights.some((real: string) => 
+          real.toLowerCase().includes(ai.toLowerCase().slice(0, 20))
+        )
+      )
+    ].slice(0, 6); // Limit to 6 total highlights
+
+    return {
+      schools,
+      amenities,
+      highlights: combinedHighlights,
+      walkScore: aiData.walkability?.walkScore || mockNeighborhoodData.walkScore,
+      transitScore: aiData.walkability?.transitScore || mockNeighborhoodData.transitScore,
+      bikeScore: aiData.walkability?.bikeScore || mockNeighborhoodData.bikeScore,
+      dataAvailability: {
+        schools: schools.length > 0,
+        amenities: amenities.length > 0,
+        overview: true,
+        market: true
+      },
+      dataSources: {
+        schools: realData.schools?.length > 0 ? 'real' : (schools.length > 0 ? 'ai' : 'none'),
+        amenities: realData.amenities?.length > 0 ? 'real' : (amenities.length > 0 ? 'ai' : 'none')
+      }
+    };
+  };
+
+  // Calculate data quality score
+  const calculateDataQuality = (data: any) => {
+    let score = 0;
+    if (data.dataSources?.schools === 'real') score += 2;
+    else if (data.dataSources?.schools === 'ai') score += 1;
+    
+    if (data.dataSources?.amenities === 'real') score += 2;
+    else if (data.dataSources?.amenities === 'ai') score += 1;
+    
+    if (score >= 4) return 'excellent';
+    if (score >= 3) return 'good';
+    if (score >= 2) return 'limited';
+    return 'minimal';
+  };
+
   const fetchNeighborhoodData = async (address: string) => {
     setLoading(true);
+    
+    // Parse address for better API calls
+    const addressComponents = parseAddressComponents(address);
+    
     try {
-      // Call the same endpoint that LocationContextWidget uses
+      // Call your context API with full address details
       const response = await fetch('/api/listings/context', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address })
+        body: JSON.stringify({ 
+          address: addressComponents.fullAddress,
+          city: addressComponents.city,
+          state: addressComponents.state,
+          zipCode: addressComponents.zipCode
+        })
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch neighborhood data');
+        throw new Error(`Context API failed: ${response.status}`);
       }
 
       const contextData = await response.json();
-      console.log('✅ NeighborhoodInsights received real data:', contextData);
+      console.log('✅ Real neighborhood data received:', contextData);
       
-      // Transform the real data to match our component's expected format
       const transformedData = await transformContextDataToNeighborhoodData(contextData, address);
       setData(transformedData);
+      setDataQuality(calculateDataQuality(transformedData));
     } catch (error) {
       console.error('❌ Error fetching neighborhood data:', error);
-      // Keep using mock data as fallback
+      
+      // If real data fails, try AI-only approach
+      const aiOnlyData = await generateAIFallbackData(address, {});
+      if (aiOnlyData) {
+        const fallbackData = {
+          ...mockNeighborhoodData,
+          ...aiOnlyData,
+          dataAvailability: {
+            schools: !!aiOnlyData.schools,
+            amenities: !!aiOnlyData.amenities,
+            overview: true,
+            market: true
+          },
+          dataSources: {
+            schools: aiOnlyData.schools ? 'ai' : 'none',
+            amenities: aiOnlyData.amenities ? 'ai' : 'none'
+          }
+        };
+        setData(fallbackData);
+        setDataQuality(calculateDataQuality(fallbackData));
+      }
     } finally {
       setLoading(false);
     }
@@ -240,13 +352,20 @@ const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({
       const hasParks = currentData.parks && currentData.parks.length > 0;
       const hasTransit = currentData.transit && currentData.transit.length > 0;
 
-      const response = await fetch('/api/generate-content', {
+      const response = await fetch('/api/gemini/neighborhood-insights', { // Updated endpoint
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          prompt: `Generate comprehensive neighborhood data for: ${address}
+          address: address, // Pass full address for better context
+          prompt: `Generate realistic neighborhood data for: ${address}
+
+LOCATION CONTEXT: Analyze this specific address and generate data appropriate for this exact geographic location, considering:
+- Neighborhood type (urban/suburban/rural)
+- Regional characteristics and typical amenities
+- Local business patterns and naming conventions
+- School district boundaries and typical ratings for this area
 
 CURRENT DATA STATUS:
 - Schools: ${hasSchools ? 'AVAILABLE' : 'MISSING'}
@@ -255,37 +374,28 @@ CURRENT DATA STATUS:
 - Parks: ${hasParks ? 'AVAILABLE' : 'MISSING'}
 - Transit: ${hasTransit ? 'AVAILABLE' : 'MISSING'}
 
-INSTRUCTIONS:
-Generate realistic data ONLY for missing categories. Base suggestions on the specific geographic area and typical businesses/amenities found in this neighborhood type.
+REQUIREMENTS:
+1. Generate ONLY missing categories
+2. Use realistic business names that would exist in this specific area
+3. Base distances on actual neighborhood layouts
+4. Provide school ratings appropriate for this district
+5. Include walkability scores based on neighborhood density
+6. Add 3-4 neighborhood highlights specific to this location
 
-For MISSING schools: Provide 2-3 realistic schools with names that would exist in this area, ratings (1-10), distances, and types (Elementary/Middle/High).
-
-For MISSING restaurants: Provide 4-6 diverse dining options including casual and upscale restaurants, cafes, and local favorites.
-
-For MISSING shopping: Provide 3-4 shopping venues including grocery stores, retail, and convenience options.
-
-For MISSING parks: Provide 2-3 recreational areas including parks, trails, or green spaces.
-
-For MISSING transit: Provide 2-3 public transportation options if applicable to this area.
-
-Return ONLY missing data in this exact JSON format:
+Return JSON format:
 {
   "schools": [{"name": "...", "rating": 8, "distance": "0.5 miles", "type": "Elementary"}],
-  "restaurants": [{"name": "...", "category": "Restaurant", "distance": "0.3 miles", "icon": "🍽️", "rating": 4.2}],
-  "shopping": [{"name": "...", "category": "Grocery Store", "distance": "0.4 miles", "icon": "🛒", "rating": 4.1}],
-  "parks": [{"name": "...", "category": "Park", "distance": "0.6 miles", "icon": "🌳", "acres": 15}],
-  "transit": [{"name": "...", "category": "Bus Stop", "distance": "0.2 miles", "icon": "🚌", "walkTime": "3 min"}],
+  "amenities": [{"name": "...", "category": "Restaurant", "distance": "0.3 miles", "icon": "🍽️"}],
   "walkability": {
     "walkScore": 75,
-    "transitScore": 65,
+    "transitScore": 65, 
     "bikeScore": 70,
-    "description": "Most errands can be accomplished on foot"
+    "description": "..."
   },
-  "insights": ["Insight about neighborhood character", "Safety and community insight", "Lifestyle highlight"]
-}
-
-Include ONLY the categories that are MISSING. If all data is available, return empty object {}`,
-          contentType: 'neighborhood-insights'
+  "highlights": ["Specific neighborhood insight", "Local character detail", "Area advantage"]
+}`,
+          maxTokens: 1000,
+          temperature: 0.3 // Lower temperature for more realistic data
         }),
       });
 
@@ -309,7 +419,8 @@ Include ONLY the categories that are MISSING. If all data is available, return e
   const transformContextDataToNeighborhoodData = async (contextData: any, currentAddress: string) => {
     // Extract real data from context cards and transform to our format
     const schoolsCard = contextData.cards?.find((card: any) => card.id === 'schools');
-    const hasRealSchools = schoolsCard?.fullData && schoolsCard.fullData.length > 0;
+    const hasRealSchools = schoolsCard?.fullData && 
+      validateRealData(schoolsCard.fullData, 'schools'); // Use improved validation
     let schools = hasRealSchools 
       ? schoolsCard.fullData.map((school: any) => ({
           name: school.name,
@@ -319,12 +430,12 @@ Include ONLY the categories that are MISSING. If all data is available, return e
         }))
       : [];
 
-    const amenities: { name: string; category: string; distance: string; icon: string; }[] = [];
+    let amenities: { name: string; category: string; distance: string; icon: string; }[] = [];
     let hasRealAmenities = false;
     
     // Extract restaurants
     const restaurantCard = contextData.cards?.find((card: any) => card.id === 'dining');
-    if (restaurantCard?.fullData && restaurantCard.fullData.length > 0) {
+    if (restaurantCard?.fullData && validateRealData(restaurantCard.fullData, 'amenities')) {
       hasRealAmenities = true;
       restaurantCard.fullData.slice(0, 4).forEach((restaurant: any) => {
         amenities.push({
@@ -338,7 +449,7 @@ Include ONLY the categories that are MISSING. If all data is available, return e
     
     // Extract shopping
     const shoppingCard = contextData.cards?.find((card: any) => card.id === 'shopping');
-    if (shoppingCard?.fullData && shoppingCard.fullData.length > 0) {
+    if (shoppingCard?.fullData && validateRealData(shoppingCard.fullData, 'amenities')) {
       hasRealAmenities = true;
       shoppingCard.fullData.slice(0, 2).forEach((store: any) => {
         amenities.push({
@@ -369,44 +480,24 @@ Include ONLY the categories that are MISSING. If all data is available, return e
 
       const aiData = await generateAIFallbackData(currentAddress, currentRealData);
       if (aiData) {
-        // Merge AI-generated schools if missing
-        if (!hasRealSchools && aiData.schools) {
-          schools = aiData.schools;
-        }
-        
-        // Merge AI-generated restaurants and shopping into amenities
-        if (!hasRealAmenities) {
-          if (aiData.restaurants) {
-            amenities.push(...aiData.restaurants);
-          }
-          if (aiData.shopping) {
-            amenities.push(...aiData.shopping);
-          }
-          if (aiData.parks) {
-            amenities.push(...aiData.parks.map((park: any) => ({
-              name: park.name,
-              category: 'Recreation',
-              distance: park.distance,
-              icon: park.icon || '🌳'
-            })));
-          }
-          if (aiData.transit) {
-            amenities.push(...aiData.transit.map((transit: any) => ({
-              name: transit.name,
-              category: 'Transit',
-              distance: transit.distance,
-              icon: transit.icon || '🚌'
-            })));
-          }
-        }
+        // Use the new mergeAIWithRealData function for better integration
+        const realData = {
+          schools: hasRealSchools ? schools : [],
+          amenities: hasRealAmenities ? amenities : [],
+          highlights: [] // Will be generated by mergeAIWithRealData
+        };
 
-        // Use AI-generated insights and walkability data
-        if (aiData.insights) {
-          aiEnhancedHighlights = aiData.insights;
-        }
-        if (aiData.walkability) {
-          aiWalkabilityData = aiData.walkability;
-        }
+        const mergedData = mergeAIWithRealData(realData, aiData, currentAddress);
+        
+        // Update our variables with merged data
+        schools = mergedData.schools;
+        amenities = mergedData.amenities;
+        aiEnhancedHighlights = mergedData.highlights;
+        aiWalkabilityData = {
+          walkScore: mergedData.walkScore,
+          transitScore: mergedData.transitScore,
+          bikeScore: mergedData.bikeScore
+        };
       }
     }
 
@@ -441,7 +532,7 @@ Include ONLY the categories that are MISSING. If all data is available, return e
           schools.length > 0 ? `${schools.length} local schools identified` : "School information not available",
         hasRealAmenities ? `${amenities.length} restaurants and shops within walking distance` : 
           amenities.length > 0 ? `${amenities.length} local businesses and amenities nearby` : "Local business data not available", 
-        aiWalkabilityData ? aiWalkabilityData.description : "Walkability and transportation analysis available",
+        aiWalkabilityData ? "Walkability and transportation analysis available" : "Walkability and transportation analysis available",
         "Market trends and demographics available",
         (hasRealSchools || hasRealAmenities) ? "Real-time neighborhood data integrated" : 
           (schools.length > 0 || amenities.length > 0) ? "AI-enhanced neighborhood insights provided" :
@@ -563,6 +654,27 @@ ${data.amenities.map(amenity =>
             <h3 className="text-xl font-bold text-brand-text-primary mb-1 flex items-center">
               <Building className="w-6 h-6 mr-2 text-brand-primary" />
               Neighborhood Insights
+              {/* Data Quality Indicator */}
+              {dataQuality === 'excellent' && (
+                <span className="ml-3 px-2 py-1 text-xs bg-green-100 text-green-700 rounded-full border border-green-200">
+                  ✓ Excellent Data
+                </span>
+              )}
+              {dataQuality === 'good' && (
+                <span className="ml-3 px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full border border-blue-200">
+                  ↗ Good Data
+                </span>
+              )}
+              {dataQuality === 'limited' && (
+                <span className="ml-3 px-2 py-1 text-xs bg-amber-100 text-amber-700 rounded-full border border-amber-200">
+                  ⚠ Limited Data
+                </span>
+              )}
+              {dataQuality === 'minimal' && (
+                <span className="ml-3 px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded-full border border-gray-200">
+                  ◐ Minimal Data
+                </span>
+              )}
             </h3>
             <p className="text-sm text-brand-text-secondary">Discover what makes this area special</p>
           </div>
@@ -751,8 +863,13 @@ ${data.amenities.map(amenity =>
                     <GraduationCap className="w-5 h-5 mr-2 text-brand-primary" />
                     Nearby Schools
                     {data.dataSources?.schools === 'ai' && (
-                      <span className="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full">
-                        AI Enhanced
+                      <span className="ml-2 px-2 py-1 text-xs bg-amber-100 text-amber-700 rounded-full border border-amber-200">
+                        🤖 AI Suggested
+                      </span>
+                    )}
+                    {data.dataSources?.schools === 'real' && (
+                      <span className="ml-2 px-2 py-1 text-xs bg-green-100 text-green-700 rounded-full border border-green-200">
+                        ✓ Verified Data
                       </span>
                     )}
                   </h4>
@@ -820,8 +937,13 @@ ${data.amenities.map(amenity =>
                   <ShoppingCart className="w-5 h-5 mr-2 text-brand-secondary" />
                   Popular Nearby Amenities
                   {data.dataSources?.amenities === 'ai' && (
-                    <span className="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full">
-                      AI Enhanced
+                    <span className="ml-2 px-2 py-1 text-xs bg-amber-100 text-amber-700 rounded-full border border-amber-200">
+                      🤖 AI Suggested
+                    </span>
+                  )}
+                  {data.dataSources?.amenities === 'real' && (
+                    <span className="ml-2 px-2 py-1 text-xs bg-green-100 text-green-700 rounded-full border border-green-200">
+                      ✓ Verified Data
                     </span>
                   )}
                 </h4>

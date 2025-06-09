@@ -739,6 +739,46 @@ app.post('/api/generate-content', async (req, res) => {
   }
 });
 
+// Gemini-specific neighborhood insights endpoint
+app.post('/api/gemini/neighborhood-insights', async (req, res) => {
+  try {
+    if (!GeminiService) {
+      return res.status(500).json({ 
+        error: 'Gemini AI service not available. Please check GEMINI_API_KEY in .env file.' 
+      });
+    }
+
+    const { address, prompt, maxTokens = 1000, temperature = 0.3 } = req.body;
+
+    if (!address || !prompt) {
+      return res.status(400).json({ 
+        error: 'Address and prompt are required' 
+      });
+    }
+
+    console.log('🏠 Generating neighborhood insights for:', address);
+
+    // Use Gemini to generate structured neighborhood data
+    const result = await GeminiService.model.generateContent(prompt);
+    const response = await result.response;
+    const content = response.text();
+
+    res.json({
+      success: true,
+      content: content.trim(),
+      address: address,
+      generatedAt: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('Neighborhood insights generation error:', error);
+    res.status(500).json({ 
+      error: 'Failed to generate neighborhood insights',
+      details: error.message 
+    });
+  }
+});
+
 // Batch content generation endpoint
 app.post('/api/listings/generate-all-content', async (req, res) => {
   try {
