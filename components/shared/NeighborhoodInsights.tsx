@@ -221,7 +221,7 @@ const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({
       console.log('✅ NeighborhoodInsights received real data:', contextData);
       
       // Transform the real data to match our component's expected format
-      const transformedData = await transformContextDataToNeighborhoodData(contextData);
+      const transformedData = await transformContextDataToNeighborhoodData(contextData, address);
       setData(transformedData);
     } catch (error) {
       console.error('❌ Error fetching neighborhood data:', error);
@@ -232,6 +232,7 @@ const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({
   };
 
     const generateAIFallbackData = async (address: string, missingDataTypes: string[]) => {
+    console.log('🚀 Starting AI fallback generation for:', address, missingDataTypes);
     try {
       const response = await fetch('/api/generate-content', {
         method: 'POST',
@@ -261,14 +262,18 @@ Base your suggestions on typical businesses and schools that would be found in t
 
       if (response.ok) {
         const result = await response.json();
+        console.log('✅ AI fallback response received:', result);
         // Parse the AI response - it should return JSON
         try {
           const aiData = JSON.parse(result.content);
+          console.log('✅ AI fallback data parsed:', aiData);
           return aiData;
         } catch (parseError) {
           console.warn('Could not parse AI response as JSON:', result.content);
           return null;
         }
+      } else {
+        console.warn('❌ AI fallback API failed:', response.status, response.statusText);
       }
     } catch (error) {
       console.warn('AI fallback failed:', error);
@@ -276,7 +281,7 @@ Base your suggestions on typical businesses and schools that would be found in t
     return null;
   };
 
-  const transformContextDataToNeighborhoodData = async (contextData: any) => {
+  const transformContextDataToNeighborhoodData = async (contextData: any, currentAddress: string) => {
     // Extract real data from context cards and transform to our format
     const schoolsCard = contextData.cards?.find((card: any) => card.id === 'schools');
     const hasRealSchools = schoolsCard?.fullData && schoolsCard.fullData.length > 0;
@@ -325,10 +330,13 @@ Base your suggestions on typical businesses and schools that would be found in t
     if (!hasRealSchools) missingDataTypes.push('schools');
     if (!hasRealAmenities) missingDataTypes.push('amenities');
 
+    console.log('🔍 Data availability check:', { hasRealSchools, hasRealAmenities, missingDataTypes, currentAddress });
+
     let aiEnhancedHighlights: string[] = [];
     
-    if (missingDataTypes.length > 0 && address) {
-      const aiData = await generateAIFallbackData(address, missingDataTypes);
+    if (missingDataTypes.length > 0 && currentAddress) {
+      console.log('🤖 Triggering AI fallback for:', missingDataTypes, 'at address:', currentAddress);
+      const aiData = await generateAIFallbackData(currentAddress, missingDataTypes);
       if (aiData) {
         // Use AI-generated schools if real data is missing
         if (!hasRealSchools && aiData.schools) {

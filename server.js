@@ -700,6 +700,45 @@ app.post('/api/listings/generate-flyer', async (req, res) => {
   }
 });
 
+// Generic content generation endpoint for neighborhood insights
+app.post('/api/generate-content', async (req, res) => {
+  try {
+    if (!GeminiService) {
+      return res.status(500).json({ 
+        error: 'Gemini AI service not available. Please check GEMINI_API_KEY in .env file.' 
+      });
+    }
+
+    const { prompt, contentType = 'general' } = req.body;
+
+    if (!prompt) {
+      return res.status(400).json({ 
+        error: 'Prompt is required' 
+      });
+    }
+
+    console.log('🤖 Generating content for:', contentType);
+
+    const result = await GeminiService.model.generateContent(prompt);
+    const response = await result.response;
+    const content = response.text();
+
+    res.json({
+      success: true,
+      content: content.trim(),
+      contentType: contentType,
+      generatedAt: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('Generic content generation error:', error);
+    res.status(500).json({ 
+      error: 'Failed to generate content',
+      details: error.message 
+    });
+  }
+});
+
 // Batch content generation endpoint
 app.post('/api/listings/generate-all-content', async (req, res) => {
   try {

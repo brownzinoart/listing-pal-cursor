@@ -62,7 +62,7 @@ class RealLocationDataService {
 
       for (const type of types) {
         try {
-          const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=1000&type=${type}&key=${this.googleMapsApiKey}`;
+          const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=8047&type=${type}&key=${this.googleMapsApiKey}`;
           console.log(`📍 Fetching ${type} data...`);
           
           const response = await fetch(url);
