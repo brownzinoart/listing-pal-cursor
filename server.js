@@ -931,34 +931,20 @@ app.post('/api/fetch-property-details', async (req, res) => {
 
     try {
         // Use Gemini AI to generate realistic property details based on address location
-        console.log('🔍 Asking Gemini AI to search the web for property details:', address);
+        console.log('🔍 Asking Gemini AI to cross-reference multiple real estate sites for:', address);
         
-        const geminiPrompt = `Search for real estate information about: "${address}"
+        const geminiPrompt = `Find property details for: "${address}"
 
-Find property details from real estate websites, MLS listings, property databases, or recent sales data. Look for:
+Search Zillow, Redfin, Realtor.com, and MLS data. Cross-reference multiple sources for accuracy.
 
-FOR THIS SPECIFIC ADDRESS:
-- Current or recent listing prices
-- Property characteristics (bedrooms, bathrooms, square footage)
-- Year built
-- Property type
+VALIDATION RULES:
+- bathrooms: Use decimals like 1.5, 2.5, 3.5 (NOT 35!)
+- bedrooms: 1-6 typical
+- price: Reasonable market value
+- squareFootage: 800-5000 typical
+- yearBuilt: 1800-2024
 
-EXAMPLE SEARCH QUERIES TO USE:
-- "${address}" real estate listing
-- "${address}" property details
-- "${address}" MLS 
-- "${address}" recent sale price
-- "${address}" Zillow Redfin Realtor.com
-
-EXTRACT ONLY THESE FIELDS (numbers only, no symbols):
-- price: Listing price or recent sale price (digits only)
-- bedrooms: Number of bedrooms
-- bathrooms: Number of bathrooms (use decimals like 2.5)
-- squareFootage: Square footage (digits only)
-- yearBuilt: Construction year (4-digit year)
-- propertyType: Single Family, Townhouse, Condo, Colonial, etc.
-
-Return ONLY this JSON (no explanations):
+Return ONLY this JSON:
 {
   "price": "",
   "bedrooms": "",
@@ -977,11 +963,15 @@ Return ONLY this JSON (no explanations):
         const extractedData = response.text();
         
         console.log('🔍 Raw Gemini Response:', extractedData);
+        console.log('🔍 Response length:', extractedData.length);
+        console.log('🔍 First 200 chars:', extractedData.substring(0, 200));
         
         // Clean up the response from Gemini to ensure it's valid JSON
         const jsonString = extractedData.match(/\{[\s\S]*\}/);
+        console.log('🔍 Matched JSON string:', jsonString);
         if (!jsonString) {
              console.log('❌ Could not parse Gemini response as JSON');
+             console.log('❌ Full response was:', extractedData);
              return res.status(500).json({ error: 'AI could not generate property details.' });
         }
 
