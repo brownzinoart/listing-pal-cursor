@@ -1,32 +1,55 @@
-import React from 'react';
+import React, { InputHTMLAttributes } from 'react';
+import { VariantProps, cva } from 'class-variance-authority';
+import { cn } from '../../utils/cn';
 
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+const inputVariants = cva(
+  'w-full bg-brand-card transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 rounded-lg border',
+  {
+    variants: {
+      variant: {
+        default: 'bg-white text-gray-900 border-gray-300 focus:ring-brand-primary focus:border-brand-primary',
+        gradient: 'bg-transparent text-white border-brand-border/50 focus:ring-brand-accent focus:border-brand-accent placeholder-brand-text-tertiary',
+      },
+      inputSize: {
+        sm: 'px-2 py-1 text-sm',
+        md: 'px-4 py-2 text-base',
+        lg: 'px-5 py-3 text-lg',
+      },
+    },
+    defaultVariants: {
+      variant: 'default',
+      inputSize: 'md',
+    },
+  }
+);
+
+export interface InputProps extends InputHTMLAttributes<HTMLInputElement>, VariantProps<typeof inputVariants> {
   label?: string;
   error?: string;
   hint?: string;
   inputClassName?: string;
   labelClassName?: string;
   containerClassName?: string;
-  variant?: 'default' | 'glass' | 'gradient';
-  inputSize?: 'sm' | 'md' | 'lg';
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
 }
 
-const Input: React.FC<InputProps> = ({ 
-  label, 
-  id, 
-  error, 
+const Input: React.FC<InputProps> = ({
+  className,
+  containerClassName,
+  variant,
+  inputSize,
+  label,
+  id,
+  error,
   hint,
-  containerClassName = '', 
-  inputClassName = '', 
-  labelClassName = '', 
-  variant = 'default',
-  inputSize = 'md',
+  inputClassName = '',
+  labelClassName = '',
   leftIcon,
   rightIcon,
-  ...props 
+  ...props
 }) => {
+  const generatedId = id || React.useId();
   const getSizeClasses = () => {
     switch (inputSize) {
       case 'sm':
@@ -60,9 +83,9 @@ const Input: React.FC<InputProps> = ({
   const labelStyle = "block text-sm font-medium text-brand-text-secondary mb-2";
 
   return (
-    <div className={`space-y-2 ${containerClassName}`}>
+    <div className={cn('space-y-2', containerClassName)}>
       {label && (
-        <label htmlFor={id} className={`${labelStyle} ${labelClassName}`}>
+        <label htmlFor={generatedId} className={`${labelStyle} ${labelClassName}`}>
           {label}
         </label>
       )}
@@ -75,8 +98,8 @@ const Input: React.FC<InputProps> = ({
           </div>
         )}
         <input
-          id={id}
-          className={`${getInputStyles()} ${error ? errorStyle : ''} ${inputClassName}`}
+          id={generatedId}
+          className={cn(inputVariants({ variant, inputSize, className }), error ? errorStyle : '', inputClassName)}
           {...props}
         />
         {rightIcon && (

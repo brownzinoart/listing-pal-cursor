@@ -1,6 +1,30 @@
-import React from 'react';
+import React, { TextareaHTMLAttributes, useId } from 'react';
+import { VariantProps, cva } from 'class-variance-authority';
+import { cn } from '../../utils/cn';
 
-interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+const textareaVariants = cva(
+  'w-full bg-brand-card transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 rounded-lg border',
+  {
+    variants: {
+      variant: {
+        default: 'bg-white text-gray-900 border-gray-300 focus:ring-brand-primary focus:border-brand-primary',
+        gradient: 'bg-transparent text-white border-brand-border/50 focus:ring-brand-accent focus:border-brand-accent placeholder-brand-text-tertiary',
+      },
+      resizable: {
+        true: 'resize',
+        false: 'resize-none',
+      },
+    },
+    defaultVariants: {
+      variant: 'default',
+      resizable: false,
+    },
+  }
+);
+
+export interface TextareaProps
+  extends TextareaHTMLAttributes<HTMLTextAreaElement>,
+    VariantProps<typeof textareaVariants> {
   label?: string;
   error?: string;
   hint?: string;
@@ -12,19 +36,22 @@ interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement
   resizable?: boolean;
 }
 
-const Textarea: React.FC<TextareaProps> = ({ 
-  label, 
-  id, 
-  error, 
+const Textarea: React.FC<TextareaProps> = ({
+  className,
+  containerClassName,
+  variant,
+  label,
+  id,
+  resizable,
+  error,
   hint,
-  containerClassName = '', 
-  textareaClassName = '', 
-  labelClassName = '', 
-  variant = 'default',
+  textareaClassName = '',
+  labelClassName = '',
   textareaSize = 'md',
-  resizable = true,
-  ...props 
+  ...props
 }) => {
+  const generatedId = id || useId();
+
   const getSizeClasses = () => {
     switch (textareaSize) {
       case 'sm':
@@ -57,15 +84,15 @@ const Textarea: React.FC<TextareaProps> = ({
   const labelStyle = "block text-sm font-medium text-brand-text-secondary mb-2";
 
   return (
-    <div className={`space-y-2 ${containerClassName}`}>
+    <div className={cn('space-y-2', containerClassName)}>
       {label && (
-        <label htmlFor={id} className={`${labelStyle} ${labelClassName}`}>
+        <label htmlFor={generatedId} className={`${labelStyle} ${labelClassName}`}>
           {label}
         </label>
       )}
       <textarea
-        id={id}
-        className={`${getTextareaStyles()} ${error ? errorStyle : ''} ${textareaClassName}`}
+        id={generatedId}
+        className={cn(textareaVariants({ variant, resizable, className }))}
         rows={props.rows || 4}
         {...props}
       />

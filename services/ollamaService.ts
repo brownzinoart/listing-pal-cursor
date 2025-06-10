@@ -25,63 +25,111 @@ export class OllamaService {
     try {
       const response = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...request,
-          stream: false, // We want the complete response
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...request, stream: false }),
       });
 
       if (!response.ok) {
-        throw new Error(`Ollama API error: ${response.status} ${response.statusText}`);
+        const errorBody = await response.text();
+        console.error(`Ollama API error: ${response.status} ${response.statusText}`, errorBody);
+        throw new Error(`Failed to get a response from the AI service. Status: ${response.status}`);
       }
-
       const data: OllamaGenerateResponse = await response.json();
       return data.response.trim();
     } catch (error) {
-      console.error('Ollama API error:', error);
-      // Fallback to mock generation if Ollama is not available
-      return this.getMockResponse(request.prompt);
+      console.error('Ollama service connection error:', error);
+      throw new Error('Could not connect to the AI generation service. Please ensure it is running and accessible.');
     }
   }
 
-  private getMockResponse(prompt: string): string {
-    // Fallback mock responses when Ollama is not available
-    if (prompt.includes('property description')) {
-      return 'This stunning property offers modern living at its finest. With spacious rooms, premium finishes, and an ideal location, this home represents exceptional value in today\'s market.';
-    } else if (prompt.includes('Facebook')) {
-      return '🏡 Just listed! This beautiful property is now available and ready for its new owners. Contact us today for a private showing!';
-    } else if (prompt.includes('Instagram')) {
-      return '✨ New listing alert! ✨\nDreaming of your perfect home? This might be the one! 🔑\n\n#realestate #newlisting #dreamhome';
-    } else if (prompt.includes('Twitter') || prompt.includes('X post')) {
-      return '🆕 Just listed! Beautiful property now available. Perfect for families looking for their dream home. DM for details! #realestate';
-    } else if (prompt.includes('email') || prompt.includes('introductory')) {
-      return `Subject: New Listing - Your Dream Home Awaits!
-
-Dear [Client Name],
-
-I hope this email finds you well! I'm thrilled to share an incredible opportunity that just came on the market.
-
-This stunning property offers everything you've been looking for and more. From the moment you step inside, you'll be captivated by the thoughtful design and premium finishes throughout.
-
-Here's what makes this property special:
-• Spacious and bright living areas perfect for entertaining
-• Modern amenities that blend comfort with style  
-• Ideal location with convenient access to everything you need
-• Move-in ready condition
-
-I would love to schedule a private showing at your earliest convenience. Properties like this don't stay on the market long, and I want to make sure you have the first opportunity to see it.
-
-Please let me know your availability this week, and I'll arrange everything for you.
-
-Best regards,
-[Your Name]
-[Your Contact Information]`;
+  private cleanAIResponse(response: string, contentType: string = 'general'): string {
+    // This function cleans up valid AI responses.
+    let cleaned = response;
+    
+    const introPatterns = [
+      /^(Here's a|Here is a|I'll write|I've written|Here's an|Here is an|I'll create|I've created).*?(email|post|caption|description|content).*?[\n:]/i,
+      /^(Sure,? here's|Certainly,? here's|Of course,? here's).*?[\n:]/i,
+      /^(Let me (write|create|craft)).*?[\n:]/i
+    ];
+    introPatterns.forEach(pattern => { cleaned = cleaned.replace(pattern, ''); });
+    
+    const endingPatterns = [
+      /\n\n(This (email|post|caption|description)|The (email|post|caption|description)|Note:|Please note:|Remember to|Don't forget to|Feel free to|You can).*$/i,
+      /\n\n(I hope this|This should|Let me know if).*$/i,
+      /\n\n(Adjust|Modify|Customize|Tailor).*$/i
+    ];
+    endingPatterns.forEach(pattern => { cleaned = cleaned.replace(pattern, ''); });
+    
+    if (contentType === 'email') {
+      if (cleaned.includes('Subject:')) {
+        const subjectMatch = cleaned.match(/Subject:\s*(.+?)(?:\n|$)/i);
+        if (subjectMatch) {
+          const subjectLine = subjectMatch[1].trim();
+          const subjectIndex = cleaned.indexOf(subjectMatch[0]);
+          const afterSubject = cleaned.substring(subjectIndex + subjectMatch[0].length);
+          if (subjectLine.includes('Dear') || subjectLine.includes('Hello') || subjectLine.includes('Hi ')) {
+            const sentenceEnd = subjectLine.search(/[.!?]\s+/);
+            if (sentenceEnd > 0 && sentenceEnd < 60) {
+              const properSubject = subjectLine.substring(0, sentenceEnd + 1).trim();
+              const bodyStart = subjectLine.substring(sentenceEnd + 1).trim();
+              cleaned = `Subject: ${properSubject}\n\n${bodyStart} ${afterSubject.trim()}`;
+            } else {
+              const words = subjectLine.split(' ');
+              let properSubject = '';
+              let bodyStart = '';
+              let charCount = 0;
+              for (let i = 0; i < words.length; i++) {
+                if (charCount + words[i].length + 1 > 50) {
+                  bodyStart = words.slice(i).join(' ');
+                  break;
+                }
+                properSubject += (properSubject ? ' ' : '') + words[i];
+                charCount += words[i].length + 1;
+              }
+              cleaned = `Subject: ${properSubject}\n\n${bodyStart} ${afterSubject.trim()}`;
+            }
+          } else {
+            cleaned = `Subject: ${subjectLine}\n\n${afterSubject.trim()}`;
+          }
+        }
+      }
+      cleaned = cleaned.replace(/(\nSubject:|^Subject:)(?!.*^Subject:)/gmi, '');
+      const closingMatch = cleaned.match(/(Best regards|Sincerely|Best wishes|Kind regards|Warmly|Cheers).*?(\[.*?\]|\n.*?$)/i);
+      if (closingMatch) {
+        const closingIndex = cleaned.indexOf(closingMatch[0]);
+        const endIndex = closingIndex + closingMatch[0].length;
+        const afterClosing = cleaned.substring(endIndex);
+        if (afterClosing.includes('Note:') || afterClosing.includes('Remember:') || afterClosing.includes('This email')) {
+          cleaned = cleaned.substring(0, endIndex);
+        }
+      }
     }
     
-    return 'Generated content using AI assistance.';
+    cleaned = cleaned.replace(/\[.*?\]/g, (match) => {
+      const keepPatterns = ['client name', 'your name', 'contact information', 'agent name', 'phone number', 'email address', 'company name', 'website', 'insert photo', 'add image', 'your logo'];
+      if (keepPatterns.some(pattern => match.toLowerCase().includes(pattern))) { return match; }
+      return '';
+    });
+    
+    cleaned = cleaned.replace(/^(Assistant:|AI:|Model:|Response:|ChatGPT:|Claude:)/i, '');
+    cleaned = cleaned.replace(/\(Note:.*?\)/gi, '');
+    cleaned = cleaned.replace(/\*Note:.*?\*/gi, '');
+    cleaned = cleaned.replace(/^["'](.*)["']$/s, '$1');
+    cleaned = cleaned.replace(/^["']/gm, '');
+    cleaned = cleaned.replace(/["']$/gm, '');
+    
+    if (contentType !== 'instagram' && contentType !== 'social') {
+      cleaned = cleaned.replace(/\n\n#[A-Za-z].*$/gm, (match) => {
+        if (match.includes('customize') || match.includes('adjust') || match.includes('modify')) { return ''; }
+        return match;
+      });
+    }
+    
+    cleaned = cleaned.replace(/\n\s*\n\s*\n/g, '\n\n');
+    cleaned = cleaned.replace(/^\s+|\s+$/gm, '');
+    cleaned = cleaned.trim();
+    
+    return cleaned;
   }
 
   async generatePropertyDescription(listing: Listing, style: string = 'professional'): Promise<string> {
@@ -120,7 +168,9 @@ Bathrooms: ${listing.bathrooms}
 Square Footage: ${listing.squareFootage} sqft
 Key Features: ${listing.keyFeatures}
 
-Write ONLY the Facebook post content that's friendly, engaging, and encourages interaction. Include relevant hashtags and a call-to-action. Keep it under 250 words. Do not include any introductory text or explanatory comments.`;
+Based on real estate advertising research, create a post that tells a story and appeals to lifestyle aspirations. Translate features into tangible benefits for the buyer. The tone should be enthusiastic and emotional. Keep it under 250 words.
+
+Write ONLY the Facebook post content. Do not include any introductory text or explanatory comments.`;
 
     const response = await this.callOllama({
       model: DEFAULT_MODEL,
@@ -144,7 +194,9 @@ Bathrooms: ${listing.bathrooms}
 Square Footage: ${listing.squareFootage} sqft
 Key Features: ${listing.keyFeatures}
 
-Write ONLY the Instagram caption content that's trendy, includes relevant emojis, and uses popular real estate hashtags. Keep it engaging and visually appealing. Do not include any introductory text or explanatory comments.`;
+Create a visually-driven, punchy, and emoji-heavy caption. Focus on lifestyle and tangible benefits. It should be short, scannable, and include a strong set of relevant hashtags.
+
+Write ONLY the Instagram caption content. Do not include any introductory text or explanatory comments.`;
 
     const response = await this.callOllama({
       model: DEFAULT_MODEL,
@@ -167,7 +219,9 @@ Bedrooms: ${listing.bedrooms}
 Bathrooms: ${listing.bathrooms}
 Square Footage: ${listing.squareFootage} sqft
 
-Write ONLY the punchy, engaging X post content that fits within 280 characters. Include relevant hashtags and make it shareable. Do not include any introductory text or explanatory comments.`;
+Write ONLY a punchy, attention-grabbing X post content that fits within 280 characters. Use a strong hook and a clear call to action with a link to the listing.
+
+Write ONLY the X post content. Do not include any introductory text or explanatory comments.`;
 
     const response = await this.callOllama({
       model: DEFAULT_MODEL,
@@ -179,188 +233,6 @@ Write ONLY the punchy, engaging X post content that fits within 280 characters. 
     });
 
     return this.cleanAIResponse(response, 'social');
-  }
-
-  async generateAdCopy(listing: Listing, platform: string, objective: string): Promise<{ headline: string; body: string; cta: string }> {
-    const prompt = `Create ad copy for a real estate listing for a ${platform} campaign with the objective of "${objective}".
-    The property is located at ${listing.address} and is priced at $${listing.price.toLocaleString()}.
-    It has ${listing.bedrooms} bedrooms, ${listing.bathrooms} bathrooms, and is ${listing.squareFootage} sqft.
-    Key Features include: ${listing.keyFeatures}.
-
-    Your response MUST be a raw JSON object with three keys: "headline", "body", and "cta".
-    - "headline": A catchy headline, under 60 characters.
-    - "body": Engaging and persuasive text for the ad body.
-    - "cta": A short, clear call to action like "Learn More", "Sign Up", or "Contact Us".
-
-    Example format:
-    {
-      "headline": "Your Dream Home Awaits in Cityville!",
-      "body": "Discover this stunning 3-bed, 2-bath gem with a newly renovated kitchen. Perfect for families. Don't miss out on this prime location!",
-      "cta": "Schedule a Tour"
-    }
-
-    Now, generate the JSON for the current listing.`;
-
-    const response = await this.callOllama({
-      model: DEFAULT_MODEL,
-      prompt,
-      options: {
-        temperature: 0.7
-      }
-    });
-
-    try {
-      // Clean the response to ensure it's valid JSON
-      const jsonResponse = response.match(/\{[\s\S]*\}/);
-      if (jsonResponse) {
-        return JSON.parse(jsonResponse[0]);
-      }
-      throw new Error("No valid JSON found in AI response.");
-    } catch (e) {
-      console.error("Failed to parse ad copy JSON from Ollama:", e);
-      // Fallback in case of parsing failure
-      return {
-        headline: `Incredible Home at ${listing.address.split(',')[0]}`,
-        body: `Don't miss this amazing opportunity. Featuring: ${listing.keyFeatures}. Contact us today!`,
-        cta: "Learn More",
-      };
-    }
-  }
-
-  private cleanAIResponse(response: string, contentType: string = 'general'): string {
-    // Remove common AI companion text patterns
-    let cleaned = response;
-    
-    // Remove introductory phrases based on content type
-    const introPatterns = [
-      /^(Here's a|Here is a|I'll write|I've written|Here's an|Here is an|I'll create|I've created).*?(email|post|caption|description|content).*?[\n:]/i,
-      /^(Sure,? here's|Certainly,? here's|Of course,? here's).*?[\n:]/i,
-      /^(Let me (write|create|craft)).*?[\n:]/i
-    ];
-    
-    introPatterns.forEach(pattern => {
-      cleaned = cleaned.replace(pattern, '');
-    });
-    
-    // Remove explanatory text at the end
-    const endingPatterns = [
-      /\n\n(This (email|post|caption|description)|The (email|post|caption|description)|Note:|Please note:|Remember to|Don't forget to|Feel free to|You can).*$/i,
-      /\n\n(I hope this|This should|Let me know if).*$/i,
-      /\n\n(Adjust|Modify|Customize|Tailor).*$/i
-    ];
-    
-    endingPatterns.forEach(pattern => {
-      cleaned = cleaned.replace(pattern, '');
-    });
-    
-    // For emails, handle closings and formatting specially
-    if (contentType === 'email') {
-      // Fix subject line formatting issues
-      if (cleaned.includes('Subject:')) {
-        // Find the subject line and extract it properly
-        const subjectMatch = cleaned.match(/Subject:\s*(.+?)(?:\n|$)/i);
-        if (subjectMatch) {
-          const subjectLine = subjectMatch[1].trim();
-          
-          // Find where the subject line ends and body begins
-          const subjectIndex = cleaned.indexOf(subjectMatch[0]);
-          const afterSubject = cleaned.substring(subjectIndex + subjectMatch[0].length);
-          
-          // Check if there's body content immediately after the subject line (no line break)
-          if (subjectLine.includes('Dear') || subjectLine.includes('Hello') || subjectLine.includes('Hi ')) {
-            // Subject line contains body content - need to split it
-            const sentenceEnd = subjectLine.search(/[.!?]\s+/);
-            if (sentenceEnd > 0 && sentenceEnd < 60) {
-              // Split at the first sentence boundary within reasonable subject length
-              const properSubject = subjectLine.substring(0, sentenceEnd + 1).trim();
-              const bodyStart = subjectLine.substring(sentenceEnd + 1).trim();
-              cleaned = `Subject: ${properSubject}\n\n${bodyStart} ${afterSubject.trim()}`;
-            } else {
-              // No good sentence boundary, use first 50 characters
-              const words = subjectLine.split(' ');
-              let properSubject = '';
-              let bodyStart = '';
-              let charCount = 0;
-              
-              for (let i = 0; i < words.length; i++) {
-                if (charCount + words[i].length + 1 > 50) {
-                  bodyStart = words.slice(i).join(' ');
-                  break;
-                }
-                properSubject += (properSubject ? ' ' : '') + words[i];
-                charCount += words[i].length + 1;
-              }
-              
-              cleaned = `Subject: ${properSubject}\n\n${bodyStart} ${afterSubject.trim()}`;
-            }
-          } else {
-            // Subject line looks clean, just ensure proper formatting
-            cleaned = `Subject: ${subjectLine}\n\n${afterSubject.trim()}`;
-          }
-        }
-      }
-      
-      // Remove any duplicate "Subject:" lines
-      cleaned = cleaned.replace(/(\nSubject:|^Subject:)(?!.*^Subject:)/gmi, '');
-      
-      // Handle email closings
-      const closingMatch = cleaned.match(/(Best regards|Sincerely|Best wishes|Kind regards|Warmly|Cheers).*?(\[.*?\]|\n.*?$)/i);
-      if (closingMatch) {
-        const closingIndex = cleaned.indexOf(closingMatch[0]);
-        const endIndex = closingIndex + closingMatch[0].length;
-        const afterClosing = cleaned.substring(endIndex);
-        if (afterClosing.includes('Note:') || afterClosing.includes('Remember:') || afterClosing.includes('This email')) {
-          cleaned = cleaned.substring(0, endIndex);
-        }
-      }
-    }
-    
-    // Remove any bracketed instructions or notes
-    cleaned = cleaned.replace(/\[.*?\]/g, (match) => {
-      // Keep common placeholders but remove instructional text
-      const keepPatterns = [
-        'client name', 'your name', 'contact information', 'agent name', 
-        'phone number', 'email address', 'company name', 'website',
-        'insert photo', 'add image', 'your logo'
-      ];
-      
-      if (keepPatterns.some(pattern => match.toLowerCase().includes(pattern))) {
-        return match;
-      }
-      return '';
-    });
-    
-    // Remove AI model artifacts
-    cleaned = cleaned.replace(/^(Assistant:|AI:|Model:|Response:|ChatGPT:|Claude:)/i, '');
-    
-    // Remove meta-commentary about the content
-    cleaned = cleaned.replace(/\(Note:.*?\)/gi, '');
-    cleaned = cleaned.replace(/\*Note:.*?\*/gi, '');
-    
-    // Remove quotes around the entire content
-    cleaned = cleaned.replace(/^["'](.*)["']$/s, '$1');
-    
-    // Remove quotes at the beginning and end of lines
-    cleaned = cleaned.replace(/^["']/gm, '');
-    cleaned = cleaned.replace(/["']$/gm, '');
-    
-    // Clean up hashtags that are instructional rather than actual hashtags
-    if (contentType !== 'instagram' && contentType !== 'social') {
-      cleaned = cleaned.replace(/\n\n#[A-Za-z].*$/gm, (match) => {
-        // Keep if it looks like real hashtags, remove if it looks instructional
-        if (match.includes('customize') || match.includes('adjust') || match.includes('modify')) {
-          return '';
-        }
-        return match;
-      });
-    }
-    
-    // Clean up extra whitespace
-    cleaned = cleaned.replace(/\n\s*\n\s*\n/g, '\n\n'); // Replace multiple line breaks with double
-    cleaned = cleaned.replace(/^\s+|\s+$/gm, ''); // Trim each line
-    cleaned = cleaned.trim();
-    
-    return cleaned;
   }
 
   async generateIntroEmail(listing: Listing, emailType: string = 'new-listing'): Promise<string> {
@@ -409,6 +281,55 @@ Write the email now following this EXACT format. DO NOT put any content after "S
     });
 
     return this.cleanAIResponse(response, 'email');
+  }
+
+  async generateAdCopy(listing: Listing, platform: string, objective: string): Promise<{ headline: string; body: string; cta: string }> {
+    let platformPrompt;
+    
+    switch (platform) {
+      case 'linkedin':
+        platformPrompt = `
+          Platform: LinkedIn.
+          Objective: ${objective}.
+          Audience: Professionals, Investors, High-Net-Worth Individuals.
+          Tone: Professional, authoritative, data-driven, and value-focused.
+          Instructions: Generate a headline (max 150 chars), body text (max 600 chars), and a professional call-to-action (max 20 chars).
+          Emphasize investment potential, ROI, unique luxury features, and market insights. Avoid casual language and emojis.
+        `;
+        break;
+      case 'google':
+        platformPrompt = `
+          Platform: Google Ads.
+          Objective: ${objective}.
+          Audience: Users actively searching for real estate.
+          Tone: Direct, keyword-rich, and benefit-oriented.
+          Instructions: Generate a concise headline (max 30 chars), descriptive body text (max 90 chars), and a strong call-to-action (max 20 chars).
+          The headline and body should be highly relevant to potential search queries for this type of property.
+        `;
+        break;
+      default: // Facebook & Instagram
+        platformPrompt = `
+          Platform: Facebook & Instagram.
+          Objective: ${objective}.
+          Audience: Local buyers, specific demographics (e.g., families, first-time buyers).
+          Tone: Engaging, emotional, and lifestyle-oriented.
+          Instructions: Generate a catchy headline (max 40 chars), engaging body text (max 125 chars), and a clear call-to-action (max 20 chars).
+          Translate features into benefits and use storytelling to create a connection.
+        `;
+    }
+    
+    const prompt = `Create ad copy for a real estate listing.\n\nProperty Details:\n- Address: ${listing.address}\n- Price: $${listing.price.toLocaleString()}\n- Bedrooms: ${listing.bedrooms}\n- Bathrooms: ${listing.bathrooms}\n- Square Footage: ${listing.squareFootage} sqft\n- Key Features: ${listing.keyFeatures}\n\nAd Requirements:\n${platformPrompt}\n\nYour response MUST be a raw JSON object with three keys: "headline", "body", and "cta". Example format:\n{\n  "headline": "Your Dream Home Awaits!",\n  "body": "Discover this stunning 3-bed, 2-bath gem with a newly renovated kitchen. Perfect for families!",\n  "cta": "Schedule a Tour"\n}\n\nNow, generate the JSON for the current listing.`;
+
+    const response = await this.callOllama({ model: DEFAULT_MODEL, prompt, options: { temperature: 0.7 } });
+
+    try {
+      const jsonResponse = response.match(/\{[\s\S]*\}/);
+      if (jsonResponse) return JSON.parse(jsonResponse[0]);
+      throw new Error("No valid JSON found in AI response.");
+    } catch (e) {
+      console.error("Failed to parse ad copy JSON from Ollama:", e);
+      throw new Error("The AI returned an invalid format. Please try generating again.");
+    }
   }
 }
 

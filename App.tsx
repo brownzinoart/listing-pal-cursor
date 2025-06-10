@@ -7,7 +7,7 @@ import DashboardPage from './components/dashboard/DashboardPage';
 import ListingFormPage from './components/listings/ListingFormPage';
 import ListingDetailPage from './components/listings/ListingDetailPage';
 import LandingPage from './components/shared/LandingPage';
-import { useAuth } from './contexts/AuthContext';
+import { useAuth, AuthProvider } from './contexts/AuthContext';
 import ListingDescriptionGeneratorPage from './components/listings/generation/ListingDescriptionGeneratorPage';
 import AiRoomRedesignPage from './components/listings/AiRoomRedesignPage';
 import FacebookPostGeneratorPage from './components/listings/generation/FacebookPostGeneratorPage';
@@ -16,8 +16,9 @@ import XPostGeneratorPage from './components/listings/generation/XPostGeneratorP
 import EmailGeneratorPage from './components/listings/generation/EmailGeneratorPage';
 import FlyerGeneratorPage from './components/listings/generation/FlyerGeneratorPage';
 import PaidAdGeneratorPage from './components/listings/generation/PaidAdGeneratorPage';
+import { OllamaStatusProvider } from './contexts/OllamaStatusContext';
 
-const App: React.FC = () => {
+const PrivateRoute: React.FC<{ children: React.ReactElement }> = ({ children }) => {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
@@ -28,50 +29,54 @@ const App: React.FC = () => {
     );
   }
 
+  return user ? children : <Navigate to="/login" />;
+};
+
+const AppRoutes = () => {
   return (
     <div className="min-h-screen flex flex-col bg-brand-background overflow-x-hidden">
       <Navbar />
       <main className="flex-grow container mx-auto px-4 py-8 overflow-hidden">
         <Routes>
-          <Route path="/" element={!user ? <LandingPage /> : <Navigate to="/dashboard" />} />
-          <Route path="/login" element={!user ? <LoginPage /> : <Navigate to="/login" />} />
-          <Route path="/signup" element={!user ? <SignupPage /> : <Navigate to="/login" />} />
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
           
-          <Route path="/dashboard" element={user ? <DashboardPage /> : <Navigate to="/login" />} />
-          <Route path="/listings/new" element={user ? <ListingFormPage /> : <Navigate to="/login" />} />
-          <Route path="/listings/:id/edit" element={user ? <ListingFormPage /> : <Navigate to="/login" />} />
-          <Route path="/listings/:id" element={user ? <ListingDetailPage /> : <Navigate to="/login" />} />
+          <Route path="/dashboard" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
+          <Route path="/listings/new" element={<PrivateRoute><ListingFormPage /></PrivateRoute>} />
+          <Route path="/listings/:id/edit" element={<PrivateRoute><ListingFormPage /></PrivateRoute>} />
+          <Route path="/listings/:id" element={<PrivateRoute><ListingDetailPage /></PrivateRoute>} />
           <Route 
             path="/listings/:id/generate/description" 
-            element={user ? <ListingDescriptionGeneratorPage /> : <Navigate to="/login" />} 
+            element={<PrivateRoute><ListingDescriptionGeneratorPage /></PrivateRoute>} 
           />
           <Route
             path="/listings/:id/generate/facebook-post"
-            element={user ? <FacebookPostGeneratorPage /> : <Navigate to="/login" />}
+            element={<PrivateRoute><FacebookPostGeneratorPage /></PrivateRoute>}
           />
           <Route
             path="/listings/:id/generate/instagram-post"
-            element={user ? <InstagramPostGeneratorPage /> : <Navigate to="/login" />}
+            element={<PrivateRoute><InstagramPostGeneratorPage /></PrivateRoute>}
           />
           <Route
             path="/listings/:id/generate/x-post"
-            element={user ? <XPostGeneratorPage /> : <Navigate to="/login" />}
+            element={<PrivateRoute><XPostGeneratorPage /></PrivateRoute>}
           />
           <Route
             path="/listings/:id/generate/email"
-            element={user ? <EmailGeneratorPage /> : <Navigate to="/login" />}
+            element={<PrivateRoute><EmailGeneratorPage /></PrivateRoute>}
           />
           <Route
             path="/listings/:id/generate/flyer"
-            element={user ? <FlyerGeneratorPage /> : <Navigate to="/login" />}
+            element={<PrivateRoute><FlyerGeneratorPage /></PrivateRoute>}
           />
           <Route
             path="/listings/:id/generate/paid-ad"
-            element={user ? <PaidAdGeneratorPage /> : <Navigate to="/login" />}
+            element={<PrivateRoute><PaidAdGeneratorPage /></PrivateRoute>}
           />
           <Route
             path="/listings/:id/ai/room-redesign"
-            element={user ? <AiRoomRedesignPage /> : <Navigate to="/login" />}
+            element={<PrivateRoute><AiRoomRedesignPage /></PrivateRoute>}
           />
           
           <Route path="*" element={<Navigate to="/" />} />
@@ -83,5 +88,15 @@ const App: React.FC = () => {
     </div>
   );
 };
+
+function App() {
+  return (
+    <AuthProvider>
+      <OllamaStatusProvider>
+        <AppRoutes />
+      </OllamaStatusProvider>
+    </AuthProvider>
+  );
+}
 
 export default App;

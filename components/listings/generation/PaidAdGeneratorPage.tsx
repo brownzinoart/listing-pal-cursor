@@ -13,6 +13,7 @@ import WorkflowNavigation from './WorkflowNavigation';
 import AdCreativeMockup from './AdCreativeMockup';
 import { ArrowLeftIcon, SparklesIcon as SparklesOutlineIcon, CheckIcon, LockClosedIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { FaFacebook, FaLinkedin, FaGoogle } from 'react-icons/fa';
+import { InformationCircleIcon } from '@heroicons/react/24/outline';
 
 // Define types and constants for the feature
 type AdPlatform = 'facebook' | 'linkedin' | 'google';
@@ -324,8 +325,8 @@ const PaidAdGeneratorPage: React.FC = () => {
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="text-xl font-semibold text-brand-text-primary">Ad Content & Preview</h3>
                                 <div className="text-sm text-brand-text-secondary">
-                                    Platform: <span className="font-medium text-brand-primary">{AD_PLATFORMS.find(p => p.id === activePlatform)?.name}</span> | 
-                                    Objective: <span className="font-medium text-brand-primary">{AD_OBJECTIVES.find(o => o.id === selectedObjective)?.name}</span>
+                                    Platform: <span className="font-medium text-brand-text-primary">{AD_PLATFORMS.find(p => p.id === activePlatform)?.name}</span> | 
+                                    Objective: <span className="font-medium text-brand-text-primary">{AD_OBJECTIVES.find(o => o.id === selectedObjective)?.name}</span>
                                 </div>
                             </div>
                             
@@ -370,7 +371,7 @@ const PaidAdGeneratorPage: React.FC = () => {
                                         <h5 className="text-xs font-medium text-brand-text-secondary mb-2">
                                             💡 {AD_PLATFORMS.find(p => p.id === activePlatform)?.name} - {AD_OBJECTIVES.find(o => o.id === selectedObjective)?.name}
                                         </h5>
-                                        <div className="text-xs text-brand-text-tertiary space-y-0.5">
+                                        <div className="text-xs text-brand-text-primary space-y-0.5">
                                             {currentBestPractices.map((tip, index) => (
                                                 <div key={index}>{tip}</div>
                                             ))}
@@ -400,7 +401,8 @@ const PaidAdGeneratorPage: React.FC = () => {
                                             listing={listing} 
                                             headline={currentAdCopy?.headline || ''} 
                                             body={currentAdCopy?.body || ''} 
-                                            cta={currentAdCopy?.cta || ''} 
+                                            cta={currentAdCopy?.cta || ''}
+                                            platform={activePlatform}
                                         />
                                     </div>
                                 </div>
