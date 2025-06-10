@@ -1029,6 +1029,7 @@ ${data.amenities.map(amenity =>
               </div>
             </div>
 
+            {/* Price Comparison */}
             {listingPrice && (
               <div className="p-4 bg-gradient-to-r from-brand-accent/10 to-brand-primary/10 border border-brand-accent/20 rounded-lg backdrop-blur-sm">
                 <h5 className="font-semibold text-brand-text-primary mb-3 flex items-center">
@@ -1037,7 +1038,7 @@ ${data.amenities.map(amenity =>
                 </h5>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-brand-text-secondary">This Property:</span>
+                    <span className="text-sm text-brand-text-secondary">Current Listing:</span>
                     <span className="text-lg font-bold text-brand-accent">${listingPrice.toLocaleString()}</span>
                   </div>
                   <div className="flex items-center justify-between">
@@ -1059,6 +1060,27 @@ ${data.amenities.map(amenity =>
             )}
           </div>
         )}
+      </div>
+
+      {/* Data Source Disclaimer */}
+      <div className="mt-6 p-3 bg-brand-panel/50 border border-brand-border/50 rounded-lg">
+        <div className="flex items-start space-x-2">
+          <div className="flex-shrink-0 mt-0.5">
+            <svg className="w-4 h-4 text-brand-text-tertiary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div className="text-xs text-brand-text-tertiary leading-relaxed">
+            <p className="mb-1">
+              <strong>Data Sources:</strong> Information displayed comes from Google Places API, Google Custom Search API, 
+              public real estate listings, and AI-enhanced insights when real data is limited.
+            </p>
+            <p>
+              Property details are auto-filled from available public listings and may not reflect current conditions. 
+              Always verify information independently for accuracy.
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Section Manager Overlay */}

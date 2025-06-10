@@ -5,7 +5,6 @@ interface AddressAutocompleteProps {
   value: string;
   placeholder?: string;
   onAddressSelect: (address: string, lat?: number, lng?: number) => void;
-  className?: string;
 }
 
 interface PlacePrediction {
@@ -21,7 +20,6 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
   value,
   placeholder = "Start typing an address...",
   onAddressSelect,
-  className = ""
 }) => {
   const [suggestions, setSuggestions] = useState<PlacePrediction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -243,7 +241,7 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
           onBlur={handleBlur}
           onFocus={handleFocus}
           placeholder={placeholder}
-          className={`w-full pl-10 pr-10 ${className}`}
+          className="w-full bg-brand-input-bg border-brand-border rounded-lg text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary pl-10 pr-10 py-2"
           autoComplete="off"
         />
         
@@ -259,8 +257,6 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
           </div>
         )}
       </div>
-
-
 
       {/* Manual entry button - only show when search was performed but no suggestions found */}
       {!isLoading && 

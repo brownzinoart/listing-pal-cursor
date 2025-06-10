@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeftIcon as ArrowLeft, DocumentIcon as Save, ArrowUpTrayIcon as Upload, XMarkIcon as X } from "@heroicons/react/24/outline";
+import { ArrowLeftIcon as ArrowLeft, DocumentIcon as Save, ArrowUpTrayIcon as Upload, XMarkIcon as X, SparklesIcon } from "@heroicons/react/24/outline";
 import { useAuth } from "../../contexts/AuthContext";
 import * as listingService from "../../services/listingService";
 import Button from "../shared/Button";
 import AddressAutocomplete from "../shared/AddressAutocomplete";
-import { LocationContextWidget } from './LocationContextWidget';
 import NeighborhoodInsights from '../shared/NeighborhoodInsights';
 import { ContextCard } from '../../types/locationContext';
 
@@ -37,6 +36,7 @@ export default function ListingFormPage() {
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
   const [isFetching, setIsFetching] = useState(false);
+  const [isFetchingDetails, setIsFetchingDetails] = useState(false);
   const [selectedContextCards, setSelectedContextCards] = useState<ContextCard[]>([]);
   const [contextInsightsAdded, setContextInsightsAdded] = useState(false);
   const [contextError, setContextError] = useState<string | null>(null);
@@ -133,6 +133,53 @@ export default function ListingFormPage() {
     }
   };
 
+  const handleAddressSelect = async (address: string, lat?: number, lng?: number) => {
+    console.log('Selected address:', address, 'Latitude:', lat || 0, 'Longitude:', lng || 0);
+    
+    // Parse the address to populate individual fields
+    const addressParts = address.split(',').map(part => part.trim());
+    
+    // Set form data immediately for responsiveness
+    const newFormData = {
+      ...formData,
+      address: address,
+      latitude: lat || 0,
+      longitude: lng || 0,
+      streetAddress: addressParts[0] || "",
+      city: addressParts[1] || "",
+      state: addressParts[2] || "",
+      zipCode: addressParts[3] || ""
+    };
+    setFormData(newFormData);
+    setInsightsAddress(address);
+
+    // Now, automatically fetch details
+    setIsFetchingDetails(true);
+    setFormError(null);
+    try {
+      const details = await listingService.fetchPropertyDetails(address);
+      if (details) {
+        setFormData(prev => ({
+          ...prev,
+          bedrooms: parseInt(details.bedrooms) || prev.bedrooms,
+          bathrooms: parseFloat(details.bathrooms) || prev.bathrooms,
+          sqFt: parseInt(details.squareFootage) || prev.sqFt,
+          yearBuilt: parseInt(details.yearBuilt) || prev.yearBuilt,
+        }));
+      }
+    } catch (error: any) {
+      // Don't block the user, just inform them
+      console.error("💥 Autofill Error:", error);
+      console.error("💥 Error Type:", typeof error);
+      console.error("💥 Error Details:", JSON.stringify(error, null, 2));
+
+      const message = error.details || "We couldn't auto-fill property details. Please complete the form manually.";
+      setFormError(error.error ? `${error.error} ${message}`: message);
+    } finally {
+      setIsFetchingDetails(false);
+    }
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     let parsedValue: string | number = value;
@@ -157,26 +204,6 @@ export default function ListingFormPage() {
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
-  };
-
-  const handleAddressSelect = (address: string, lat?: number, lng?: number) => {
-    console.log('Selected address:', address, 'Latitude:', lat || 0, 'Longitude:', lng || 0);
-    
-    // Parse the address to populate individual fields
-    const addressParts = address.split(',').map(part => part.trim());
-    
-    setFormData(prev => ({
-      ...prev,
-      address: address,
-      latitude: lat || 0,
-      longitude: lng || 0,
-      streetAddress: addressParts[0] || "",
-      city: addressParts[1] || "",
-      state: addressParts[2] || "",
-      zipCode: addressParts[3] || ""
-    }));
-
-    setInsightsAddress(address);
   };
 
   const handleContextSelection = (cards: ContextCard[]) => {
@@ -249,99 +276,74 @@ export default function ListingFormPage() {
       education: 'SCHOOLS & EDUCATION',
       transportation: 'TRANSIT & TRANSPORTATION'
     };
-    return titles[category] || category.toUpperCase();
+    
+    return titles[category] || category.charAt(0).toUpperCase() + category.slice(1);
   };
 
   const getBaseDescription = (): string => {
-    // Remove any existing context section from description
     const currentDescription = formData.keyFeatures || '';
-    const contextStartIndex = currentDescription.indexOf('**NEIGHBORHOOD HIGHLIGHTS**');
     
-    if (contextStartIndex === -1) {
-      return currentDescription;
+    // Check if the neighborhood highlights section exists
+    const highlightsIndex = currentDescription.indexOf('\n\n**NEIGHBORHOOD HIGHLIGHTS**');
+    
+    if (highlightsIndex !== -1) {
+      // Return only the part before the highlights
+      return currentDescription.substring(0, highlightsIndex).trim();
     }
     
-    return currentDescription.substring(0, contextStartIndex).trim();
+    // If no highlights section, return the whole description
+    return currentDescription;
   };
 
   const removeContextFromDescription = () => {
-    const baseDescription = getBaseDescription();
     setFormData(prev => ({
       ...prev,
-      keyFeatures: baseDescription
+      keyFeatures: getBaseDescription()
     }));
   };
 
   const isValidAddressForContext = (address: string): boolean => {
-    // Check if address is substantial enough to fetch context
-    return address.length > 10 && 
-           address.includes(',');
+    // A simple check to ensure the address has at least street, city, and state
+    return address.split(',').length >= 3;
   };
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) {
-      setFormError("You must be logged in to save a listing.");
-      return;
-    }
-    
-    setFormError(null);
     setIsSubmitting(true);
+    setFormError(null);
 
-    // Validation
-    if (!formData.address.trim()) {
-      setFormError("Property address is required. Please select an address from the autocomplete suggestions.");
+    // Basic validation
+    if (!formData.address || !formData.price || !formData.bedrooms || !formData.bathrooms) {
+      setFormError("Please fill in all required fields: address, price, beds, and baths.");
       setIsSubmitting(false);
       return;
     }
-    if (formData.price <= 0 || formData.bedrooms <= 0 || formData.bathrooms <= 0 || formData.sqFt <= 0) {
-      setFormError("Please enter valid values for price, bedrooms, bathrooms, and square feet.");
-      setIsSubmitting(false);
-      return;
-    }
+
+    const listingDataForApi = {
+      userId: user!.id,
+      address: formData.address,
+      price: formData.price,
+      bedrooms: formData.bedrooms,
+      bathrooms: formData.bathrooms,
+      squareFootage: formData.sqFt,
+      yearBuilt: formData.yearBuilt,
+      propertyType: formData.propertyType,
+      keyFeatures: formData.keyFeatures,
+      images: uploadedImages.map(url => ({ url, label: '' })), // New image format
+      // No need to include fields that aren't in the core Listing type unless you extend it
+    };
 
     try {
-      // Use the selected address from Google Places
-      const fullAddress = formData.address || [formData.streetAddress, formData.city, formData.state, formData.zipCode]
-        .filter(part => part.trim())
-        .join(', ');
-        
-             const listingData = {
-         address: fullAddress,
-         bedrooms: formData.bedrooms,
-         bathrooms: formData.bathrooms,
-         squareFootage: formData.sqFt,
-         yearBuilt: formData.yearBuilt,
-         price: formData.price,
-         keyFeatures: formData.keyFeatures,
-         images: uploadedImages.map((url, index) => ({ url, name: `Image ${index + 1}` })),
-         userId: user.id,
-         // 10. SAVE HANDLING - Track context usage
-         contextInsights: {
-           used: contextInsightsAdded,
-           selectedCards: selectedContextCards.map(card => ({
-             id: card.id,
-             title: card.title,
-             category: card.category
-           })),
-           addedAt: new Date().toISOString()
-         }
-       };
-
-      let listing;
       if (isEditing && listingId) {
-        listing = await listingService.updateListing(listingId, listingData);
+        await listingService.updateListing(listingId, listingDataForApi);
+        navigate(`/listings/${listingId}`);
       } else {
-        listing = await listingService.createListing(listingData);
+        const newListing = await listingService.createListing(listingDataForApi);
+        navigate(`/listings/${newListing.id}`);
       }
-
-      if (listing && typeof listing === 'object' && 'id' in listing) {
-        setTimeout(() => {
-          navigate(`/listings/${listing.id}`);
-        }, 1500);
-      }
-    } catch (error) {
-      setFormError(`Failed to ${isEditing ? 'update' : 'create'} listing. Please try again.`);
+    } catch (err) {
+      setFormError("Failed to save the listing. Please try again.");
+      console.error(err);
     } finally {
       setIsSubmitting(false);
     }
@@ -350,336 +352,200 @@ export default function ListingFormPage() {
   if (isFetching) {
     return (
       <div className="min-h-screen bg-brand-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-brand-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-brand-text-primary text-lg">Loading listing data...</p>
-        </div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-primary"></div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-brand-background">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6">
-          <Link 
-            to={isEditing && listingId ? `/listings/${listingId}` : '/dashboard'}
-            className="inline-flex items-center text-sm text-brand-text-secondary hover:text-brand-primary transition-colors group mb-4"
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="flex items-center justify-between mb-8">
+          <Button 
+            onClick={handleBack}
+            variant="ghost" 
+            size="sm"
+            leftIcon={<ArrowLeft className="h-4 w-4" />}
           >
-            <ArrowLeft className="h-4 w-4 mr-2 group-hover:text-brand-primary" />
-            Back to {isEditing ? "Property Details" : "Dashboard"}
-          </Link>
-          <h1 className="text-3xl font-bold text-brand-text-primary mb-2">
-            {isEditing ? "Edit Listing" : "Add New Listing"}
+            Back
+          </Button>
+          <h1 className="text-3xl font-bold text-brand-text-primary text-center flex-grow">
+            {isEditing ? "Edit Property" : "Create New Listing"}
           </h1>
-          <p className="text-brand-text-secondary">
-            {isEditing ? "Update your property details" : "Enter the property details to create a new listing"}
-          </p>
+          <div className="w-24"></div> {/* Spacer to balance the back button */}
         </div>
 
-        <div className="bg-brand-panel rounded-2xl shadow-2xl border border-brand-border">
-          <div className="p-8 border-b border-brand-border">
-            <h2 className="text-2xl font-semibold text-brand-text-primary">Property Information</h2>
+        {formError && (
+          <div className="bg-red-500/10 text-red-400 text-sm p-3 rounded-lg mb-6 border border-red-500/20">
+            {formError}
           </div>
+        )}
+  
+        <div className="bg-brand-panel rounded-2xl shadow-2xl border border-brand-border">
           <div className="p-8">
             <form onSubmit={onSubmit} className="space-y-8">
-              {formError && (
-                <div className="mb-6 text-sm text-brand-danger bg-brand-danger/20 p-4 rounded-xl border border-brand-danger/30">
-                  {formError}
-                </div>
-              )}
-
               {/* Address Search */}
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-brand-text-secondary text-sm font-medium mb-3">Property Address</label>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-brand-text-secondary flex items-center">
+                  Property Address
+                  {isFetchingDetails && (
+                    <span className="ml-2 flex items-center text-xs text-brand-text-tertiary">
+                      <SparklesIcon className="h-4 w-4 mr-1 animate-pulse text-brand-accent"/>
+                      Auto-filling details...
+                    </span>
+                  )}
+                </label>
+                <div className="flex-grow">
                   <AddressAutocomplete
-                    value={formData.address}
-                    placeholder="Start typing the property address..."
                     onAddressSelect={handleAddressSelect}
-                    className="bg-brand-input-bg border-0 text-brand-text-primary placeholder-brand-text-tertiary rounded-xl px-4 py-4 text-base focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all duration-200"
+                    value={formData.address}
                   />
                 </div>
+                <p className="text-xs text-brand-text-tertiary">
+                  Start typing to search for an address. Select one to auto-fill location and property details.
+                </p>
               </div>
 
-              {/* Property Details Row 1 */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Property Details Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {/* Price */}
                 <div>
                   <label className="block text-brand-text-secondary text-sm font-medium mb-3">Price ($)</label>
-                  <input 
+                  <input
+                    type="number"
                     name="price"
-                    type="number" 
-                    placeholder="e.g. 750000" 
                     value={formData.price || ''}
                     onChange={handleInputChange}
-                    className="w-full bg-brand-input-bg border-0 text-brand-text-primary placeholder-brand-text-tertiary rounded-xl px-4 py-4 text-base focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all duration-200"
+                    placeholder="e.g., 500000"
+                    className="w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
                   />
-                  <p className="text-xs text-brand-text-tertiary mt-2">Enter the listing price in dollars</p>
                 </div>
+                {/* Bedrooms */}
                 <div>
                   <label className="block text-brand-text-secondary text-sm font-medium mb-3">Bedrooms</label>
-                  <div className="relative">
-                    <select 
-                      name="bedrooms"
-                      value={formData.bedrooms || ''}
-                      onChange={(e) => handleSelectChange(e.target.name, e.target.value)}
-                      className="w-full bg-brand-input-bg border-0 text-brand-text-primary rounded-xl px-4 py-4 text-base focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all duration-200 appearance-none cursor-pointer"
-                    >
-                      <option value="" className="text-brand-text-tertiary">Select</option>
-                      <option value="1">1</option>
-                      <option value="2">2</option>
-                      <option value="3">3</option>
-                      <option value="4">4</option>
-                      <option value="5">5</option>
-                      <option value="6">6+</option>
-                    </select>
-                    <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
-                      <svg className="w-5 h-5 text-brand-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </div>
-                  </div>
+                  <input
+                    type="number"
+                    name="bedrooms"
+                    value={formData.bedrooms || ''}
+                    onChange={handleInputChange}
+                    placeholder="e.g., 3"
+                    className="w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                  />
                 </div>
+                {/* Bathrooms */}
                 <div>
                   <label className="block text-brand-text-secondary text-sm font-medium mb-3">Bathrooms</label>
-                  <div className="relative">
-                    <select 
-                      name="bathrooms"
-                      value={formData.bathrooms || ''}
-                      onChange={(e) => handleSelectChange(e.target.name, e.target.value)}
-                      className="w-full bg-brand-input-bg border-0 text-brand-text-primary rounded-xl px-4 py-4 text-base focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all duration-200 appearance-none cursor-pointer"
-                    >
-                      <option value="" className="text-brand-text-tertiary">Select</option>
-                      <option value="1">1</option>
-                      <option value="1.5">1.5</option>
-                      <option value="2">2</option>
-                      <option value="2.5">2.5</option>
-                      <option value="3">3</option>
-                      <option value="3.5">3.5</option>
-                      <option value="4">4</option>
-                      <option value="5">5+</option>
-                    </select>
-                    <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
-                      <svg className="w-5 h-5 text-brand-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </div>
-                  </div>
+                  <input
+                    type="number"
+                    name="bathrooms"
+                    step="0.5"
+                    value={formData.bathrooms || ''}
+                    onChange={handleInputChange}
+                    placeholder="e.g., 2.5"
+                    className="w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                  />
+                </div>
+                {/* Square Feet */}
+                <div>
+                  <label className="block text-brand-text-secondary text-sm font-medium mb-3">Square Feet</label>
+                  <input
+                    type="number"
+                    name="sqFt"
+                    value={formData.sqFt || ''}
+                    onChange={handleInputChange}
+                    placeholder="e.g., 1800"
+                    className="w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                  />
                 </div>
               </div>
 
               {/* Property Details Row 2 */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <label className="block text-brand-text-secondary text-sm font-medium mb-3">Square Feet</label>
-                  <input 
-                    name="sqFt"
-                    type="number" 
-                    placeholder="e.g. 2500" 
-                    value={formData.sqFt || ''}
-                    onChange={handleInputChange}
-                    className="w-full bg-brand-input-bg border-0 text-brand-text-primary placeholder-brand-text-tertiary rounded-xl px-4 py-4 text-base focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all duration-200"
-                  />
-                  <p className="text-xs text-brand-text-tertiary mt-2">Enter the total square footage</p>
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Year Built */}
                 <div>
                   <label className="block text-brand-text-secondary text-sm font-medium mb-3">Year Built</label>
-                  <input 
+                  <input
+                    type="number"
                     name="yearBuilt"
-                    type="number" 
-                    placeholder="2025" 
-                    value={formData.yearBuilt}
+                    value={formData.yearBuilt || ''}
                     onChange={handleInputChange}
-                    className="w-full bg-brand-input-bg border-0 text-brand-text-primary placeholder-brand-text-tertiary rounded-xl px-4 py-4 text-base focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all duration-200"
+                    placeholder="e.g., 1998"
+                    className="w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
                   />
                 </div>
+                {/* Property Type */}
                 <div>
                   <label className="block text-brand-text-secondary text-sm font-medium mb-3">Property Type</label>
-                  <div className="relative">
-                    <select 
-                      name="propertyType"
-                      value={formData.propertyType}
-                      onChange={(e) => handleSelectChange(e.target.name, e.target.value)}
-                      className="w-full bg-brand-input-bg border-0 text-brand-text-primary rounded-xl px-4 py-4 text-base focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all duration-200 appearance-none cursor-pointer"
-                    >
-                      <option value="" className="text-brand-text-tertiary">Select Type</option>
-                      <option value="Single Family">Single Family</option>
-                      <option value="Townhouse">Townhouse</option>
-                      <option value="Condo">Condo</option>
-                      <option value="Multi-Family">Multi-Family</option>
-                      <option value="Land">Land</option>
-                      <option value="Commercial">Commercial</option>
-                    </select>
-                    <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
-                      <svg className="w-5 h-5 text-brand-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </div>
-                  </div>
+                  <input
+                    type="text"
+                    name="propertyType"
+                    value={formData.propertyType}
+                    onChange={handleInputChange}
+                    placeholder="e.g., Single Family"
+                    className="w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                  />
                 </div>
               </div>
-
-              {/* 5. JSX - Location Context Widget Integration - Positioned Under Property Details */}
-              {isValidAddressForContext(formData.address) && (
-                <div className="relative w-full overflow-hidden rounded-xl border border-brand-border bg-brand-panel p-6 my-8">
-                  {/* Visual separator */}
-                  <div className="relative mb-6">
-                    <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-brand-border" />
-                    </div>
-                    <div className="relative flex justify-center text-sm">
-                      <span className="px-3 bg-brand-panel text-brand-text-secondary font-medium">✨ Enhance with neighborhood insights</span>
-                    </div>
-                  </div>
-                  
-                  {/* Isolated container for Neighborhood Insights */}
-                  <div className="relative w-full overflow-hidden">
-                    <NeighborhoodInsights
-                      address={insightsAddress}
-                      listingPrice={formData.price ? (typeof formData.price === 'string' ? parseInt(formData.price) : formData.price) : undefined}
-                      onSectionAdd={(section, content) => {
-                        // Add neighborhood content to key features for AI generation
-                        const currentFeatures = formData.keyFeatures || '';
-                        const newFeatures = currentFeatures + (currentFeatures ? '\n\n' : '') + 
-                          `**NEIGHBORHOOD - ${section.toUpperCase()}**\n${content}`;
-                        
-                        handleInputChange({
-                          target: { name: 'keyFeatures', value: newFeatures }
-                        } as React.ChangeEvent<HTMLTextAreaElement>);
-                      }}
-                      onSectionRemove={(section, content) => {
-                        // Remove neighborhood content from key features
-                        const currentFeatures = formData.keyFeatures || '';
-                        const sectionHeader = `**NEIGHBORHOOD - ${section.toUpperCase()}**`;
-                        
-                        // Find and remove the section content
-                        const lines = currentFeatures.split('\n');
-                        const startIndex = lines.findIndex(line => line.trim() === sectionHeader);
-                        
-                        if (startIndex !== -1) {
-                          // Find the end of this section (next section or end of content)
-                          let endIndex = lines.length;
-                          for (let i = startIndex + 1; i < lines.length; i++) {
-                            if (lines[i].trim().startsWith('**') && lines[i].trim().endsWith('**')) {
-                              endIndex = i;
-                              break;
-                            }
-                          }
-                          
-                          // Remove the section content
-                          const newLines = [
-                            ...lines.slice(0, startIndex),
-                            ...lines.slice(endIndex)
-                          ];
-                          
-                          // Clean up extra empty lines
-                          const cleanedFeatures = newLines
-                            .join('\n')
-                            .replace(/\n\n\n+/g, '\n\n')
-                            .trim();
-                          
-                          handleInputChange({
-                            target: { name: 'keyFeatures', value: cleanedFeatures }
-                          } as React.ChangeEvent<HTMLTextAreaElement>);
-                        }
-                      }}
-                      selectedSections={[]} // Initialize empty, will be managed by component
-                      onSectionToggle={(sections) => {
-                        // Handle section toggle for listing page display
-                        console.log('Selected sections for listing page:', sections);
-                      }}
-                    />
-                  </div>
-                  
-                  {/* Selected count feedback - branded */}
-                  {selectedContextCards.length > 0 && (
-                    <div className="bg-gradient-to-r from-brand-primary/10 to-brand-accent/10 border border-brand-primary/30 rounded-xl p-4 mt-6">
-                      <div className="flex items-center space-x-2">
-                        <svg className="h-5 w-5 text-brand-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        <span className="text-brand-text-primary font-medium">
-                          {selectedContextCards.length} neighborhood insight{selectedContextCards.length === 1 ? '' : 's'} added to listing
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Error display - branded */}
-                  {contextError && (
-                    <div className="bg-brand-card border border-brand-danger/30 rounded-xl p-4 mt-6">
-                      <div className="flex items-center space-x-2">
-                        <svg className="h-5 w-5 text-brand-danger" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span className="text-brand-text-primary text-sm">{contextError}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Key Features with Context Preview */}
-              <div className="space-y-2 mt-8">
-                <label htmlFor="keyFeatures" className="block text-brand-text-secondary text-sm font-medium">
-                  Key Features
-                  {contextInsightsAdded && (
-                    <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      + Neighborhood insights
-                    </span>
-                  )}
+              
+              {/* Key Features / Description */}
+              <div>
+                <label className="block text-brand-text-secondary text-sm font-medium mb-3">
+                  Property Description / Key Features
                 </label>
-                <textarea 
-                  id="keyFeatures"
+                <textarea
                   name="keyFeatures"
-                  placeholder="Updated kitchen, hardwood floors, two-car garage, swimming pool..." 
-                  className="w-full bg-brand-input-bg border-0 text-brand-text-primary placeholder-brand-text-tertiary rounded-xl px-4 py-4 text-base focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all duration-200 min-h-[120px] resize-none"
                   value={formData.keyFeatures}
                   onChange={handleInputChange}
+                  rows={6}
+                  placeholder="Enter key features, property description, and neighborhood highlights..."
+                  className="w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
                 />
-                
-                {/* Character count with context awareness */}
-                <div className="flex justify-between text-xs text-brand-text-tertiary">
-                  <span>
-                    {contextInsightsAdded ? 'Base description + neighborhood insights' : 'Property description'}
-                  </span>
-                  <span>{formData.keyFeatures.length} characters</span>
-                </div>
               </div>
 
+              {/* Neighborhood Insights */}
+              {isValidAddressForContext(insightsAddress) && (
+                <NeighborhoodInsights 
+                  address={insightsAddress}
+                  listingPrice={formData.price}
+                  onSectionAdd={(section, content) => handleContextSelection([{ 
+                    id: section, 
+                    title: section, 
+                    category: section,
+                    marketingCopy: content
+                  } as ContextCard])}
+                  onSectionRemove={(section) => handleContextSelection([])}
+                />
+              )}
+
               {/* Image Upload */}
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-brand-text-secondary text-sm font-medium mb-3">Property Images</label>
-                  <div className="mt-2">
-                    <div className="flex items-center justify-center w-full">
-                      <label htmlFor="image-upload" className="flex flex-col items-center justify-center w-full h-40 border-2 border-brand-border/50 border-dashed rounded-xl cursor-pointer bg-brand-input-bg/50 hover:bg-brand-input-bg/70 transition-all duration-200">
-                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                          <Upload className="w-10 h-10 mb-4 text-brand-text-tertiary" />
-                          <p className="mb-2 text-base text-brand-text-secondary">
-                            <span className="font-semibold">Click to upload</span> or drag and drop
-                          </p>
-                          <p className="text-sm text-brand-text-tertiary">PNG, JPG or JPEG (MAX. 10MB)</p>
-                        </div>
-                        <input 
-                          id="image-upload" 
-                          type="file" 
-                          className="hidden" 
-                          multiple 
-                          accept="image/*"
-                          onChange={handleImageUpload}
-                        />
+              <div>
+                <label className="block text-brand-text-secondary text-sm font-medium mb-3">Upload Images</label>
+                <div className="mt-2 flex justify-center px-6 pt-5 pb-6 border-2 border-brand-border border-dashed rounded-lg bg-brand-input-bg">
+                  <div className="space-y-1 text-center">
+                    <Upload className="mx-auto h-12 w-12 text-brand-text-tertiary" />
+                    <div className="flex text-sm text-brand-text-secondary">
+                      <label
+                        htmlFor="file-upload"
+                        className="relative cursor-pointer bg-brand-background rounded-md font-medium text-brand-primary hover:text-brand-accent focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-brand-primary"
+                      >
+                        <span>Upload files</span>
+                        <input id="file-upload" name="file-upload" type="file" className="sr-only" multiple onChange={handleImageUpload} />
                       </label>
+                      <p className="pl-1">or drag and drop</p>
                     </div>
+                    <p className="text-xs text-brand-text-tertiary">PNG, JPG up to 10MB</p>
                   </div>
                 </div>
-
-                {/* Image Preview Grid */}
-                {uploadedImages.length > 0 && (
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              </div>
+              
+              {/* Image Previews */}
+              {uploadedImages.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-medium text-brand-text-primary mb-4">Image Previews</h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                     {uploadedImages.map((file, index) => (
-                      <div key={index} className="relative">
-                        <div className="aspect-square bg-brand-card rounded-xl overflow-hidden">
+                      <div key={index} className="relative group">
+                        <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-lg bg-gray-200">
                           <img 
                             src={file} 
                             alt={`Preview ${index + 1}`}
@@ -697,18 +563,11 @@ export default function ListingFormPage() {
                       </div>
                     ))}
                   </div>
-                )}
-              </div>
+                </div>
+              )}
 
               {/* Form Actions */}
               <div className="flex justify-end space-x-4 pt-8 border-t border-brand-border">
-                <Button 
-                  type="button" 
-                  variant="secondary" 
-                  onClick={handleBack}
-                >
-                  Cancel
-                </Button>
                 <Button 
                   type="submit" 
                   variant="primary"

@@ -129,7 +129,20 @@ export const LocationContextWidget: React.FC<LocationContextWidgetProps> = ({
   }
 
   // Main content
-  if (!contextData) return null;
+  if (!contextData || !contextData.cards) return null;
+
+  // Helper function to categorize cards on the client-side
+  const categorizeCards = (cards: ContextCard[]) => {
+    return {
+      location: cards.filter(c => ['walkability', 'climate'].includes(c.id)),
+      community: cards.filter(c => ['demographics', 'safety'].includes(c.id)),
+      amenities: cards.filter(c => ['dining', 'shopping', 'parks', 'recreation'].includes(c.id)),
+      education: cards.filter(c => ['schools', 'libraries'].includes(c.id)),
+      transportation: cards.filter(c => ['transit', 'commute'].includes(c.id))
+    };
+  };
+
+  const categorizedCards = categorizeCards(contextData.cards);
 
   return (
     <div className={`relative w-full overflow-hidden ${className}`}>
@@ -150,7 +163,7 @@ export const LocationContextWidget: React.FC<LocationContextWidgetProps> = ({
       <div className="w-full max-h-[500px] overflow-y-auto overflow-x-hidden rounded-xl border border-brand-border bg-brand-card p-4">
         {/* Context cards organized by category */}
         <div className="space-y-6 w-full">
-          {Object.entries(contextData.categorizedCards).map(([category, cards]) => (
+          {Object.entries(categorizedCards).map(([category, cards]) => (
             cards.length > 0 && (
               <div key={category} className="space-y-4 w-full">
                 {/* Category header - improved visibility */}
@@ -231,7 +244,7 @@ const ContextCard: React.FC<{
           </div>
           <div className="flex-1 min-w-0 w-full">
             <h4 className="font-bold text-gray-900 text-base mb-1 leading-tight truncate">{card.title}</h4>
-            {card.preview.quickStat && (
+            {card.preview?.quickStat && (
               <div className={`font-bold text-xl ${
                 isSelected ? 'text-blue-600' : 'text-blue-500'
               }`}>
@@ -248,12 +261,12 @@ const ContextCard: React.FC<{
           WebkitBoxOrient: 'vertical',
           overflow: 'hidden'
         }}>
-          {card.preview.headline}
+          {card.preview?.headline || ''}
         </p>
 
         {/* Key points - with scrollable area when expanded */}
         <div className={`space-y-2 w-full ${isExpanded ? 'max-h-32 overflow-y-auto' : ''}`}>
-          {card.preview.bullets.slice(0, isExpanded ? undefined : 2).map((bullet, idx) => (
+          {(card.preview?.bullets || []).slice(0, isExpanded ? undefined : 2).map((bullet, idx) => (
             <div key={idx} className="flex items-start space-x-3 text-sm w-full">
               <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
                 isSelected ? 'bg-blue-500' : 'bg-gray-400'
@@ -264,7 +277,7 @@ const ContextCard: React.FC<{
         </div>
 
         {/* Expand/collapse */}
-        {card.preview.bullets.length > 2 && (
+        {(card.preview?.bullets || []).length > 2 && (
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -272,7 +285,7 @@ const ContextCard: React.FC<{
             }}
             className="mt-4 text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors flex items-center space-x-1 w-full"
           >
-            <span>{isExpanded ? 'Show less' : `Show ${card.preview.bullets.length - 2} more details`}</span>
+            <span>{isExpanded ? 'Show less' : `Show ${(card.preview?.bullets || []).length - 2} more details`}</span>
             <svg className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
@@ -290,7 +303,7 @@ const ContextCard: React.FC<{
             </div>
             <div className="text-sm text-gray-800 leading-relaxed">
               <span className="text-gray-500">"</span>
-              {card.marketingCopy}
+              {card.marketingCopy || ''}
               <span className="text-gray-500">"</span>
             </div>
           </div>

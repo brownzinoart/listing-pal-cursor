@@ -57,7 +57,7 @@ const WorkflowControls: React.FC<WorkflowControlsProps> = ({
                 leftIcon={<ArrowLeftIcon className="h-4 w-4" />}
                 className="bg-white/10 backdrop-blur-sm hover:bg-white/20 border-white/20 text-brand-text-primary"
               >
-                Back to {previousTool.name}
+                Back
               </Button>
             </Link>
           ) : (
@@ -68,7 +68,7 @@ const WorkflowControls: React.FC<WorkflowControlsProps> = ({
                 leftIcon={<ArrowLeftIcon className="h-4 w-4" />}
                 className="bg-white/10 backdrop-blur-sm hover:bg-white/20 border-white/20 text-brand-text-primary"
               >
-                Back to Property
+                Back
               </Button>
             </Link>
           )}

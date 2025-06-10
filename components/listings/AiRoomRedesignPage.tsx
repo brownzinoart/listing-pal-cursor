@@ -248,66 +248,49 @@ const AiRoomRedesignPage: React.FC = () => {
     return (
       <div className="text-center py-10">
         <p className="text-brand-danger bg-red-900/30 p-4 rounded-md max-w-md mx-auto">{error}</p>
-        <Button variant="secondary" onClick={() => navigate('/dashboard')} className="mt-4">Go to Dashboard</Button>
+        <Link to="/dashboard" className="mt-4 inline-block">
+          <Button variant="secondary">Go to Dashboard</Button>
+        </Link>
       </div>
     );
   }
   
   if (!listing) {
-     return <p className="text-center text-brand-text-secondary py-10">Listing data is unavailable or you do not have permission.</p>;
+    return (
+      <div className="text-center py-10">
+        <p className="text-brand-warning">Listing not found.</p>
+        <Link to="/dashboard" className="mt-4 inline-block">
+          <Button variant="secondary">Go to Dashboard</Button>
+        </Link>
+      </div>
+    );
   }
 
   const handleConfirmAndSave = async () => {
-    if (!generatedRedesign) {
-      setError("Please generate a room redesign before saving.");
+    if (!listingId || !generatedRedesign || !uploadedImage) {
+      alert("No redesigned image to save.");
       return;
     }
-    
-    if (!listingId || !listing || !user) {
-      setError("Missing required data to save redesign.");
-      return;
-    }
-    
+
+    // Create a new image object
+    const newImage = {
+      // For now, we are just saving the URL. In a real app, you'd upload this to your own storage.
+      url: generatedRedesign, 
+      label: `${selectedDesignStyle} Redesign of ${selectedRoomType}`,
+      isRedesign: true,
+      originalImageUrl: uploadedImage,
+    };
+
+    // Add the new image to the existing list of images
+    const updatedImages = [...(listing.images || []), newImage];
+
     try {
-      // Create the room design data to save
-      const roomDesign = {
-        originalImageUrl: uploadedImage!,
-        styleId: selectedDesignStyle!,
-        redesignedImageUrl: generatedRedesign,
-        prompt: designPrompt || undefined,
-        createdAt: new Date().toISOString()
-      };
-      
-      // Get existing room designs or create new array
-      const existingDesigns = listing.generatedRoomDesigns || [];
-      const updatedDesigns = [...existingDesigns, roomDesign];
-      
-      // Update the listing with the new room design
-      await listingService.updateListing(listingId, { 
-        ...listing, 
-        generatedRoomDesigns: updatedDesigns,
-        userId: user.id 
-      });
-      
-      // If in workflow, go to next tool
-      if (isInWorkflow) {
-        const currentIndex = workflowTools.indexOf('interior');
-        const nextToolId = workflowTools[currentIndex + 1];
-        
-        if (nextToolId) {
-          const nextTool = TOOLKIT_TOOLS.find(tool => tool.id === nextToolId);
-          if (nextTool && nextTool.pathSuffix) {
-            navigate(`/listings/${listingId}${nextTool.pathSuffix}?workflow=${workflowParam}`);
-            return;
-          }
-        }
-      }
-      
-      // Default: go back to listing
+      await listingService.updateListing(listingId, { images: updatedImages });
+      // Optionally, navigate away or show a success message
       navigate(`/listings/${listingId}`);
     } catch (error) {
-      console.error('Save error:', error);
-      setError('Failed to save room redesign. Please try again.');
+      console.error("Failed to save redesigned image:", error);
+      alert("Failed to save image. Please try again.");
     }
   };
 
@@ -317,7 +300,7 @@ const AiRoomRedesignPage: React.FC = () => {
         <div className="mb-6">
           <Link to={getPreviousStepPath()} className="inline-flex items-center text-sm text-brand-text-secondary hover:text-brand-primary transition-colors group">
             <ArrowLeftIcon className="h-4 w-4 mr-2 group-hover:text-brand-primary" />
-            Back to {getPreviousStepName()}
+            Back
           </Link>
         </div>
         <h1 className="text-3xl font-bold text-brand-text-primary mb-6">Interior Reimagined</h1>
@@ -370,16 +353,16 @@ const AiRoomRedesignPage: React.FC = () => {
             {fileError && <p className="text-xs text-brand-danger mt-2">{fileError}</p>}
           </div>
           
-          <Input
-            label="Optional: Design Prompt (e.g., 'add a velvet green sofa')"
-            id="designPrompt"
-            name="designPrompt"
-            value={designPrompt}
-            onChange={(e) => setDesignPrompt(e.target.value)}
-            placeholder="Describe specific changes or additions..."
-            inputClassName="text-sm"
-            variant="glass"
-          />
+          <div className="flex-1">
+            <Input 
+                type="text"
+                placeholder="e.g., add a modern coffee table and a large plant"
+                value={designPrompt}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setDesignPrompt(e.target.value)}
+                className="w-full text-sm"
+                variant="gradient"
+            />
+          </div>
         </div>
 
         {/* Room Type & Design Style Selection (Tabbed) */}

@@ -1,4 +1,3 @@
-
 import { Listing, ListingImage } from '../types';
 
 const LISTINGS_KEY = 'realtyboost_listings';
@@ -90,5 +89,22 @@ export const deleteListing = async (id: string): Promise<boolean> => {
     return true;
   }
   return false;
+};
+
+export const fetchPropertyDetails = async (address: string): Promise<any> => {
+  const response = await fetch('/api/fetch-property-details', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ address }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw errorData;
+  }
+
+  return response.json();
 };
     

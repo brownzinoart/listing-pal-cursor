@@ -191,7 +191,7 @@ Best regards,
         <div className="mb-6">
           <Link to={getPreviousStepPath()} className="inline-flex items-center text-sm text-brand-text-secondary hover:text-brand-primary transition-colors group">
             <ArrowLeftIcon className="h-4 w-4 mr-2 group-hover:text-brand-primary" />
-            Back to {getPreviousStepName()}
+            Back
           </Link>
         </div>
         <h1 className="text-3xl font-bold text-brand-text-primary mb-6">Generate Email Campaign</h1>
