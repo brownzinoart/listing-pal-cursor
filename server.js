@@ -508,6 +508,37 @@ const getPlaceCoordinates = async (address) => {
     }
 };
 
+const getMarketAnalysis = (coordinates) => {
+    // Simulate market data based on location.
+    // This is a placeholder and should be replaced with a real estate data API for production.
+    const isUrban = Math.random() > 0.5; // simple check
+    const basePrice = isUrban ? 550000 : 350000;
+    const priceFluctuation = (Math.random() - 0.5) * 100000;
+    const priceChange = (Math.random() * 8 - 2).toFixed(1);
+
+    return {
+        medianPrice: Math.round((basePrice + priceFluctuation) / 1000) * 1000,
+        priceChange: `${priceChange > 0 ? '+' : ''}${priceChange}%`,
+        daysOnMarket: isUrban ? 25 + Math.floor(Math.random() * 20) : 45 + Math.floor(Math.random() * 30),
+        inventory: isUrban ? 'Low' : 'Medium',
+    };
+};
+
+const getDemographics = (coordinates) => {
+    // Simulate demographic data based on location.
+    // In a real application, this would come from a Census API or similar service.
+    const isUrban = Math.random() > 0.6; // Higher threshold for urban demographics
+    const baseIncome = isUrban ? 95000 : 62000;
+    const incomeFluctuation = (Math.random() - 0.4) * 40000;
+
+    return {
+        medianAge: isUrban ? 35 + Math.floor(Math.random() * 5) : 42 + Math.floor(Math.random() * 8),
+        medianIncome: Math.round((baseIncome + incomeFluctuation) / 1000) * 1000,
+        familyFriendly: parseFloat((isUrban ? 6.5 + Math.random() * 2 : 8 + Math.random() * 1.5).toFixed(1)),
+        diversityIndex: parseFloat((isUrban ? 7 + Math.random() * 2 : 5 + Math.random() * 2).toFixed(1)),
+    };
+};
+
 const searchNearbyPlaces = async (coordinates, type, radius = 16093) => { // 10 miles in meters
     try {
         const apiKey = process.env.VITE_GOOGLE_MAPS_API_KEY;
@@ -550,12 +581,17 @@ app.post('/api/listings/context', async (req, res) => {
             searchNearbyPlaces(coordinates, 'store'),
         ]);
 
+        const marketTrends = getMarketAnalysis(coordinates);
+        const demographics = getDemographics(coordinates);
+
         const responseData = {
             cards: [
                 { id: 'schools', fullData: schools },
                 { id: 'dining', fullData: dining },
                 { id: 'shopping', fullData: shopping },
+                { id: 'demographics', fullData: demographics },
             ],
+            marketTrends,
         };
 
         res.status(200).json(responseData);

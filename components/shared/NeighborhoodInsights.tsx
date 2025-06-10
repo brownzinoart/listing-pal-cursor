@@ -53,6 +53,7 @@ const mockNeighborhoodData = {
     "Easy access to downtown (15 min)",
     "Low crime rate - 40% below national average"
   ],
+  schoolDistrictSummary: "This property is part of a well-regarded school district known for strong academic programs.",
   dataAvailability: {
     schools: true,
     amenities: true,
@@ -258,6 +259,7 @@ const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({
       walkScore: aiData.walkability?.walkScore || mockNeighborhoodData.walkScore,
       transitScore: aiData.walkability?.transitScore || mockNeighborhoodData.transitScore,
       bikeScore: aiData.walkability?.bikeScore || mockNeighborhoodData.bikeScore,
+      schoolDistrictSummary: aiData.schoolDistrictSummary || "General school district information is available.",
       dataAvailability: {
         schools: schools.length > 0,
         amenities: amenities.length > 0,
@@ -361,6 +363,38 @@ const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({
       const hasRestaurants = currentData.dining && currentData.dining.length > 0;
       const hasShopping = currentData.shopping && currentData.shopping.length > 0;
 
+      // Build a dynamic prompt based on what's missing.
+      const missingDataInstructions = [];
+      if (!hasSchools) {
+        missingDataInstructions.push('- A `schools` array with 3-5 nearby schools, including `name`, `rating` (1-10), `distance`, and `type`.');
+      }
+      if (!hasRestaurants || !hasShopping) {
+        missingDataInstructions.push('- An `amenities` array with 5 popular local restaurants, cafes, and shops, including `name`, `category`, `distance`, and an appropriate emoji `icon`.');
+      }
+
+      const prompt = `
+        For the address "${address}", provide the following information in a structured JSON format. 
+        
+        ALWAYS PROVIDE THE FOLLOWING:
+        - A "walkability" object with "walkScore", "transitScore", and "bikeScore" (all numbers out of 100), plus a brief "description".
+        - A "highlights" array with 4-5 compelling, specific bullet points about living in this neighborhood. Use the real data below for context to make these highlights more relevant.
+
+        ${missingDataInstructions.length > 0 ? `ONLY PROVIDE THESE IF MISSING:\n${missingDataInstructions.join('\n')}` : ''}
+      
+        REAL DATA CONTEXT (Use this to improve highlights, but do not repeat it in the output):
+        - Schools: ${hasSchools ? 'Provided' : 'Missing'}
+        - Dining/Shopping: ${hasRestaurants && hasShopping ? 'Provided' : 'Missing'}
+        
+        Return JSON output following this exact schema. If a missing category is not requested, return an empty array for it.
+        {
+          "schools": [],
+          "amenities": [],
+          "walkability": { "walkScore": 88, "transitScore": 75, "bikeScore": 92, "description": "A great area for walking." },
+          "highlights": ["Highlight 1", "Highlight 2"],
+          "schoolDistrictSummary": "A brief, one-sentence summary of the local school district."
+        }
+      `;
+
       // CHANGED: Added a 10-mile radius requirement to the prompt for more relevant results.
       const response = await fetch('/api/gemini/neighborhood-insights', {
         method: 'POST',
@@ -369,34 +403,7 @@ const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({
         },
         body: JSON.stringify({
           address: address,
-          prompt: `Generate realistic neighborhood data for: ${address}
-
-LOCATION CONTEXT: Analyze this specific address and generate data appropriate for this exact geographic location, considering:
-- Neighborhood type (urban/suburban/rural)
-- Regional characteristics and typical amenities
-- Local business patterns and naming conventions
-- School district boundaries and typical ratings for this area
-
-CURRENT DATA STATUS:
-- Schools: ${hasSchools ? 'AVAILABLE' : 'MISSING'}
-- Restaurants: ${hasRestaurants ? 'AVAILABLE' : 'MISSING'}
-- Shopping: ${hasShopping ? 'AVAILABLE' : 'MISSING'}
-
-REQUIREMENTS:
-1. Generate ONLY missing categories.
-2. Use realistic business names that would exist in this specific area.
-3. Base distances on actual neighborhood layouts within a 10-MILE RADIUS.
-4. Provide school ratings appropriate for this district.
-5. Include walkability scores based on neighborhood density.
-6. Add 3-4 neighborhood highlights specific to this location.
-
-Return JSON format:
-{
-  "schools": [{"name": "...", "rating": 8, "distance": "X miles", "type": "Elementary"}],
-  "amenities": [{"name": "...", "category": "Restaurant", "distance": "X miles", "icon": "🍽️"}],
-  "walkability": { "walkScore": 75, "transitScore": 65, "bikeScore": 70, "description": "..." },
-  "highlights": ["Specific neighborhood insight", "Local character detail", "Area advantage"]
-}`,
+          prompt: prompt,
           maxTokens: 1000,
           temperature: 0.3
         }),
@@ -467,40 +474,39 @@ Return JSON format:
     let aiEnhancedHighlights: string[] = [];
     let aiWalkabilityData: any = null;
     
-    // Check if we need AI enhancement
-    const needsAIEnhancement = !hasRealSchools || !hasRealAmenities;
+    // ALWAYS call AI for overview data (walkability, highlights)
+    // and to fill in gaps for schools/amenities if needed.
+    const currentRealData = {
+      schools: hasRealSchools ? schools : [],
+      dining: hasRealAmenities ? restaurantCard?.fullData : [],
+      shopping: hasRealAmenities ? shoppingCard?.fullData : [],
+      parks: contextData.cards?.find((c: any) => c.id === 'parks')?.fullData || [],
+      transit: contextData.cards?.find((c: any) => c.id === 'transit')?.fullData || []
+    };
+
+    const aiData = await generateAIFallbackData(currentAddress, currentRealData);
     
-    if (needsAIEnhancement && currentAddress) {
-      // Pass current real data so AI knows what's missing
-      const currentRealData = {
+    if (aiData) {
+      // Use the new mergeAIWithRealData function for better integration
+      const realData = {
         schools: hasRealSchools ? schools : [],
-        dining: hasRealAmenities ? restaurantCard?.fullData : [],
-        shopping: hasRealAmenities ? shoppingCard?.fullData : [],
-        parks: contextData.cards?.find((c: any) => c.id === 'parks')?.fullData || [],
-        transit: contextData.cards?.find((c: any) => c.id === 'transit')?.fullData || []
+        amenities: hasRealAmenities ? amenities : [],
+        highlights: [] // Will be generated by mergeAIWithRealData
       };
 
-      const aiData = await generateAIFallbackData(currentAddress, currentRealData);
-      if (aiData) {
-        // Use the new mergeAIWithRealData function for better integration
-        const realData = {
-          schools: hasRealSchools ? schools : [],
-          amenities: hasRealAmenities ? amenities : [],
-          highlights: [] // Will be generated by mergeAIWithRealData
-        };
-
-        const mergedData = mergeAIWithRealData(realData, aiData, currentAddress);
-        
-        // Update our variables with merged data
-        schools = mergedData.schools;
-        amenities = mergedData.amenities;
-        aiEnhancedHighlights = mergedData.highlights;
-        aiWalkabilityData = {
-          walkScore: mergedData.walkScore,
-          transitScore: mergedData.transitScore,
-          bikeScore: mergedData.bikeScore
-        };
-      }
+      const mergedData = mergeAIWithRealData(realData, aiData, currentAddress);
+      
+      // Update our variables with merged data
+      schools = mergedData.schools;
+      amenities = mergedData.amenities;
+      aiEnhancedHighlights = mergedData.highlights;
+      aiWalkabilityData = {
+        walkScore: mergedData.walkScore,
+        transitScore: mergedData.transitScore,
+        bikeScore: mergedData.bikeScore
+      };
+      
+      setData(prevData => ({ ...prevData, schoolDistrictSummary: mergedData.schoolDistrictSummary }));
     }
 
     // Track data availability for each section (including AI-enhanced)
@@ -521,7 +527,9 @@ Return JSON format:
       ...mockNeighborhoodData, // Start with mock as base
       schools,
       amenities,
+      marketTrends: contextData.marketTrends || mockNeighborhoodData.marketTrends,
       demographics: contextData.cards?.find((card: any) => card.id === 'demographics')?.fullData || mockNeighborhoodData.demographics,
+      schoolDistrictSummary: aiData?.schoolDistrictSummary || mockNeighborhoodData.schoolDistrictSummary,
       dataAvailability, // Add this to track what data is real
       dataSources, // Track whether data is real or AI-generated
       // Use AI walkability data if available, otherwise use mock
@@ -892,7 +900,7 @@ ${data.amenities.map(amenity =>
             )}
             <div className="mt-6 p-4 bg-brand-primary/10 border border-brand-primary/20 rounded-lg backdrop-blur-sm">
               <p className="text-sm text-brand-text-secondary">
-                <strong className="text-brand-primary">School District:</strong> This property is in an award-winning school district with a 95% graduation rate.
+                <strong className="text-brand-primary">School District:</strong> {data.schoolDistrictSummary}
               </p>
             </div>
           </div>
