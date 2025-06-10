@@ -92,6 +92,8 @@ export const deleteListing = async (id: string): Promise<boolean> => {
 };
 
 export const fetchPropertyDetails = async (address: string): Promise<any> => {
+  console.log('🌐 Making API call to /api/fetch-property-details with address:', address);
+  
   const response = await fetch('/api/fetch-property-details', {
     method: 'POST',
     headers: {
@@ -100,11 +102,16 @@ export const fetchPropertyDetails = async (address: string): Promise<any> => {
     body: JSON.stringify({ address }),
   });
 
+  console.log('📡 API Response status:', response.status, response.statusText);
+
   if (!response.ok) {
     const errorData = await response.json();
+    console.error('❌ API Error response:', errorData);
     throw errorData;
   }
 
-  return response.json();
+  const data = await response.json();
+  console.log('✅ API Success response:', data);
+  return data;
 };
     

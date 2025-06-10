@@ -940,10 +940,33 @@ app.post('/api/fetch-property-details', async (req, res) => {
             return res.status(404).json({ error: 'Could not find a public listing for this address.' });
         }
 
-        console.log(`Found snippet: ${firstResult.snippet}`);
+        console.log(`🔎 Found search snippet:`, firstResult.snippet);
+        console.log(`🔗 Search result URL:`, firstResult.link);
+        console.log(`📋 Search result title:`, firstResult.title);
 
         // Step 2: Use Gemini to extract structured data from the search snippet.
-        const geminiPrompt = `From the following text, extract the number of bedrooms, bathrooms, square footage, and the year built. Your response MUST be a raw JSON object with keys: "bedrooms", "bathrooms", "squareFootage", and "yearBuilt". If a value is not found, use an empty string "" as the value.\n\nText: "${firstResult.snippet}"\n\nExample Response:\n{\n  "bedrooms": "3",\n  "bathrooms": "2",\n  "squareFootage": "1850",\n  "yearBuilt": "1998"\n}`;
+        const geminiPrompt = `From the following real estate listing text, extract these specific details. Your response MUST be a raw JSON object with exactly these keys: "price", "bedrooms", "bathrooms", "squareFootage", "yearBuilt", and "propertyType". 
+
+EXTRACTION RULES:
+- price: Look for dollar amounts, sale prices, asking prices, listing prices (extract number only, no $ or commas)
+- bedrooms: Number of bedrooms, beds, BR
+- bathrooms: Number of bathrooms, baths, BA (include decimals like 2.5)
+- squareFootage: Square feet, sq ft, sqft (number only)
+- yearBuilt: Year built, built in, construction year
+- propertyType: Single Family, Townhouse, Condo, etc.
+- If ANY value is not found, use an empty string ""
+
+Text to analyze: "${firstResult.snippet}"
+
+Required JSON format:
+{
+  "price": "525000",
+  "bedrooms": "3", 
+  "bathrooms": "2.5",
+  "squareFootage": "1850",
+  "yearBuilt": "1998",
+  "propertyType": "Single Family"
+}`;
         
         if (!GeminiService) {
             return res.status(500).json({ error: 'Gemini AI service not available.' });
@@ -961,8 +984,23 @@ app.post('/api/fetch-property-details', async (req, res) => {
 
         const propertyDetails = JSON.parse(jsonString[0]);
 
-        console.log('Extracted Property Details:', propertyDetails);
-        res.json(propertyDetails);
+        console.log('🔍 Raw AI Response:', extractedData);
+        console.log('📊 Extracted Property Details:', propertyDetails);
+        console.log('💰 Price extracted:', propertyDetails.price);
+        console.log('🏠 Property Type extracted:', propertyDetails.propertyType);
+        
+        // Ensure all expected fields are present, even if empty
+        const completeDetails = {
+            price: propertyDetails.price || "",
+            bedrooms: propertyDetails.bedrooms || "",
+            bathrooms: propertyDetails.bathrooms || "",
+            squareFootage: propertyDetails.squareFootage || "",
+            yearBuilt: propertyDetails.yearBuilt || "",
+            propertyType: propertyDetails.propertyType || ""
+        };
+        
+        console.log('📤 Final response being sent:', completeDetails);
+        res.json(completeDetails);
 
     } catch (error) {
         console.error('Error fetching property details:', error.response ? error.response.data : error.message);
@@ -973,13 +1011,17 @@ app.post('/api/fetch-property-details', async (req, res) => {
             
             // Generate realistic mock data based on address
             const mockData = {
+                price: (Math.floor(Math.random() * 300000) + 300000).toString(), // $300k-$600k
                 bedrooms: Math.floor(Math.random() * 4) + 2, // 2-5 bedrooms
                 bathrooms: (Math.floor(Math.random() * 3) + 1.5).toString(), // 1.5-4.5 bathrooms
                 squareFootage: (Math.floor(Math.random() * 1500) + 1200).toString(), // 1200-2700 sq ft
-                yearBuilt: (Math.floor(Math.random() * 40) + 1980).toString() // 1980-2020
+                yearBuilt: (Math.floor(Math.random() * 40) + 1980).toString(), // 1980-2020
+                propertyType: "Single Family"
             };
             
             console.log('📋 Returning mock property details:', mockData);
+            console.log('💰 Mock Price:', mockData.price);
+            console.log('🏠 Mock Property Type:', mockData.propertyType);
             return res.json(mockData);
         }
         

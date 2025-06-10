@@ -51,9 +51,9 @@ export default function ListingFormPage() {
     streetAddress: "",
     city: "",
     state: "",
-    zipCode: "",
-    price: 0,
-    bedrooms: 0,
+          zipCode: "",
+      price: 0,
+      bedrooms: 0,
     bathrooms: 0,
     sqFt: 0,
     yearBuilt: new Date().getFullYear(),
@@ -77,9 +77,9 @@ export default function ListingFormPage() {
               streetAddress: addressParts[0] || "",
               city: addressParts[1] || "",
               state: addressParts[2] || "",
-              zipCode: addressParts[3] || "",
-              price: listing.price,
-              bedrooms: listing.bedrooms,
+                              zipCode: addressParts[3] || "",
+                price: listing.price,
+                bedrooms: listing.bedrooms,
               bathrooms: typeof listing.bathrooms === 'string' ? parseFloat(listing.bathrooms) : listing.bathrooms,
               sqFt: listing.squareFootage,
               yearBuilt: listing.yearBuilt,
@@ -140,7 +140,7 @@ export default function ListingFormPage() {
     const addressParts = address.split(',').map(part => part.trim());
     
     // Set form data immediately for responsiveness
-    const newFormData = {
+    const addressFormData = {
       ...formData,
       address: address,
       latitude: lat || 0,
@@ -150,31 +150,53 @@ export default function ListingFormPage() {
       state: addressParts[2] || "",
       zipCode: addressParts[3] || ""
     };
-    setFormData(newFormData);
+    setFormData(addressFormData);
     setInsightsAddress(address);
 
     // Now, automatically fetch details
     setIsFetchingDetails(true);
     setFormError(null);
     try {
+      console.log('🔍 Fetching property details for address:', address);
       const details = await listingService.fetchPropertyDetails(address);
+      console.log('📥 Raw API response:', details);
+      console.log('📥 Response keys:', Object.keys(details));
+      console.log('📥 Response values:', Object.values(details));
+      
       if (details) {
-        setFormData(prev => ({
-          ...prev,
-          bedrooms: parseInt(details.bedrooms) || prev.bedrooms,
-          bathrooms: parseFloat(details.bathrooms) || prev.bathrooms,
-          sqFt: parseInt(details.squareFootage) || prev.sqFt,
-          yearBuilt: parseInt(details.yearBuilt) || prev.yearBuilt,
-        }));
+        console.log('🏠 Processing details:');
+        console.log('  - Price from API:', details.price, '→ Parsed:', parseInt(details.price));
+        console.log('  - Property Type from API:', details.propertyType);
+        console.log('  - Bedrooms from API:', details.bedrooms, '→ Parsed:', parseInt(details.bedrooms));
+        console.log('  - Bathrooms from API:', details.bathrooms, '→ Parsed:', parseFloat(details.bathrooms));
+        console.log('  - Square Footage from API:', details.squareFootage, '→ Parsed:', parseInt(details.squareFootage));
+        console.log('  - Year Built from API:', details.yearBuilt, '→ Parsed:', parseInt(details.yearBuilt));
+        
+        // Use the addressFormData (which has the address) as base, not the old formData
+        const finalFormData = {
+          ...addressFormData,  // This preserves the address and location data
+          price: parseInt(details.price) || addressFormData.price,
+          bedrooms: parseInt(details.bedrooms) || addressFormData.bedrooms,
+          bathrooms: parseFloat(details.bathrooms) || addressFormData.bathrooms,
+          sqFt: parseInt(details.squareFootage) || addressFormData.sqFt,
+          yearBuilt: parseInt(details.yearBuilt) || addressFormData.yearBuilt,
+          propertyType: details.propertyType || addressFormData.propertyType,
+        };
+        
+        console.log('📝 Address form data:', addressFormData);
+        console.log('📝 Final combined form data:', finalFormData);
+        
+        setFormData(finalFormData);
+      } else {
+        console.log('⚠️ No details returned from API');
       }
     } catch (error: any) {
-      // Don't block the user, just inform them
-      console.error("💥 Autofill Error:", error);
-      console.error("💥 Error Type:", typeof error);
-      console.error("💥 Error Details:", JSON.stringify(error, null, 2));
-
-      const message = error.details || "We couldn't auto-fill property details. Please complete the form manually.";
-      setFormError(error.error ? `${error.error} ${message}`: message);
+      // Enhanced error logging for debugging
+      console.error('❌ Auto-fill error details:');
+      console.error('  - Error message:', error.message || 'Unknown error');
+      console.error('  - Error object:', error);
+      console.error('  - Error response:', error.response?.data);
+      console.log("🔄 Auto-fill attempt completed with limited data - check logs above for details");
     } finally {
       setIsFetchingDetails(false);
     }
@@ -370,7 +392,7 @@ export default function ListingFormPage() {
             Back
           </Button>
           <h1 className="text-3xl font-bold text-brand-text-primary text-center flex-grow">
-            {isEditing ? "Edit Property" : "Create New Listing"}
+            {isEditing ? "Edit Listing" : "Create New Listing"}
           </h1>
           <div className="w-24"></div> {/* Spacer to balance the back button */}
         </div>
@@ -387,7 +409,7 @@ export default function ListingFormPage() {
               {/* Address Search */}
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-brand-text-secondary flex items-center">
-                  Property Address
+                  Listing Address
                   {isFetchingDetails && (
                     <span className="ml-2 flex items-center text-xs text-brand-text-tertiary">
                       <SparklesIcon className="h-4 w-4 mr-1 animate-pulse text-brand-accent"/>
@@ -406,100 +428,92 @@ export default function ListingFormPage() {
                 </p>
               </div>
 
-              {/* Property Details Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {/* Price */}
-                <div>
-                  <label className="block text-brand-text-secondary text-sm font-medium mb-3">Price ($)</label>
-                  <input
-                    type="number"
-                    name="price"
-                    value={formData.price || ''}
-                    onChange={handleInputChange}
-                    placeholder="e.g., 500000"
-                    className="w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
-                  />
+              {/* Listing Details Section */}
+              <div className="space-y-6">
+                <h2 className="text-2xl font-bold text-brand-text-primary border-b border-brand-border pb-3">
+                  Listing Details
+                </h2>
+                
+                {/* First Row: Price - Bedrooms - Bathrooms */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* Price */}
+                  <div>
+                    <label className="block text-brand-text-secondary text-sm font-medium mb-3">Price ($)</label>
+                    <input
+                      type="number"
+                      name="price"
+                      value={formData.price || ''}
+                      onChange={handleInputChange}
+                      placeholder="e.g., 500000"
+                      className="w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                    />
+                  </div>
+                  {/* Bedrooms */}
+                  <div>
+                    <label className="block text-brand-text-secondary text-sm font-medium mb-3">Bedrooms</label>
+                    <input
+                      type="number"
+                      name="bedrooms"
+                      value={formData.bedrooms || ''}
+                      onChange={handleInputChange}
+                      placeholder="e.g., 3"
+                      className="w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                    />
+                  </div>
+                  {/* Bathrooms */}
+                  <div>
+                    <label className="block text-brand-text-secondary text-sm font-medium mb-3">Bathrooms</label>
+                    <input
+                      type="number"
+                      name="bathrooms"
+                      step="0.5"
+                      value={formData.bathrooms || ''}
+                      onChange={handleInputChange}
+                      placeholder="e.g., 2.5"
+                      className="w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                    />
+                  </div>
                 </div>
-                {/* Bedrooms */}
-                <div>
-                  <label className="block text-brand-text-secondary text-sm font-medium mb-3">Bedrooms</label>
-                  <input
-                    type="number"
-                    name="bedrooms"
-                    value={formData.bedrooms || ''}
-                    onChange={handleInputChange}
-                    placeholder="e.g., 3"
-                    className="w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
-                  />
-                </div>
-                {/* Bathrooms */}
-                <div>
-                  <label className="block text-brand-text-secondary text-sm font-medium mb-3">Bathrooms</label>
-                  <input
-                    type="number"
-                    name="bathrooms"
-                    step="0.5"
-                    value={formData.bathrooms || ''}
-                    onChange={handleInputChange}
-                    placeholder="e.g., 2.5"
-                    className="w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
-                  />
-                </div>
-                {/* Square Feet */}
-                <div>
-                  <label className="block text-brand-text-secondary text-sm font-medium mb-3">Square Feet</label>
-                  <input
-                    type="number"
-                    name="sqFt"
-                    value={formData.sqFt || ''}
-                    onChange={handleInputChange}
-                    placeholder="e.g., 1800"
-                    className="w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
-                  />
-                </div>
-              </div>
 
-              {/* Property Details Row 2 */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Year Built */}
-                <div>
-                  <label className="block text-brand-text-secondary text-sm font-medium mb-3">Year Built</label>
-                  <input
-                    type="number"
-                    name="yearBuilt"
-                    value={formData.yearBuilt || ''}
-                    onChange={handleInputChange}
-                    placeholder="e.g., 1998"
-                    className="w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
-                  />
+                {/* Second Row: Sq Ft - Year Built - Listing Type */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* Square Feet */}
+                  <div>
+                    <label className="block text-brand-text-secondary text-sm font-medium mb-3">Square Feet</label>
+                    <input
+                      type="number"
+                      name="sqFt"
+                      value={formData.sqFt || ''}
+                      onChange={handleInputChange}
+                      placeholder="e.g., 1800"
+                      className="w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                    />
+                  </div>
+                  {/* Year Built */}
+                  <div>
+                    <label className="block text-brand-text-secondary text-sm font-medium mb-3">Year Built</label>
+                    <input
+                      type="number"
+                      name="yearBuilt"
+                      value={formData.yearBuilt || ''}
+                      onChange={handleInputChange}
+                      placeholder="e.g., 1998"
+                      className="w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                    />
+                  </div>
+                  {/* Listing Type */}
+                  <div>
+                    <label className="block text-brand-text-secondary text-sm font-medium mb-3">Listing Type</label>
+                    <input
+                      type="text"
+                      name="propertyType"
+                      value={formData.propertyType}
+                      onChange={handleInputChange}
+                      placeholder="e.g., Single Family"
+                      className="w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                    />
+                  </div>
                 </div>
-                {/* Property Type */}
-                <div>
-                  <label className="block text-brand-text-secondary text-sm font-medium mb-3">Property Type</label>
-                  <input
-                    type="text"
-                    name="propertyType"
-                    value={formData.propertyType}
-                    onChange={handleInputChange}
-                    placeholder="e.g., Single Family"
-                    className="w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
-                  />
-                </div>
-              </div>
-              
-              {/* Key Features / Description */}
-              <div>
-                <label className="block text-brand-text-secondary text-sm font-medium mb-3">
-                  Property Description / Key Features
-                </label>
-                <textarea
-                  name="keyFeatures"
-                  value={formData.keyFeatures}
-                  onChange={handleInputChange}
-                  rows={6}
-                  placeholder="Enter key features, property description, and neighborhood highlights..."
-                  className="w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
-                />
               </div>
 
               {/* Neighborhood Insights */}
@@ -516,24 +530,50 @@ export default function ListingFormPage() {
                   onSectionRemove={(section) => handleContextSelection([])}
                 />
               )}
+              
+              {/* Key Features / Description */}
+              <div className="space-y-3">
+                <h2 className="text-2xl font-bold text-brand-text-primary border-b border-brand-border pb-3">
+                  Listing Description & Key Features
+                </h2>
+                <label className="block text-brand-text-secondary text-sm font-medium">
+                  Describe the listing's unique features, amenities, and selling points
+                </label>
+                <textarea
+                  name="keyFeatures"
+                  value={formData.keyFeatures}
+                  onChange={handleInputChange}
+                  rows={8}
+                  placeholder="Enter key features, listing description, and neighborhood highlights..."
+                  className="w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                />
+                <p className="text-xs text-brand-text-tertiary">
+                  Tip: Neighborhood insights added above will automatically be included in this description
+                </p>
+              </div>
 
               {/* Image Upload */}
-              <div>
-                <label className="block text-brand-text-secondary text-sm font-medium mb-3">Upload Images</label>
-                <div className="mt-2 flex justify-center px-6 pt-5 pb-6 border-2 border-brand-border border-dashed rounded-lg bg-brand-input-bg">
-                  <div className="space-y-1 text-center">
-                    <Upload className="mx-auto h-12 w-12 text-brand-text-tertiary" />
-                    <div className="flex text-sm text-brand-text-secondary">
-                      <label
-                        htmlFor="file-upload"
-                        className="relative cursor-pointer bg-brand-background rounded-md font-medium text-brand-primary hover:text-brand-accent focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-brand-primary"
-                      >
-                        <span>Upload files</span>
-                        <input id="file-upload" name="file-upload" type="file" className="sr-only" multiple onChange={handleImageUpload} />
-                      </label>
-                      <p className="pl-1">or drag and drop</p>
+              <div className="space-y-6">
+                <h2 className="text-2xl font-bold text-brand-text-primary border-b border-brand-border pb-3">
+                  Listing Images
+                </h2>
+                <div>
+                  <label className="block text-brand-text-secondary text-sm font-medium mb-3">Upload Images</label>
+                  <div className="mt-2 flex justify-center px-6 pt-5 pb-6 border-2 border-brand-border border-dashed rounded-lg bg-brand-input-bg">
+                    <div className="space-y-1 text-center">
+                      <Upload className="mx-auto h-12 w-12 text-brand-text-tertiary" />
+                      <div className="flex text-sm text-brand-text-secondary">
+                        <label
+                          htmlFor="file-upload"
+                          className="relative cursor-pointer bg-brand-background rounded-md font-medium text-brand-primary hover:text-brand-accent focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-brand-primary"
+                        >
+                          <span>Upload files</span>
+                          <input id="file-upload" name="file-upload" type="file" className="sr-only" multiple onChange={handleImageUpload} />
+                        </label>
+                        <p className="pl-1">or drag and drop</p>
+                      </div>
+                      <p className="text-xs text-brand-text-tertiary">PNG, JPG up to 10MB</p>
                     </div>
-                    <p className="text-xs text-brand-text-tertiary">PNG, JPG up to 10MB</p>
                   </div>
                 </div>
               </div>
@@ -578,6 +618,27 @@ export default function ListingFormPage() {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+
+        {/* Data Source Footer */}
+        <div className="mt-6 p-4 bg-brand-panel/50 border border-brand-border/50 rounded-lg">
+          <div className="flex items-start space-x-2">
+            <div className="flex-shrink-0 mt-0.5">
+              <svg className="w-4 h-4 text-brand-text-tertiary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div className="text-xs text-brand-text-tertiary leading-relaxed">
+              <p className="mb-1">
+                <strong>Data Sources:</strong> Information displayed comes from Google Places API, Google Custom Search API, 
+                public real estate listings, and AI-enhanced insights when real data is limited.
+              </p>
+              <p>
+                Listing details are auto-filled from available public listings and may not reflect current conditions. 
+                Always verify information independently for accuracy.
+              </p>
+            </div>
           </div>
         </div>
       </div>

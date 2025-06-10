@@ -155,8 +155,10 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
     const coordinates = await getPlaceDetails(suggestion.place_id);
     
     if (coordinates) {
+      console.log('📞 Calling onAddressSelect with:', suggestion.description, coordinates.lat, coordinates.lng);
       onAddressSelect(suggestion.description, coordinates.lat, coordinates.lng);
     } else {
+      console.log('📞 Calling onAddressSelect without coordinates:', suggestion.description);
       // Fallback without coordinates
       onAddressSelect(suggestion.description);
     }
