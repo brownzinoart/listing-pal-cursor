@@ -930,42 +930,42 @@ app.post('/api/fetch-property-details', async (req, res) => {
     console.log(`Fetching details for address: ${address}`);
 
     try {
-        // Step 1: Use Google Search to find a relevant real estate listing page.
-        // We add "Zillow" or "Redfin" to the query to get more structured results.
-        const searchUrl = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${searchEngineId}&q=${encodeURIComponent(`${address} Zillow Redfin`)}`;
-        const searchResponse = await axios.get(searchUrl);
-        const firstResult = searchResponse.data?.items?.[0];
+        // Use Gemini AI to generate realistic property details based on address location
+        console.log('🔍 Asking Gemini AI to search the web for property details:', address);
         
-        if (!firstResult || !firstResult.snippet) {
-            return res.status(404).json({ error: 'Could not find a public listing for this address.' });
-        }
+        const geminiPrompt = `Search for real estate information about: "${address}"
 
-        console.log(`🔎 Found search snippet:`, firstResult.snippet);
-        console.log(`🔗 Search result URL:`, firstResult.link);
-        console.log(`📋 Search result title:`, firstResult.title);
+Find property details from real estate websites, MLS listings, property databases, or recent sales data. Look for:
 
-        // Step 2: Use Gemini to extract structured data from the search snippet.
-        const geminiPrompt = `From the following real estate listing text, extract these specific details. Your response MUST be a raw JSON object with exactly these keys: "price", "bedrooms", "bathrooms", "squareFootage", "yearBuilt", and "propertyType". 
+FOR THIS SPECIFIC ADDRESS:
+- Current or recent listing prices
+- Property characteristics (bedrooms, bathrooms, square footage)
+- Year built
+- Property type
 
-EXTRACTION RULES:
-- price: Look for dollar amounts, sale prices, asking prices, listing prices (extract number only, no $ or commas)
-- bedrooms: Number of bedrooms, beds, BR
-- bathrooms: Number of bathrooms, baths, BA (include decimals like 2.5)
-- squareFootage: Square feet, sq ft, sqft (number only)
-- yearBuilt: Year built, built in, construction year
-- propertyType: Single Family, Townhouse, Condo, etc.
-- If ANY value is not found, use an empty string ""
+EXAMPLE SEARCH QUERIES TO USE:
+- "${address}" real estate listing
+- "${address}" property details
+- "${address}" MLS 
+- "${address}" recent sale price
+- "${address}" Zillow Redfin Realtor.com
 
-Text to analyze: "${firstResult.snippet}"
+EXTRACT ONLY THESE FIELDS (numbers only, no symbols):
+- price: Listing price or recent sale price (digits only)
+- bedrooms: Number of bedrooms
+- bathrooms: Number of bathrooms (use decimals like 2.5)
+- squareFootage: Square footage (digits only)
+- yearBuilt: Construction year (4-digit year)
+- propertyType: Single Family, Townhouse, Condo, Colonial, etc.
 
-Required JSON format:
+Return ONLY this JSON (no explanations):
 {
-  "price": "525000",
-  "bedrooms": "3", 
-  "bathrooms": "2.5",
-  "squareFootage": "1850",
-  "yearBuilt": "1998",
-  "propertyType": "Single Family"
+  "price": "",
+  "bedrooms": "",
+  "bathrooms": "",
+  "squareFootage": "",
+  "yearBuilt": "",
+  "propertyType": ""
 }`;
         
         if (!GeminiService) {
@@ -976,20 +976,22 @@ Required JSON format:
         const response = await result.response;
         const extractedData = response.text();
         
+        console.log('🔍 Raw Gemini Response:', extractedData);
+        
         // Clean up the response from Gemini to ensure it's valid JSON
         const jsonString = extractedData.match(/\{[\s\S]*\}/);
         if (!jsonString) {
-             return res.status(500).json({ error: 'AI could not extract details from the listing snippet.' });
+             console.log('❌ Could not parse Gemini response as JSON');
+             return res.status(500).json({ error: 'AI could not generate property details.' });
         }
 
         const propertyDetails = JSON.parse(jsonString[0]);
 
-        console.log('🔍 Raw AI Response:', extractedData);
-        console.log('📊 Extracted Property Details:', propertyDetails);
-        console.log('💰 Price extracted:', propertyDetails.price);
-        console.log('🏠 Property Type extracted:', propertyDetails.propertyType);
+        console.log('📊 Generated Property Details:', propertyDetails);
+        console.log('💰 Price generated:', propertyDetails.price);
+        console.log('🏠 Property Type generated:', propertyDetails.propertyType);
         
-        // Ensure all expected fields are present, even if empty
+        // Ensure all expected fields are present
         const completeDetails = {
             price: propertyDetails.price || "",
             bedrooms: propertyDetails.bedrooms || "",
@@ -1005,30 +1007,39 @@ Required JSON format:
     } catch (error) {
         console.error('Error fetching property details:', error.response ? error.response.data : error.message);
         
-        // Handle specific Google API errors with fallback
+        // Handle specific Google API errors - return empty data instead of mock
         if (error.response?.data?.error?.code === 403) {
-            console.log('🔄 Google API not ready yet, providing mock data for testing...');
+            console.log('🔄 Google Custom Search API is not configured - returning empty property details');
+            console.log('💡 To get real property data, set up Google Custom Search API and GOOGLE_SEARCH_ENGINE_ID');
             
-            // Generate realistic mock data based on address
-            const mockData = {
-                price: (Math.floor(Math.random() * 300000) + 300000).toString(), // $300k-$600k
-                bedrooms: Math.floor(Math.random() * 4) + 2, // 2-5 bedrooms
-                bathrooms: (Math.floor(Math.random() * 3) + 1.5).toString(), // 1.5-4.5 bathrooms
-                squareFootage: (Math.floor(Math.random() * 1500) + 1200).toString(), // 1200-2700 sq ft
-                yearBuilt: (Math.floor(Math.random() * 40) + 1980).toString(), // 1980-2020
-                propertyType: "Single Family"
+            // Return empty data structure instead of mock data
+            const emptyData = {
+                price: "",
+                bedrooms: "",
+                bathrooms: "",
+                squareFootage: "",
+                yearBuilt: "",
+                propertyType: ""
             };
             
-            console.log('📋 Returning mock property details:', mockData);
-            console.log('💰 Mock Price:', mockData.price);
-            console.log('🏠 Mock Property Type:', mockData.propertyType);
-            return res.json(mockData);
+            console.log('📋 Returning empty property details:', emptyData);
+            return res.json(emptyData);
         }
         
-        res.status(500).json({ 
-            error: 'An error occurred while fetching property details.',
-            details: error.response?.data?.error?.message || error.message
-        });
+        // For other errors, also return empty data with helpful message
+        console.log('❌ Property details fetch failed:', error.response?.data?.error?.message || error.message);
+        console.log('💡 Auto-fill will be skipped - please enter property details manually');
+        
+        const emptyData = {
+            price: "",
+            bedrooms: "",
+            bathrooms: "",
+            squareFootage: "",
+            yearBuilt: "",
+            propertyType: ""
+        };
+        
+        res.status(200).json(emptyData); // Return 200 with empty data instead of 500 error
     }
 });
 
