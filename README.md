@@ -1,4 +1,4 @@
-# RealtyBoost AI - Phase 1
+# Listing Pal - Phase 1
 
 A modern real estate AI platform featuring intelligent room redesign, listing generation, and social media content creation.
 
