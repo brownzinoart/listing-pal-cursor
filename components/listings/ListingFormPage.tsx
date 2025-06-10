@@ -40,6 +40,7 @@ export default function ListingFormPage() {
   const [selectedContextCards, setSelectedContextCards] = useState<ContextCard[]>([]);
   const [contextInsightsAdded, setContextInsightsAdded] = useState(false);
   const [contextError, setContextError] = useState<string | null>(null);
+  const [insightsAddress, setInsightsAddress] = useState('');
 
   const isEditing = !!listingId;
 
@@ -174,6 +175,8 @@ export default function ListingFormPage() {
       state: addressParts[2] || "",
       zipCode: addressParts[3] || ""
     }));
+
+    setInsightsAddress(address);
   };
 
   const handleContextSelection = (cards: ContextCard[]) => {
@@ -532,7 +535,7 @@ export default function ListingFormPage() {
                   {/* Isolated container for Neighborhood Insights */}
                   <div className="relative w-full overflow-hidden">
                     <NeighborhoodInsights
-                      address={formData.address}
+                      address={insightsAddress}
                       listingPrice={formData.price ? (typeof formData.price === 'string' ? parseInt(formData.price) : formData.price) : undefined}
                       onSectionAdd={(section, content) => {
                         // Add neighborhood content to key features for AI generation

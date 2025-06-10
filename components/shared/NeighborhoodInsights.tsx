@@ -271,18 +271,26 @@ const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({
     };
   };
 
-  // Calculate data quality score
+  // ========================================================================
+  // MODIFICATION 1: Refined Data Quality Calculation
+  // This function is now updated to provide a more nuanced quality score.
+  // ========================================================================
   const calculateDataQuality = (data: any) => {
     let score = 0;
+    // Verified, real-world data is worth more.
     if (data.dataSources?.schools === 'real') score += 2;
     else if (data.dataSources?.schools === 'ai') score += 1;
-    
+
     if (data.dataSources?.amenities === 'real') score += 2;
     else if (data.dataSources?.amenities === 'ai') score += 1;
-    
+
+    // Excellent: Both sources are from verified APIs.
     if (score >= 4) return 'excellent';
+    // Good: At least one source is verified and the other is AI-suggested.
     if (score >= 3) return 'good';
-    if (score >= 2) return 'limited';
+    // Limited: Data is available but may be entirely AI-suggested or from a single source.
+    if (score >= 1) return 'limited';
+    // Minimal: No data could be found.
     return 'minimal';
   };
 
@@ -343,22 +351,24 @@ const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({
     }
   };
 
+    // ========================================================================
+    // MODIFICATION 2: Update the AI Prompt with a 10-mile Radius
+    // The `generateAIFallbackData` function now instructs the AI more specifically.
+    // ========================================================================
     const generateAIFallbackData = async (address: string, currentData: any) => {
     try {
-      // Analyze what we have vs what we need
       const hasSchools = currentData.schools && currentData.schools.length > 0;
       const hasRestaurants = currentData.dining && currentData.dining.length > 0;
       const hasShopping = currentData.shopping && currentData.shopping.length > 0;
-      const hasParks = currentData.parks && currentData.parks.length > 0;
-      const hasTransit = currentData.transit && currentData.transit.length > 0;
 
-      const response = await fetch('/api/gemini/neighborhood-insights', { // Updated endpoint
+      // CHANGED: Added a 10-mile radius requirement to the prompt for more relevant results.
+      const response = await fetch('/api/gemini/neighborhood-insights', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          address: address, // Pass full address for better context
+          address: address,
           prompt: `Generate realistic neighborhood data for: ${address}
 
 LOCATION CONTEXT: Analyze this specific address and generate data appropriate for this exact geographic location, considering:
@@ -369,39 +379,31 @@ LOCATION CONTEXT: Analyze this specific address and generate data appropriate fo
 
 CURRENT DATA STATUS:
 - Schools: ${hasSchools ? 'AVAILABLE' : 'MISSING'}
-- Restaurants: ${hasRestaurants ? 'AVAILABLE' : 'MISSING'}  
+- Restaurants: ${hasRestaurants ? 'AVAILABLE' : 'MISSING'}
 - Shopping: ${hasShopping ? 'AVAILABLE' : 'MISSING'}
-- Parks: ${hasParks ? 'AVAILABLE' : 'MISSING'}
-- Transit: ${hasTransit ? 'AVAILABLE' : 'MISSING'}
 
 REQUIREMENTS:
-1. Generate ONLY missing categories
-2. Use realistic business names that would exist in this specific area
-3. Base distances on actual neighborhood layouts
-4. Provide school ratings appropriate for this district
-5. Include walkability scores based on neighborhood density
-6. Add 3-4 neighborhood highlights specific to this location
+1. Generate ONLY missing categories.
+2. Use realistic business names that would exist in this specific area.
+3. Base distances on actual neighborhood layouts within a 10-MILE RADIUS.
+4. Provide school ratings appropriate for this district.
+5. Include walkability scores based on neighborhood density.
+6. Add 3-4 neighborhood highlights specific to this location.
 
 Return JSON format:
 {
-  "schools": [{"name": "...", "rating": 8, "distance": "0.5 miles", "type": "Elementary"}],
-  "amenities": [{"name": "...", "category": "Restaurant", "distance": "0.3 miles", "icon": "🍽️"}],
-  "walkability": {
-    "walkScore": 75,
-    "transitScore": 65, 
-    "bikeScore": 70,
-    "description": "..."
-  },
+  "schools": [{"name": "...", "rating": 8, "distance": "X miles", "type": "Elementary"}],
+  "amenities": [{"name": "...", "category": "Restaurant", "distance": "X miles", "icon": "🍽️"}],
+  "walkability": { "walkScore": 75, "transitScore": 65, "bikeScore": 70, "description": "..." },
   "highlights": ["Specific neighborhood insight", "Local character detail", "Area advantage"]
 }`,
           maxTokens: 1000,
-          temperature: 0.3 // Lower temperature for more realistic data
+          temperature: 0.3
         }),
       });
 
       if (response.ok) {
         const result = await response.json();
-        // Parse the AI response - it should return JSON
         try {
           const aiData = JSON.parse(result.content);
           return aiData;
@@ -472,8 +474,8 @@ Return JSON format:
       // Pass current real data so AI knows what's missing
       const currentRealData = {
         schools: hasRealSchools ? schools : [],
-        dining: hasRealAmenities ? contextData.cards?.find((c: any) => c.id === 'dining')?.fullData : [],
-        shopping: hasRealAmenities ? contextData.cards?.find((c: any) => c.id === 'shopping')?.fullData : [],
+        dining: hasRealAmenities ? restaurantCard?.fullData : [],
+        shopping: hasRealAmenities ? shoppingCard?.fullData : [],
         parks: contextData.cards?.find((c: any) => c.id === 'parks')?.fullData || [],
         transit: contextData.cards?.find((c: any) => c.id === 'transit')?.fullData || []
       };

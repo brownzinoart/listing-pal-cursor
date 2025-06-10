@@ -488,57 +488,82 @@ app.post('/api/test-design', async (req, res) => {
     }
 });
 
+// ========================================================================
+// REAL DATA FETCHING HELPERS (GOOGLE PLACES API)
+// ========================================================================
+
+const getPlaceCoordinates = async (address) => {
+    try {
+        const apiKey = process.env.VITE_GOOGLE_MAPS_API_KEY;
+        const response = await axios.get('https://maps.googleapis.com/maps/api/geocode/json', {
+            params: { address, key: apiKey }
+        });
+        if (response.data.results && response.data.results.length > 0) {
+            return response.data.results[0].geometry.location; // { lat, lng }
+        }
+        return null;
+    } catch (error) {
+        console.error("Error fetching coordinates:", error.message);
+        return null;
+    }
+};
+
+const searchNearbyPlaces = async (coordinates, type, radius = 16093) => { // 10 miles in meters
+    try {
+        const apiKey = process.env.VITE_GOOGLE_MAPS_API_KEY;
+        const response = await axios.get('https://maps.googleapis.com/maps/api/place/nearbysearch/json', {
+            params: {
+                location: `${coordinates.lat},${coordinates.lng}`,
+                radius,
+                type,
+                key: apiKey
+            }
+        });
+        return response.data.results.map(place => ({
+            name: place.name,
+            rating: place.rating || null,
+            address: place.vicinity
+        }));
+    } catch (error) {
+        console.error(`Error searching for ${type}:`, error.message);
+        return [];
+    }
+};
+
 // Location Context API endpoint - Now with REAL DATA integration
 app.post('/api/listings/context', async (req, res) => {
-  try {
-    const { address, latitude, longitude, lat, lng } = req.body;
-    // Support both parameter formats
-    const finalLat = latitude || lat;
-    const finalLng = longitude || lng;
-    
-    if (!address || address.length < 10) {
-      return res.status(400).json({ error: 'Valid address required (minimum 10 characters)' });
+    const { address } = req.body;
+
+    if (!address) {
+        return res.status(400).json({ message: 'Address is required' });
     }
 
-    console.log(`🌍 Fetching REAL location data for: ${address}`);
-    
-    // Use real data service when coordinates are available
-    if (finalLat && finalLng && typeof finalLat === 'number' && typeof finalLng === 'number') {
-      console.log(`📍 Using coordinates: ${finalLat}, ${finalLng}`);
-      
-      // Import the real data service
-      const { realLocationDataService } = await import('./services/realLocationDataService.js');
-      
-      // Fetch real location data using coordinates
-      const locationData = await realLocationDataService.getLocationContext(address, finalLat, finalLng);
-      
-      // Transform to match expected format
-      const contextData = {
-        address: locationData.address,
-        coordinates: locationData.coordinates,
-        cards: locationData.cards,
-        categorizedCards: categorizecards(locationData.cards)
-      };
-      
-      console.log(`✅ Retrieved ${contextData.cards.length} real data cards`);
-      res.json(contextData);
-    } else {
-      // Fallback to mock service for addresses without coordinates
-      console.log('⚠️ No coordinates provided, using mock data service');
-      
-      const { LocationContextService } = await import('./services/locationContextService.js');
-      const contextService = new LocationContextService();
-      
-      const contextData = await contextService.getAllLocationContext(address);
-      res.json(contextData);
+    try {
+        const coordinates = await getPlaceCoordinates(address);
+        if (!coordinates) {
+            return res.status(404).json({ message: 'Could not find coordinates for the address' });
+        }
+
+        const [schools, dining, shopping] = await Promise.all([
+            searchNearbyPlaces(coordinates, 'school'),
+            searchNearbyPlaces(coordinates, 'restaurant'),
+            searchNearbyPlaces(coordinates, 'store'),
+        ]);
+
+        const responseData = {
+            cards: [
+                { id: 'schools', fullData: schools },
+                { id: 'dining', fullData: dining },
+                { id: 'shopping', fullData: shopping },
+            ],
+        };
+
+        res.status(200).json(responseData);
+
+    } catch (error) {
+        console.error('Error in /api/listings/context:', error);
+        res.status(500).json({ message: 'Failed to fetch neighborhood context data' });
     }
-  } catch (error) {
-    console.error('❌ Location context API error:', error);
-    res.status(500).json({ 
-      error: 'Failed to fetch location context',
-      details: error.message 
-    });
-  }
 });
 
 
@@ -741,41 +766,31 @@ app.post('/api/generate-content', async (req, res) => {
 
 // Gemini-specific neighborhood insights endpoint
 app.post('/api/gemini/neighborhood-insights', async (req, res) => {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ message: 'Method Not Allowed' });
+  }
+
+  const { prompt } = req.body;
+
+  if (!prompt) {
+    return res.status(400).json({ message: 'A prompt is required for the AI' });
+  }
+
   try {
-    if (!GeminiService) {
-      return res.status(500).json({ 
-        error: 'Gemini AI service not available. Please check GEMINI_API_KEY in .env file.' 
-      });
-    }
-
-    const { address, prompt, maxTokens = 1000, temperature = 0.3 } = req.body;
-
-    if (!address || !prompt) {
-      return res.status(400).json({ 
-        error: 'Address and prompt are required' 
-      });
-    }
-
-    console.log('🏠 Generating neighborhood insights for:', address);
-
-    // Use Gemini to generate structured neighborhood data
     const result = await GeminiService.model.generateContent(prompt);
     const response = await result.response;
-    const content = response.text();
+    const text = response.text();
 
-    res.json({
-      success: true,
-      content: content.trim(),
-      address: address,
-      generatedAt: new Date().toISOString()
-    });
+    // Clean the response to ensure it's a valid JSON string,
+    // as the frontend expects to parse it.
+    const cleanedText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+
+    // The frontend expects an object with a "content" key containing the JSON string
+    res.status(200).json({ content: cleanedText });
 
   } catch (error) {
-    console.error('Neighborhood insights generation error:', error);
-    res.status(500).json({ 
-      error: 'Failed to generate neighborhood insights',
-      details: error.message 
-    });
+    console.error('Error calling Gemini API:', error);
+    res.status(500).json({ message: 'Failed to generate AI insights' });
   }
 });
 
