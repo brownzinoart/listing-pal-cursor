@@ -196,11 +196,13 @@ interface NeighborhoodInsightsProps {
   onSectionAdd?: (section: string, content: string) => void;
   onSectionRemove?: (section: string, content: string) => void;
   selectedSections?: string[];
-  onSectionToggle?: (sections: string[]) => void;
+  onSectionToggle: (sections: string[]) => void;
+  addedSections: string[];
+  viewMode?: boolean;
 }
 
-const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({ 
-  address, 
+const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({
+  address,
   listingPrice,
   listingType = 'sale',
   lat,
@@ -208,15 +210,20 @@ const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({
   onSectionAdd,
   onSectionRemove,
   selectedSections = [],
-  onSectionToggle 
+  onSectionToggle,
+  addedSections,
+  viewMode = false,
 }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState(emptyNeighborhoodData);
-  const [addedSections, setAddedSections] = useState<string[]>([]);
   const [sectionContent, setSectionContent] = useState<Record<string, string>>({});
   const [showSectionManager, setShowSectionManager] = useState(false);
+  const [showAddInsightModal, setShowAddInsightModal] = useState(false);
   const [dataQuality, setDataQuality] = useState<'excellent' | 'good' | 'limited' | 'minimal'>('minimal');
+
+  // NOTE: We intentionally no longer sync activeTab with addedSections here
+  // to avoid overriding the user's current tab selection.
 
   // Fetch real neighborhood data when address changes
   useEffect(() => {
@@ -786,7 +793,7 @@ ${data.amenities.map(amenity =>
       if (contentToRemove && onSectionRemove) {
         onSectionRemove(tabId, contentToRemove);
       }
-      setAddedSections(prev => prev.filter(id => id !== tabId));
+      onSectionToggle(addedSections.filter((id) => id !== tabId));
       setSectionContent(prev => {
         const newContent = { ...prev };
         delete newContent[tabId];
@@ -797,16 +804,14 @@ ${data.amenities.map(amenity =>
       const content = generateSectionContent(tabId);
       if (onSectionAdd) {
         onSectionAdd(tabId, content);
-        setAddedSections(prev => [...prev, tabId]);
+        onSectionToggle([...addedSections, tabId]);
         setSectionContent(prev => ({ ...prev, [tabId]: content }));
       }
     }
   };
 
   const handleSectionManagerToggle = (sections: string[]) => {
-    if (onSectionToggle) {
-      onSectionToggle(sections);
-    }
+    onSectionToggle(sections);
   };
 
   if (loading) {
@@ -861,11 +866,14 @@ ${data.amenities.map(amenity =>
       {/* Tab Navigation */}
       <div className="border-b border-brand-border bg-brand-panel/50">
         <nav className="flex space-x-8 px-6">
-          {tabs.map((tab) => (
+          {tabs.filter(t=> !viewMode || addedSections.includes(t.id)).map((tab)=>(
             <button
               key={tab.id}
               type="button"
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => {
+                setShowAddInsightModal(false);
+                setActiveTab(tab.id);
+              }}
               title={tab.tooltip}
               className={`flex items-center space-x-2 py-4 border-b-2 font-medium text-sm transition-all duration-200 ${
                 activeTab === tab.id
@@ -890,33 +898,34 @@ ${data.amenities.map(amenity =>
                 <h3 className="text-xl font-bold text-brand-text-primary">Overview</h3>
                 <p className="text-sm text-brand-text-secondary mt-1">Quick snapshot of livability and lifestyle fit</p>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setAddedSections(prev => 
-                    prev.includes('overview') 
-                      ? prev.filter(id => id !== 'overview')
-                      : [...prev, 'overview']
-                  );
-                }}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 ${
-                  addedSections.includes('overview')
-                    ? 'bg-green-600 hover:bg-green-700 text-white'
-                    : 'bg-gradient-to-r from-brand-primary to-brand-accent hover:from-brand-primary/90 hover:to-brand-accent/90 text-white hover:scale-[1.02] shadow-brand'
-                }`}
-              >
-                {addedSections.includes('overview') ? (
-                  <>
-                    <Check className="w-4 h-4" />
-                    <span>Added</span>
-                  </>
-                ) : (
-                  <>
-                    <Plus className="w-4 h-4" />
-                    <span>Add Insights</span>
-                  </>
-                )}
-              </button>
+              {!viewMode && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newSections = addedSections.includes('overview')
+                      ? addedSections.filter((id) => id !== 'overview')
+                      : [...addedSections, 'overview'];
+                    onSectionToggle(newSections);
+                  }}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 ${
+                    addedSections.includes('overview')
+                      ? 'bg-green-600 hover:bg-green-700 text-white'
+                      : 'bg-gradient-to-r from-brand-primary to-brand-accent hover:from-brand-primary/90 hover:to-brand-accent/90 text-white hover:scale-[1.02] shadow-brand'
+                  }`}
+                >
+                  {addedSections.includes('overview') ? (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>Added</span>
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-4 h-4" />
+                      <span>Add Insights</span>
+                    </>
+                  )}
+                </button>
+              )}
             </div>
 
             {/* Quick Why-care bullets */}
@@ -980,41 +989,42 @@ ${data.amenities.map(amenity =>
                 <h3 className="text-xl font-bold text-brand-text-primary">Schools</h3>
                 <p className="text-sm text-brand-text-secondary mt-1">See ratings & distance for schools within a 10-mile radius</p>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setAddedSections(prev => 
-                    prev.includes('schools') 
-                      ? prev.filter(id => id !== 'schools')
-                      : [...prev, 'schools']
-                  );
-                }}
-                disabled={!data.dataAvailability?.schools && !addedSections.includes('schools')}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 ${
-                  !data.dataAvailability?.schools && !addedSections.includes('schools')
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : addedSections.includes('schools')
-                    ? 'bg-green-600 hover:bg-green-700 text-white'
-                    : 'bg-gradient-to-r from-brand-primary to-brand-accent hover:from-brand-primary/90 hover:to-brand-accent/90 text-white hover:scale-[1.02] shadow-brand'
-                }`}
-              >
-                {addedSections.includes('schools') ? (
-                  <>
-                    <Check className="w-4 h-4" />
-                    <span>Added</span>
-                  </>
-                ) : data.dataAvailability?.schools ? (
-                  <>
-                    <Plus className="w-4 h-4" />
-                    <span>Add Insights</span>
-                  </>
-                ) : (
-                  <>
-                    <AlertCircle className="w-4 h-4" />
-                    <span>No Data Available</span>
-                  </>
-                )}
-              </button>
+              {!viewMode && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newSections = addedSections.includes('schools')
+                      ? addedSections.filter((id) => id !== 'schools')
+                      : [...addedSections, 'schools'];
+                    onSectionToggle(newSections);
+                  }}
+                  disabled={!data.dataAvailability?.schools && !addedSections.includes('schools')}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 ${
+                    !data.dataAvailability?.schools && !addedSections.includes('schools')
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : addedSections.includes('schools')
+                      ? 'bg-green-600 hover:bg-green-700 text-white'
+                      : 'bg-gradient-to-r from-brand-primary to-brand-accent hover:from-brand-primary/90 hover:to-brand-accent/90 text-white hover:scale-[1.02] shadow-brand'
+                  }`}
+                >
+                  {addedSections.includes('schools') ? (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>Added</span>
+                    </>
+                  ) : data.dataAvailability?.schools ? (
+                    <>
+                      <Plus className="w-4 h-4" />
+                      <span>Add Insights</span>
+                    </>
+                  ) : (
+                    <>
+                      <AlertCircle className="w-4 h-4" />
+                      <span>No Data Available</span>
+                    </>
+                  )}
+                </button>
+              )}
             </div>
 
             {data.dataAvailability?.schools ? (
@@ -1076,41 +1086,42 @@ ${data.amenities.map(amenity =>
                 <h3 className="text-xl font-bold text-brand-text-primary">Amenities</h3>
                 <p className="text-sm text-brand-text-secondary mt-1">Groceries, gyms & cafés you can walk to</p>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setAddedSections(prev => 
-                    prev.includes('amenities') 
-                      ? prev.filter(id => id !== 'amenities')
-                      : [...prev, 'amenities']
-                  );
-                }}
-                disabled={!data.dataAvailability?.amenities && !addedSections.includes('amenities')}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 ${
-                  !data.dataAvailability?.amenities && !addedSections.includes('amenities')
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : addedSections.includes('amenities')
-                    ? 'bg-green-600 hover:bg-green-700 text-white'
-                    : 'bg-gradient-to-r from-brand-primary to-brand-accent hover:from-brand-primary/90 hover:to-brand-accent/90 text-white hover:scale-[1.02] shadow-brand'
-                }`}
-              >
-                {addedSections.includes('amenities') ? (
-                  <>
-                    <Check className="w-4 h-4" />
-                    <span>Added</span>
-                  </>
-                ) : data.dataAvailability?.amenities ? (
-                  <>
-                    <Plus className="w-4 h-4" />
-                    <span>Add Insights</span>
-                  </>
-                ) : (
-                  <>
-                    <AlertCircle className="w-4 h-4" />
-                    <span>No Data Available</span>
-                  </>
-                )}
-              </button>
+              {!viewMode && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newSections = addedSections.includes('amenities')
+                      ? addedSections.filter((id) => id !== 'amenities')
+                      : [...addedSections, 'amenities'];
+                    onSectionToggle(newSections);
+                  }}
+                  disabled={!data.dataAvailability?.amenities && !addedSections.includes('amenities')}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 ${
+                    !data.dataAvailability?.amenities && !addedSections.includes('amenities')
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : addedSections.includes('amenities')
+                      ? 'bg-green-600 hover:bg-green-700 text-white'
+                      : 'bg-gradient-to-r from-brand-primary to-brand-accent hover:from-brand-primary/90 hover:to-brand-accent/90 text-white hover:scale-[1.02] shadow-brand'
+                  }`}
+                >
+                  {addedSections.includes('amenities') ? (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>Added</span>
+                    </>
+                  ) : data.dataAvailability?.amenities ? (
+                    <>
+                      <Plus className="w-4 h-4" />
+                      <span>Add Insights</span>
+                    </>
+                  ) : (
+                    <>
+                      <AlertCircle className="w-4 h-4" />
+                      <span>No Data Available</span>
+                    </>
+                  )}
+                </button>
+              )}
             </div>
 
             {data.dataAvailability?.amenities ? (
@@ -1168,33 +1179,34 @@ ${data.amenities.map(amenity =>
                 <h3 className="text-xl font-bold text-brand-text-primary">Market Analysis</h3>
                 <p className="text-sm text-brand-text-secondary mt-1">Real-time price trends & days-on-market stats</p>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setAddedSections(prev => 
-                    prev.includes('market') 
-                      ? prev.filter(id => id !== 'market')
-                      : [...prev, 'market']
-                  );
-                }}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 ${
-                  addedSections.includes('market')
-                    ? 'bg-green-600 hover:bg-green-700 text-white'
-                    : 'bg-gradient-to-r from-brand-primary to-brand-accent hover:from-brand-primary/90 hover:to-brand-accent/90 text-white hover:scale-[1.02] shadow-brand'
-                }`}
-              >
-                {addedSections.includes('market') ? (
-                  <>
-                    <Check className="w-4 h-4" />
-                    <span>Added</span>
-                  </>
-                ) : (
-                  <>
-                    <Plus className="w-4 h-4" />
-                    <span>Add Insights</span>
-                  </>
-                )}
-              </button>
+              {!viewMode && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newSections = addedSections.includes('market')
+                      ? addedSections.filter((id) => id !== 'market')
+                      : [...addedSections, 'market'];
+                    onSectionToggle(newSections);
+                  }}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 ${
+                    addedSections.includes('market')
+                      ? 'bg-green-600 hover:bg-green-700 text-white'
+                      : 'bg-gradient-to-r from-brand-primary to-brand-accent hover:from-brand-primary/90 hover:to-brand-accent/90 text-white hover:scale-[1.02] shadow-brand'
+                  }`}
+                >
+                  {addedSections.includes('market') ? (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>Added</span>
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-4 h-4" />
+                      <span>Add Insights</span>
+                    </>
+                  )}
+                </button>
+              )}
             </div>
 
             {/* Property Valuation Section */}
@@ -1328,36 +1340,6 @@ ${data.amenities.map(amenity =>
                 <div className="text-xs text-orange-600 mt-1">via Rentcast</div>
               </div>
             </div>
-
-            {/* Price Comparison - only show when we have real market data */}
-            {listingPrice && listingPrice > 0 && data.marketTrends.medianPrice > 0 ? (
-              <div className="p-4 bg-gradient-to-r from-brand-accent/10 to-brand-primary/10 border border-brand-accent/20 rounded-lg backdrop-blur-sm">
-                <h5 className="font-semibold text-brand-text-primary mb-3 flex items-center">
-                  <Wallet className="w-5 h-5 mr-2 text-brand-accent" />
-                  Price Comparison
-                </h5>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-brand-text-secondary">Current Listing:</span>
-                    <span className="text-lg font-bold text-brand-accent">${listingPrice.toLocaleString()}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-brand-text-secondary">Neighborhood Median:</span>
-                    <span className="text-lg font-bold text-brand-text-primary">${data.marketTrends.medianPrice.toLocaleString()}</span>
-                  </div>
-                  <div className="mt-3 pt-3 border-t border-brand-border">
-                    <span className={`text-sm font-medium ${
-                      listingPrice > data.marketTrends.medianPrice ? 'text-brand-danger' : 'text-brand-secondary'
-                    }`}>
-                      {listingPrice > data.marketTrends.medianPrice 
-                        ? `${((listingPrice - data.marketTrends.medianPrice) / data.marketTrends.medianPrice * 100).toFixed(1)}% above median`
-                        : `${((data.marketTrends.medianPrice - listingPrice) / data.marketTrends.medianPrice * 100).toFixed(1)}% below median`
-                      }
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ) : null}
           </div>
         )}
       </div>
@@ -1385,12 +1367,12 @@ ${data.amenities.map(amenity =>
                 <label key={tab.id} className="flex items-center space-x-3 p-3 bg-brand-panel rounded-lg hover:bg-brand-background transition-colors cursor-pointer">
                   <input
                     type="checkbox"
-                    checked={selectedSections.includes(tab.id)}
+                    checked={addedSections.includes(tab.id)}
                     onChange={(e) => {
                       const newSections = e.target.checked
-                        ? [...selectedSections, tab.id]
-                        : selectedSections.filter(s => s !== tab.id);
-                      handleSectionManagerToggle(newSections);
+                        ? [...addedSections, tab.id]
+                        : addedSections.filter(s => s !== tab.id);
+                      onSectionToggle(newSections);
                     }}
                     className="w-4 h-4 text-brand-primary border-brand-border rounded focus:ring-brand-primary focus:ring-2"
                   />
@@ -1410,7 +1392,7 @@ ${data.amenities.map(amenity =>
 
             <div className="mt-6 flex items-center justify-between">
               <span className="text-sm text-brand-text-tertiary">
-                {selectedSections.length} of {tabs.length} sections selected
+                {addedSections.length} of {tabs.length} sections selected
               </span>
               <button
                 onClick={() => setShowSectionManager(false)}

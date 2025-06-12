@@ -106,141 +106,6 @@ const FormattedKeyFeatures: React.FC<{ content: string }> = ({ content }) => {
   }
 };
 
-// Add Insights Card Component
-const AddInsightsCard: React.FC<{
-  onAddInsights: () => void;
-  addedSectionsCount: number;
-}> = ({ onAddInsights, addedSectionsCount }) => (
-  <div className="bg-brand-panel/30 border-2 border-dashed border-brand-border rounded-xl p-8 text-center opacity-60 hover:opacity-80 transition-opacity duration-200">
-    <div className="space-y-4">
-      <div className="w-16 h-16 mx-auto bg-brand-primary/10 rounded-full flex items-center justify-center">
-        <svg className="w-8 h-8 text-brand-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" />
-        </svg>
-      </div>
-      <div>
-        <h3 className="text-lg font-semibold text-brand-text-primary mb-2">Add More Insights</h3>
-        <p className="text-sm text-brand-text-secondary mb-4">
-          {addedSectionsCount === 1 
-            ? "You've added one section. Add more to showcase this neighborhood!" 
-            : "Add neighborhood insights to enhance your listing"}
-        </p>
-        <button
-          onClick={onAddInsights}
-          className="inline-flex items-center px-4 py-2 bg-brand-primary hover:bg-brand-primary/90 text-white rounded-lg transition-colors duration-200 text-sm font-medium"
-        >
-          Browse Insights
-        </button>
-      </div>
-    </div>
-  </div>
-);
-
-// Wrapper component for conditional rendering
-const NeighborhoodInsightsSection: React.FC<{
-  address: string;
-  listingPrice: number;
-  listingType?: string;
-}> = ({ address, listingPrice, listingType }) => {
-  const [addedSections, setAddedSections] = useState<string[]>(['overview']); // Start with overview by default
-  const [showInsightsModal, setShowInsightsModal] = useState(false);
-
-  // Don't render anything if no address
-  if (!address) return null;
-
-  const availableTabs = ['overview', 'schools', 'amenities', 'market'];
-  const unaddedSections = availableTabs.filter(tab => !addedSections.includes(tab));
-  const showAddCard = unaddedSections.length > 0;
-
-  return (
-    <section className="mt-8">
-      <div className={`grid gap-6 ${showAddCard ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
-        {/* Main Neighborhood Insights */}
-        <div className={showAddCard ? '' : 'col-span-full'}>
-          <NeighborhoodInsights 
-            address={address} 
-            listingPrice={listingPrice} 
-            listingType={listingType}
-            onSectionAdd={(section, content) => {
-              setAddedSections(prev => [...prev, section]);
-            }}
-            onSectionRemove={(section, content) => {
-              setAddedSections(prev => prev.filter(s => s !== section));
-            }}
-          />
-        </div>
-
-        {/* Add Insights Card */}
-        {showAddCard && (
-          <div>
-            <AddInsightsCard 
-              onAddInsights={() => setShowInsightsModal(true)}
-              addedSectionsCount={addedSections.length}
-            />
-          </div>
-        )}
-      </div>
-
-      {/* Modal for adding more insights */}
-      {showInsightsModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-brand-card border border-brand-border rounded-xl max-w-md w-full p-6 shadow-brand-xl">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-bold text-brand-text-primary">Add Insights</h3>
-              <button
-                onClick={() => setShowInsightsModal(false)}
-                className="p-1 hover:bg-brand-panel rounded transition-colors"
-              >
-                <svg className="w-5 h-5 text-brand-text-tertiary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <p className="text-sm text-brand-text-secondary mb-4">
-              Select additional neighborhood sections to showcase:
-            </p>
-
-            <div className="space-y-3">
-              {unaddedSections.map((section) => {
-                const sectionInfo: Record<string, { label: string; desc: string }> = {
-                  overview: { label: 'Overview', desc: 'Walkability & lifestyle highlights' },
-                  schools: { label: 'Schools', desc: 'Nearby school ratings & distances' },
-                  amenities: { label: 'Amenities', desc: 'Local businesses & conveniences' },
-                  market: { label: 'Market', desc: 'Price trends & market analysis' }
-                };
-
-                return (
-                  <button
-                    key={section}
-                    onClick={() => {
-                      setAddedSections(prev => [...prev, section]);
-                      setShowInsightsModal(false);
-                    }}
-                    className="w-full p-3 bg-brand-panel hover:bg-brand-background border border-brand-border rounded-lg transition-colors text-left"
-                  >
-                    <div className="font-medium text-brand-text-primary">{sectionInfo[section]?.label}</div>
-                    <div className="text-sm text-brand-text-secondary">{sectionInfo[section]?.desc}</div>
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="mt-6 text-center">
-              <button
-                onClick={() => setShowInsightsModal(false)}
-                className="px-4 py-2 text-sm text-brand-text-secondary hover:text-brand-text-primary transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </section>
-  );
-};
-
 const ListingDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
@@ -513,10 +378,17 @@ const ListingDetailPage: React.FC = () => {
         </div>
 
         {/* Neighborhood Insights Section */}
-        <NeighborhoodInsightsSection 
-          address={listing.address} 
-          listingPrice={listing.price} 
-          listingType={listing.listingType} 
+        <NeighborhoodInsights
+          address={listing.address}
+          listingPrice={listing.price}
+          listingType={listing.listingType}
+          addedSections={listing.neighborhoodSections || []}
+          viewMode
+          onSectionToggle={(sections) => {
+            // In a real app, you might want to update the listing here
+            // For now, we can just update the local state for visual feedback
+            setListing(prev => prev ? { ...prev, neighborhoodSections: sections } : null);
+          }}
         />
 
         {/* Generated Content Sections */}

@@ -75,6 +75,7 @@ export interface Listing {
     body: string;
     cta: string;
   }[];
+  neighborhoodSections?: string[];
 }
 
 export type AuthFormMode = 'login' | 'signup';
@@ -104,3 +105,7 @@ export interface AiDesignStyle {
   description: string;
   icon: ForwardRefExoticComponent<Omit<SVGProps<SVGSVGElement>, "ref"> & { title?: string | undefined; titleId?: string | undefined; } & RefAttributes<SVGSVGElement>>; // Heroicon type
 }
+
+export type DesignIdea = {
+  // ... existing code ...
+};

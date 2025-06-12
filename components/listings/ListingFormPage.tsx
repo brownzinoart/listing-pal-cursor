@@ -242,7 +242,7 @@ const EnhancedDropdown: React.FC<{
                    key={option.value}
                    type="button"
                    onClick={() => handleSelect(option.value)}
-                   className={`w-full px-4 py-2 text-left hover:bg-brand-accent/10 transition-colors duration-150 ${
+                   className={`w-full px-4 py-2 text-left text-gray-800 hover:bg-brand-accent/10 transition-colors duration-150 ${
                      value === option.value ? 'bg-brand-accent/20 text-brand-accent font-medium' : 'text-brand-text-primary'
                    }`}
                  >
@@ -281,6 +281,9 @@ export default function ListingFormPage() {
   const [propertyTypeNeedsInput, setPropertyTypeNeedsInput] = useState(false);
   const [listingTypeAutoDetected, setListingTypeAutoDetected] = useState(false);
   const [hasAttemptedAutoFill, setHasAttemptedAutoFill] = useState(false);
+
+  // State for neighborhood insights
+  const [insightsAddedSections, setInsightsAddedSections] = useState<string[]>([]);
 
   const isEditing = !!listingId;
 
@@ -668,7 +671,7 @@ export default function ListingFormPage() {
       listingType: formData.listingType,
       keyFeatures: formData.keyFeatures,
       images: uploadedImages.map(url => ({ url, label: '' })), // New image format
-      // No need to include fields that aren't in the core Listing type unless you extend it
+      neighborhoodSections: insightsAddedSections,
     };
 
     try {
@@ -893,6 +896,10 @@ export default function ListingFormPage() {
                   address={insightsAddress}
                   listingPrice={formData.price}
                   listingType={formData.listingType}
+                  addedSections={insightsAddedSections}
+                  onSectionToggle={(sections) => {
+                    setInsightsAddedSections(sections);
+                  }}
                 />
               )}
               

@@ -89,7 +89,7 @@ const ToolkitPlaceholder: React.FC<ToolkitPlaceholderProps> = ({ listing }) => {
       <div className="mb-8 mt-12">
         <h3 className="text-xl font-bold text-brand-text-primary text-center mb-6">Generate New Content</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8 w-full">
-          {TOOLKIT_TOOLS.map((tool) => {
+          {TOOLKIT_TOOLS.filter(t=>t.enabled).map((tool) => {
             const isEnabled = tool.enabled;
             const isSelected = selected.includes(tool.id);
             const Icon = tool.icon;

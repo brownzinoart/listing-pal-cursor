@@ -3,11 +3,48 @@ import { useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { Listing } from '../../types';
 import FlyerGeneratorPage from '../listings/generation/FlyerGeneratorPage';
+import Button from '../shared/Button';
+import Card from '../shared/Card';
 import * as listingService from '../../services/listingService';
 
 interface PrintGeneratorPageProps {}
 
 type printType = 'flyer' | 'lawnSign' | 'busPanel' | 'postcard' | 'doorHanger';
+
+// Color options for different print types
+const COLOR_OPTIONS = {
+  lawnSign: [
+    { name: 'Royal Blue', bg: 'from-blue-600 to-blue-700', text: 'text-white' },
+    { name: 'Forest Green', bg: 'from-green-600 to-green-700', text: 'text-white' },
+    { name: 'Crimson Red', bg: 'from-red-600 to-red-700', text: 'text-white' },
+    { name: 'Purple', bg: 'from-purple-600 to-purple-700', text: 'text-white' },
+    { name: 'Orange', bg: 'from-orange-500 to-orange-600', text: 'text-white' },
+    { name: 'Teal', bg: 'from-teal-600 to-teal-700', text: 'text-white' },
+  ],
+  postcard: [
+    { name: 'Classic Blue', bg: 'bg-blue-600', text: 'text-white', accent: 'bg-blue-100' },
+    { name: 'Elegant Green', bg: 'bg-green-600', text: 'text-white', accent: 'bg-green-100' },
+    { name: 'Bold Red', bg: 'bg-red-600', text: 'text-white', accent: 'bg-red-100' },
+    { name: 'Modern Purple', bg: 'bg-purple-600', text: 'text-white', accent: 'bg-purple-100' },
+    { name: 'Warm Orange', bg: 'bg-orange-500', text: 'text-white', accent: 'bg-orange-100' },
+    { name: 'Professional Navy', bg: 'bg-slate-700', text: 'text-white', accent: 'bg-slate-100' },
+  ],
+  doorHanger: [
+    { name: 'Bright Blue', bg: 'from-blue-500 to-cyan-600', text: 'text-white', accent: 'bg-yellow-400' },
+    { name: 'Vibrant Green', bg: 'from-green-500 to-emerald-600', text: 'text-white', accent: 'bg-orange-400' },
+    { name: 'Hot Pink', bg: 'from-pink-500 to-rose-600', text: 'text-white', accent: 'bg-yellow-300' },
+    { name: 'Electric Purple', bg: 'from-purple-500 to-violet-600', text: 'text-white', accent: 'bg-cyan-300' },
+    { name: 'Sunset Orange', bg: 'from-orange-400 to-red-500', text: 'text-white', accent: 'bg-yellow-300' },
+    { name: 'Ocean Teal', bg: 'from-teal-500 to-blue-600', text: 'text-white', accent: 'bg-lime-300' },
+  ],
+  busPanel: [
+    { name: 'Bold Black', bg: 'from-gray-900 to-black', text: 'text-white', accent: 'text-yellow-400' },
+    { name: 'Deep Blue', bg: 'from-blue-900 to-indigo-900', text: 'text-white', accent: 'text-cyan-300' },
+    { name: 'Rich Green', bg: 'from-green-800 to-emerald-900', text: 'text-white', accent: 'text-lime-300' },
+    { name: 'Burgundy', bg: 'from-red-900 to-rose-900', text: 'text-white', accent: 'text-orange-300' },
+    { name: 'Dark Purple', bg: 'from-purple-900 to-violet-900', text: 'text-white', accent: 'text-pink-300' },
+  ]
+};
 
 // Simple price formatter
 const formatPrice = (price: number): string => {
@@ -18,83 +55,113 @@ const formatPrice = (price: number): string => {
   }).format(price);
 };
 
-// --- Placeholder Generators -------------------------
+// --- Enhanced Generators with Interactive Colors -------------------------
 const LawnSignGenerator: React.FC<{ listing: Listing }> = ({ listing }) => {
+  const [selectedColor, setSelectedColor] = useState(COLOR_OPTIONS.lawnSign[0]);
+  const [selectedSize, setSelectedSize] = useState('standard');
+
   return (
-    <div className="bg-white p-6 rounded-lg shadow-lg">
-      <h3 className="text-xl font-bold mb-4">Lawn Sign Generator</h3>
+    <Card variant="default" padding="lg">
+      <h3 className="text-xl font-semibold text-brand-text-primary mb-6">Lawn Sign Generator</h3>
       
       {/* Preview */}
       <div className="mb-6">
-        <div className="bg-gradient-to-br from-blue-600 to-blue-800 text-white p-8 rounded-lg max-w-md mx-auto aspect-[3/2] flex flex-col justify-between">
+        <div className={`bg-gradient-to-br ${selectedColor.bg} ${selectedColor.text} p-8 rounded-lg max-w-md mx-auto aspect-[3/2] flex flex-col justify-between shadow-2xl border-4 border-white`}>
           <div className="text-center">
-            <div className="text-3xl font-bold mb-2">{listing.listingType?.toUpperCase() || 'FOR SALE'}</div>
-            <div className="text-lg opacity-90">{listing.address}</div>
+            <div className="text-3xl font-bold mb-2 drop-shadow-lg">{listing.listingType?.toUpperCase() || 'FOR SALE'}</div>
+            <div className="text-lg opacity-90 drop-shadow">{listing.address}</div>
           </div>
           
           <div className="text-center">
-            <div className="text-4xl font-bold mb-2">{formatPrice(listing.price)}</div>
-            <div className="flex justify-center space-x-4 text-sm">
-              {listing.bedrooms && <span>{listing.bedrooms} BD</span>}
-              {listing.bathrooms && <span>{listing.bathrooms} BA</span>}
-              {listing.squareFootage && <span>{listing.squareFootage.toLocaleString()} SF</span>}
+            <div className="text-4xl font-bold mb-2 drop-shadow-lg">{formatPrice(listing.price)}</div>
+            <div className="flex justify-center space-x-4 text-sm font-medium">
+              {listing.bedrooms && <span className="bg-white/20 px-2 py-1 rounded">{listing.bedrooms} BD</span>}
+              {listing.bathrooms && <span className="bg-white/20 px-2 py-1 rounded">{listing.bathrooms} BA</span>}
+              {listing.squareFootage && <span className="bg-white/20 px-2 py-1 rounded">{listing.squareFootage.toLocaleString()} SF</span>}
             </div>
           </div>
           
-          <div className="text-center text-sm">
+          <div className="text-center text-sm bg-white/10 rounded p-2">
             <div className="font-semibold">Your Name</div>
-            <div>Your Phone</div>
-            <div>Your Email</div>
+            <div>Your Phone • Your Email</div>
           </div>
         </div>
       </div>
       
       {/* Customization Options */}
-      <div className="space-y-4">
+      <div className="space-y-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Background Color
+          <label className="block text-sm font-medium text-brand-text-secondary mb-3">
+            Sign Color
           </label>
-          <div className="flex space-x-2">
-            <button className="w-8 h-8 bg-blue-600 rounded border-2 border-gray-300"></button>
-            <button className="w-8 h-8 bg-red-600 rounded border-2 border-gray-300"></button>
-            <button className="w-8 h-8 bg-green-600 rounded border-2 border-gray-300"></button>
-            <button className="w-8 h-8 bg-purple-600 rounded border-2 border-gray-300"></button>
+          <div className="grid grid-cols-3 gap-3">
+            {COLOR_OPTIONS.lawnSign.map((color, index) => (
+              <button
+                key={index}
+                onClick={() => setSelectedColor(color)}
+                className={`p-3 rounded-lg border-2 transition-all duration-200 ${
+                  selectedColor.name === color.name
+                    ? 'border-brand-primary ring-2 ring-brand-primary/20'
+                    : 'border-brand-border hover:border-brand-primary/50'
+                }`}
+              >
+                <div className={`w-full h-8 bg-gradient-to-r ${color.bg} rounded mb-2`}></div>
+                <div className="text-xs font-medium text-brand-text-primary">{color.name}</div>
+              </button>
+            ))}
           </div>
         </div>
+
+        <div>
+          <label className="block text-sm font-medium text-brand-text-secondary mb-2">
+            Sign Size
+          </label>
+          <select 
+            value={selectedSize}
+            onChange={(e) => setSelectedSize(e.target.value)}
+            className="w-full p-3 bg-brand-input-bg border border-brand-border rounded-lg text-brand-text-primary focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all"
+          >
+            <option value="small">18" x 12" Small</option>
+            <option value="standard">24" x 18" Standard</option>
+            <option value="large">30" x 24" Large</option>
+          </select>
+        </div>
         
-        <button className="w-full bg-brand-primary text-white py-2 px-4 rounded-lg hover:bg-brand-primary-dark transition-colors">
+        <Button variant="primary" fullWidth>
           Generate Lawn Sign
-        </button>
+        </Button>
       </div>
-    </div>
+    </Card>
   );
 };
 
 const BusPanelGenerator: React.FC<{ listing: Listing }> = ({ listing }) => {
+  const [selectedColor, setSelectedColor] = useState(COLOR_OPTIONS.busPanel[0]);
+  const [selectedLayout, setSelectedLayout] = useState('imageRight');
+
   return (
-    <div className="bg-white p-6 rounded-lg shadow-lg">
-      <h3 className="text-xl font-bold mb-4">Bus Panel Generator</h3>
+    <Card variant="default" padding="lg">
+      <h3 className="text-xl font-semibold text-brand-text-primary mb-6">Bus Panel Generator</h3>
       
       {/* Preview */}
       <div className="mb-6">
-        <div className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-white p-6 rounded-lg aspect-[5/2] flex relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-transparent z-10"></div>
+        <div className={`bg-gradient-to-r ${selectedColor.bg} text-white p-6 rounded-lg aspect-[5/2] flex relative overflow-hidden shadow-2xl border-4 border-gray-300`}>
+          <div className="absolute inset-0 bg-gradient-to-r from-black/50 to-transparent z-10"></div>
           
           <div className="flex-1 z-20 flex flex-col justify-center">
-            <div className="text-4xl font-bold mb-2 text-white drop-shadow-lg">
+            <div className="text-4xl font-bold mb-2 text-white drop-shadow-2xl">
               {listing.listingType?.toUpperCase() || 'FOR SALE'}
             </div>
-            <div className="text-2xl mb-4 opacity-90">{listing.address}</div>
-            <div className="text-5xl font-bold mb-4 text-yellow-400">
+            <div className="text-2xl mb-4 opacity-90 drop-shadow-lg">{listing.address}</div>
+            <div className={`text-5xl font-bold mb-4 drop-shadow-2xl ${selectedColor.accent}`}>
               {formatPrice(listing.price)}
             </div>
-            <div className="flex space-x-6 text-lg mb-4">
-              {listing.bedrooms && <span>{listing.bedrooms} Bedrooms</span>}
-              {listing.bathrooms && <span>{listing.bathrooms} Bathrooms</span>}
-              {listing.squareFootage && <span>{listing.squareFootage.toLocaleString()} SF</span>}
+            <div className="flex space-x-6 text-lg mb-4 font-medium">
+              {listing.bedrooms && <span className="bg-white/20 px-3 py-1 rounded">{listing.bedrooms} Bedrooms</span>}
+              {listing.bathrooms && <span className="bg-white/20 px-3 py-1 rounded">{listing.bathrooms} Bathrooms</span>}
+              {listing.squareFootage && <span className="bg-white/20 px-3 py-1 rounded">{listing.squareFootage.toLocaleString()} SF</span>}
             </div>
-            <div className="text-xl font-semibold">
+            <div className="text-xl font-semibold bg-white/10 rounded p-2 inline-block">
               Call Your Name • Your Phone
             </div>
           </div>
@@ -112,36 +179,65 @@ const BusPanelGenerator: React.FC<{ listing: Listing }> = ({ listing }) => {
       </div>
       
       {/* Customization Options */}
-      <div className="space-y-4">
+      <div className="space-y-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-brand-text-secondary mb-3">
+            Color Scheme
+          </label>
+          <div className="grid grid-cols-2 gap-3">
+            {COLOR_OPTIONS.busPanel.map((color, index) => (
+              <button
+                key={index}
+                onClick={() => setSelectedColor(color)}
+                className={`p-3 rounded-lg border-2 transition-all duration-200 ${
+                  selectedColor.name === color.name
+                    ? 'border-brand-primary ring-2 ring-brand-primary/20'
+                    : 'border-brand-border hover:border-brand-primary/50'
+                }`}
+              >
+                <div className={`w-full h-8 bg-gradient-to-r ${color.bg} rounded mb-2`}></div>
+                <div className="text-xs font-medium text-brand-text-primary">{color.name}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-brand-text-secondary mb-2">
             Layout Style
           </label>
-          <select className="w-full p-2 border border-gray-300 rounded-lg">
-            <option>Image Right</option>
-            <option>Image Left</option>
-            <option>Image Background</option>
-            <option>Text Only</option>
+          <select 
+            value={selectedLayout}
+            onChange={(e) => setSelectedLayout(e.target.value)}
+            className="w-full p-3 bg-brand-input-bg border border-brand-border rounded-lg text-brand-text-primary focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all"
+          >
+            <option value="imageRight">Image Right</option>
+            <option value="imageLeft">Image Left</option>
+            <option value="imageBackground">Image Background</option>
+            <option value="textOnly">Text Only</option>
           </select>
         </div>
         
-        <button className="w-full bg-brand-primary text-white py-2 px-4 rounded-lg hover:bg-brand-primary-dark transition-colors">
+        <Button variant="primary" fullWidth>
           Generate Bus Panel
-        </button>
+        </Button>
       </div>
-    </div>
+    </Card>
   );
 };
 
 const PostcardGenerator: React.FC<{ listing: Listing }> = ({ listing }) => {
+  const [selectedColor, setSelectedColor] = useState(COLOR_OPTIONS.postcard[0]);
+  const [selectedSize, setSelectedSize] = useState('4x6');
+
   return (
-    <div className="bg-white p-6 rounded-lg shadow-lg">
-      <h3 className="text-xl font-bold mb-4">Postcard Generator</h3>
+    <Card variant="default" padding="lg">
+      <h3 className="text-xl font-semibold text-brand-text-primary mb-6">Postcard Generator</h3>
       
       {/* Preview - Front */}
       <div className="mb-6">
-        <h4 className="text-sm font-medium text-gray-700 mb-2">Front Side</h4>
-        <div className="bg-white border border-gray-300 p-4 rounded-lg aspect-[3/2] max-w-sm mx-auto relative">
+        <h4 className="text-sm font-medium text-brand-text-secondary mb-2">Front Side</h4>
+        <div className="bg-white border-2 border-gray-300 p-4 rounded-lg aspect-[3/2] max-w-sm mx-auto relative shadow-xl">
           {listing.images && listing.images.length > 0 ? (
             <img 
               src={listing.images[0].url} 
@@ -149,40 +245,42 @@ const PostcardGenerator: React.FC<{ listing: Listing }> = ({ listing }) => {
               className="w-full h-full object-cover rounded"
             />
           ) : (
-            <div className="w-full h-full bg-gray-200 rounded flex items-center justify-center">
-              <span className="text-gray-500">Property Photo</span>
+            <div className="w-full h-full bg-brand-panel rounded flex items-center justify-center">
+              <span className="text-brand-text-tertiary">Property Photo</span>
             </div>
           )}
           
-          <div className="absolute bottom-2 left-2 right-2 bg-white/95 p-2 rounded">
+          <div className={`absolute bottom-2 left-2 right-2 ${selectedColor.bg} ${selectedColor.text} p-3 rounded shadow-lg`}>
             <div className="text-lg font-bold">{formatPrice(listing.price)}</div>
-            <div className="text-sm text-gray-600">{listing.address}</div>
+            <div className="text-sm opacity-90">{listing.address}</div>
           </div>
         </div>
       </div>
       
       {/* Preview - Back */}
       <div className="mb-6">
-        <h4 className="text-sm font-medium text-gray-700 mb-2">Back Side</h4>
-        <div className="bg-white border border-gray-300 p-4 rounded-lg aspect-[3/2] max-w-sm mx-auto flex">
-          <div className="w-1/2 pr-2">
-            <div className="text-xs text-gray-600 mb-2">PROPERTY DETAILS</div>
-            <div className="text-sm space-y-1">
-              <div>{listing.bedrooms || '—'} Bedrooms</div>
-              <div>{listing.bathrooms || '—'} Bathrooms</div>
-              <div>{listing.squareFootage?.toLocaleString() || '—'} SF</div>
-              <div className="font-semibold mt-2">{listing.listingType?.toUpperCase() || 'FOR SALE'}</div>
+        <h4 className="text-sm font-medium text-brand-text-secondary mb-2">Back Side</h4>
+        <div className="bg-white border-2 border-gray-300 p-4 rounded-lg aspect-[3/2] max-w-sm mx-auto flex shadow-xl">
+          <div className="w-1/2 pr-3">
+            <div className={`text-xs font-bold mb-2 ${selectedColor.bg} ${selectedColor.text} px-2 py-1 rounded`}>PROPERTY DETAILS</div>
+            <div className="text-sm space-y-1 text-gray-800">
+              <div className="font-medium">{listing.bedrooms || '—'} Bedrooms</div>
+              <div className="font-medium">{listing.bathrooms || '—'} Bathrooms</div>
+              <div className="font-medium">{listing.squareFootage?.toLocaleString() || '—'} SF</div>
+              <div className={`font-bold mt-2 ${selectedColor.bg} ${selectedColor.text} px-2 py-1 rounded text-center`}>
+                {listing.listingType?.toUpperCase() || 'FOR SALE'}
+              </div>
             </div>
           </div>
           
-          <div className="w-1/2 pl-2 border-l border-gray-200">
-            <div className="text-xs text-gray-600 mb-2">CONTACT INFO</div>
-            <div className="text-sm space-y-1">
-              <div className="font-semibold">Your Name</div>
-              <div>Your Phone</div>
-              <div>Your Email</div>
-              <div className="text-xs text-gray-500 mt-2">
-                Interested in this property?<br/>
+          <div className="w-1/2 pl-3 border-l-2 border-gray-200">
+            <div className={`text-xs font-bold mb-2 ${selectedColor.bg} ${selectedColor.text} px-2 py-1 rounded`}>CONTACT INFO</div>
+            <div className="text-sm space-y-1 text-gray-800">
+              <div className="font-bold">Your Name</div>
+              <div className="font-medium">Your Phone</div>
+              <div className="font-medium">Your Email</div>
+              <div className={`text-xs mt-3 p-2 rounded ${selectedColor.accent} text-gray-700`}>
+                <strong>Interested in this property?</strong><br/>
                 Call or email today!
               </div>
             </div>
@@ -191,43 +289,83 @@ const PostcardGenerator: React.FC<{ listing: Listing }> = ({ listing }) => {
       </div>
       
       {/* Customization Options */}
-      <div className="space-y-4">
+      <div className="space-y-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-brand-text-secondary mb-3">
+            Color Scheme
+          </label>
+          <div className="grid grid-cols-3 gap-3">
+            {COLOR_OPTIONS.postcard.map((color, index) => (
+              <button
+                key={index}
+                onClick={() => setSelectedColor(color)}
+                className={`p-3 rounded-lg border-2 transition-all duration-200 ${
+                  selectedColor.name === color.name
+                    ? 'border-brand-primary ring-2 ring-brand-primary/20'
+                    : 'border-brand-border hover:border-brand-primary/50'
+                }`}
+              >
+                <div className={`w-full h-6 ${color.bg} rounded mb-2`}></div>
+                <div className="text-xs font-medium text-brand-text-primary">{color.name}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-brand-text-secondary mb-2">
             Postcard Size
           </label>
-          <select className="w-full p-2 border border-gray-300 rounded-lg">
-            <option>4" x 6" Standard</option>
-            <option>5" x 7" Large</option>
-            <option>6" x 9" Jumbo</option>
+          <select 
+            value={selectedSize}
+            onChange={(e) => setSelectedSize(e.target.value)}
+            className="w-full p-3 bg-brand-input-bg border border-brand-border rounded-lg text-brand-text-primary focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all"
+          >
+            <option value="4x6">4" x 6" Standard</option>
+            <option value="5x7">5" x 7" Large</option>
+            <option value="6x9">6" x 9" Jumbo</option>
           </select>
         </div>
         
-        <button className="w-full bg-brand-primary text-white py-2 px-4 rounded-lg hover:bg-brand-primary-dark transition-colors">
+        <Button variant="primary" fullWidth>
           Generate Postcard
-        </button>
+        </Button>
       </div>
-    </div>
+    </Card>
   );
 };
 
 const DoorHangerGenerator: React.FC<{ listing: Listing }> = ({ listing }) => {
+  const [selectedColor, setSelectedColor] = useState(COLOR_OPTIONS.doorHanger[0]);
+  const [selectedMessage, setSelectedMessage] = useState('newListing');
+
+  const getMessageText = () => {
+    switch (selectedMessage) {
+      case 'justSold': return 'JUST SOLD!';
+      case 'priceReduced': return 'PRICE REDUCED!';
+      case 'openHouse': return 'OPEN HOUSE';
+      default: return 'NEW LISTING!';
+    }
+  };
+
   return (
-    <div className="bg-white p-6 rounded-lg shadow-lg">
-      <h3 className="text-xl font-bold mb-4">Door Hanger Generator</h3>
+    <Card variant="default" padding="lg">
+      <h3 className="text-xl font-semibold text-brand-text-primary mb-6">Door Hanger Generator</h3>
       
       {/* Preview */}
       <div className="mb-6">
         <div className="max-w-xs mx-auto">
           {/* Door hanger shape with cutout */}
-          <div className="bg-gradient-to-b from-blue-50 to-white border-2 border-blue-200 rounded-lg relative" 
+          <div className={`bg-gradient-to-b ${selectedColor.bg} border-4 border-white rounded-lg relative shadow-2xl`} 
                style={{ clipPath: 'polygon(0 0, 100% 0, 100% 25%, 75% 25%, 75% 35%, 100% 35%, 100% 100%, 0 100%)' }}>
             
             <div className="p-6 pt-12">
               {/* Header */}
               <div className="text-center mb-4">
-                <div className="text-2xl font-bold text-blue-800">NEW LISTING</div>
-                <div className="text-lg text-gray-700">{listing.listingType?.toUpperCase() || 'FOR SALE'}</div>
+                <div className={`text-2xl font-black ${selectedColor.text} drop-shadow-2xl`}>{getMessageText()}</div>
+                <div className={`text-lg font-bold ${selectedColor.text} opacity-90 drop-shadow-lg`}>
+                  {listing.listingType?.toUpperCase() || 'FOR SALE'}
+                </div>
               </div>
               
               {/* Property Image */}
@@ -235,38 +373,37 @@ const DoorHangerGenerator: React.FC<{ listing: Listing }> = ({ listing }) => {
                 <img 
                   src={listing.images[0].url} 
                   alt="Property" 
-                  className="w-full h-32 object-cover rounded mb-4"
+                  className="w-full h-32 object-cover rounded-lg mb-4 border-2 border-white shadow-lg"
                 />
               ) : (
-                <div className="w-full h-32 bg-gray-200 rounded mb-4 flex items-center justify-center">
-                  <span className="text-gray-500 text-sm">Property Photo</span>
+                <div className="w-full h-32 bg-white/20 rounded-lg mb-4 flex items-center justify-center border-2 border-white">
+                  <span className="text-white text-sm font-medium">Property Photo</span>
                 </div>
               )}
               
               {/* Property Details */}
               <div className="text-center mb-4">
-                <div className="text-2xl font-bold text-green-600 mb-2">
+                <div className={`text-3xl font-black mb-2 drop-shadow-2xl ${selectedColor.accent}`}>
                   {formatPrice(listing.price)}
                 </div>
-                <div className="text-sm text-gray-700 mb-2">{listing.address}</div>
-                <div className="flex justify-center space-x-3 text-sm text-gray-600">
-                  {listing.bedrooms && <span>{listing.bedrooms} BD</span>}
-                  {listing.bathrooms && <span>{listing.bathrooms} BA</span>}
-                  {listing.squareFootage && <span>{listing.squareFootage.toLocaleString()} SF</span>}
+                <div className={`text-sm font-bold mb-2 ${selectedColor.text} drop-shadow-lg`}>{listing.address}</div>
+                <div className={`flex justify-center space-x-2 text-sm font-medium ${selectedColor.text}`}>
+                  {listing.bedrooms && <span className="bg-white/20 px-2 py-1 rounded">{listing.bedrooms} BD</span>}
+                  {listing.bathrooms && <span className="bg-white/20 px-2 py-1 rounded">{listing.bathrooms} BA</span>}
+                  {listing.squareFootage && <span className="bg-white/20 px-2 py-1 rounded">{listing.squareFootage.toLocaleString()} SF</span>}
                 </div>
               </div>
               
               {/* CTA */}
-              <div className="bg-blue-600 text-white p-3 rounded text-center mb-4">
-                <div className="font-bold">Interested?</div>
-                <div className="text-sm">Call for a showing!</div>
+              <div className={`${selectedColor.accent} text-gray-900 p-3 rounded-lg text-center mb-4 shadow-lg font-bold`}>
+                <div className="font-black">Interested?</div>
+                <div className="text-sm font-bold">Call for a showing!</div>
               </div>
               
               {/* Contact Info */}
-              <div className="text-center text-sm text-gray-700">
-                <div className="font-semibold">Your Name</div>
-                <div>Your Phone</div>
-                <div>Your Email</div>
+              <div className={`text-center text-sm ${selectedColor.text} bg-white/10 rounded p-2`}>
+                <div className="font-bold">Your Name</div>
+                <div className="font-medium">Your Phone • Your Email</div>
               </div>
             </div>
           </div>
@@ -274,24 +411,50 @@ const DoorHangerGenerator: React.FC<{ listing: Listing }> = ({ listing }) => {
       </div>
       
       {/* Customization Options */}
-      <div className="space-y-4">
+      <div className="space-y-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-brand-text-secondary mb-3">
+            Color Scheme
+          </label>
+          <div className="grid grid-cols-2 gap-3">
+            {COLOR_OPTIONS.doorHanger.map((color, index) => (
+              <button
+                key={index}
+                onClick={() => setSelectedColor(color)}
+                className={`p-3 rounded-lg border-2 transition-all duration-200 ${
+                  selectedColor.name === color.name
+                    ? 'border-brand-primary ring-2 ring-brand-primary/20'
+                    : 'border-brand-border hover:border-brand-primary/50'
+                }`}
+              >
+                <div className={`w-full h-8 bg-gradient-to-r ${color.bg} rounded mb-2`}></div>
+                <div className="text-xs font-medium text-brand-text-primary">{color.name}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-brand-text-secondary mb-2">
             Message Style
           </label>
-          <select className="w-full p-2 border border-gray-300 rounded-lg">
-            <option>New Listing</option>
-            <option>Just Sold</option>
-            <option>Price Reduced</option>
-            <option>Open House</option>
+          <select 
+            value={selectedMessage}
+            onChange={(e) => setSelectedMessage(e.target.value)}
+            className="w-full p-3 bg-brand-input-bg border border-brand-border rounded-lg text-brand-text-primary focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all"
+          >
+            <option value="newListing">New Listing</option>
+            <option value="justSold">Just Sold</option>
+            <option value="priceReduced">Price Reduced</option>
+            <option value="openHouse">Open House</option>
           </select>
         </div>
         
-        <button className="w-full bg-brand-primary text-white py-2 px-4 rounded-lg hover:bg-brand-primary-dark transition-colors">
+        <Button variant="primary" fullWidth>
           Generate Door Hanger
-        </button>
+        </Button>
       </div>
-    </div>
+    </Card>
   );
 };
 
@@ -335,8 +498,11 @@ const PrintGeneratorPage: React.FC<PrintGeneratorPageProps> = () => {
 
   if (error || !listing) {
     return (
-      <div className="text-center text-red-600 p-8">
-        Error: {error || 'Listing not found'}
+      <div className="text-center text-brand-danger p-8">
+        <div className="bg-brand-danger/10 border border-brand-danger/20 rounded-lg p-6 max-w-md mx-auto">
+          <h2 className="text-lg font-semibold mb-2">Error</h2>
+          <p>{error || 'Listing not found'}</p>
+        </div>
       </div>
     );
   }
@@ -367,11 +533,11 @@ const PrintGeneratorPage: React.FC<PrintGeneratorPageProps> = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
+    <div className="max-w-6xl mx-auto p-6 min-h-screen bg-brand-background">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Print Generator</h1>
-        <p className="text-gray-600">
-          Create professional print materials for <span className="font-semibold">{listing.address}</span>
+        <h1 className="text-3xl font-bold text-brand-text-primary mb-2">Print Generator</h1>
+        <p className="text-brand-text-secondary">
+          Create professional print materials for <span className="font-semibold text-brand-text-primary">{listing.address}</span>
         </p>
       </div>
 
@@ -382,21 +548,21 @@ const PrintGeneratorPage: React.FC<PrintGeneratorPageProps> = () => {
             <button
               key={type.id}
               onClick={() => setSelectedPrintType(type.id as printType)}
-              className={`flex items-center space-x-2 px-4 py-3 rounded-lg border transition-all ${
+              className={`flex items-center space-x-2 px-4 py-3 rounded-lg border-2 transition-all duration-200 font-medium ${
                 selectedPrintType === type.id
-                  ? 'bg-brand-primary text-white border-brand-primary shadow-lg'
-                  : 'bg-white text-gray-700 border-gray-300 hover:border-brand-primary hover:bg-brand-primary/5'
+                  ? 'bg-brand-primary text-white border-brand-primary shadow-brand-lg'
+                  : 'bg-brand-card text-brand-text-primary border-brand-border hover:border-brand-primary hover:bg-brand-panel'
               }`}
             >
               <span className="text-lg">{type.icon}</span>
-              <span className="font-medium">{type.name}</span>
+              <span>{type.name}</span>
             </button>
           ))}
         </div>
       </div>
 
       {/* Generator Content */}
-      <div className="bg-gray-50 rounded-lg p-6">
+      <div className="bg-brand-panel rounded-lg border border-brand-border shadow-brand">
         {renderGenerator()}
       </div>
     </div>
