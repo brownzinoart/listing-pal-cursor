@@ -15,8 +15,48 @@ const saveAllStoredListings = (listings: Listing[]): void => {
   localStorage.setItem(LISTINGS_KEY, JSON.stringify(listings));
 };
 
+const DEMO_ADDRESS = '123 Main St, Apex, NC 27523';
+
+const createDemoListing = (userId: string): Listing => ({
+  id: generateId(),
+  userId,
+  address: DEMO_ADDRESS,
+  bedrooms: 3,
+  bathrooms: 2,
+  squareFootage: 1850,
+  yearBuilt: 1998,
+  price: 465000,
+  keyFeatures: '• Spacious open-concept living area, perfect for entertaining.\n• Recently updated kitchen with quartz countertops & stainless appliances.\n• Primary suite with vaulted ceiling & walk-in closet.\n• Large fenced backyard with deck & mature trees.\n• Minutes to downtown Apex, parks, and top-rated schools.',
+  images: [
+    {
+      id: generateId(),
+      url: 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=1200&q=60',
+      name: 'front-exterior.jpg'
+    },
+    {
+      id: generateId(),
+      url: 'https://images.unsplash.com/photo-1505691723518-36a9e4d8bb06?auto=format&fit=crop&w=1200&q=60',
+      name: 'living-room.jpg'
+    }
+  ],
+  listingType: 'sale',
+  propertyType: 'Single Family',
+  neighborhoodSections: ['walkability','places']
+});
+
+// Ensure demo listing exists for current user
+const ensureDemoListing = (userId: string) => {
+  const all = getAllStoredListings();
+  const hasDemo = all.some(l => l.address === DEMO_ADDRESS && l.userId === userId);
+  if (!hasDemo) {
+    all.push(createDemoListing(userId));
+    saveAllStoredListings(all);
+  }
+};
+
 export const getListings = async (userId: string): Promise<Listing[]> => {
   await new Promise(resolve => setTimeout(resolve, 300)); // Simulate network delay
+  ensureDemoListing(userId);
   const allListings = getAllStoredListings();
   return allListings.filter(listing => listing.userId === userId);
 };
