@@ -132,6 +132,18 @@ export const deleteListing = async (id: string): Promise<boolean> => {
 };
 
 export const fetchPropertyDetails = async (address: string): Promise<any> => {
+  if (address.toLowerCase().includes('123 main st') && address.toLowerCase().includes('apex')) {
+    // Return mock data immediately for demo
+    return {
+      estimatedValue: 465000,
+      bedrooms: 3,
+      bathrooms: 2,
+      squareFootage: 1850,
+      yearBuilt: 1998,
+      propertyType: 'Single Family',
+      _mockData: true,
+    };
+  }
   // Use RentCast API to get real property data
   console.log('🏠 Making API call to /api/property (RentCast) with address:', address);
   const response = await fetch('/api/property', {
