@@ -392,7 +392,7 @@ const ListingDetailPage: React.FC = () => {
         />
 
         {/* Generated Content Sections */}
-        {(listing.generatedDescription || listing.generatedFacebookPost || listing.generatedInstagramCaption || listing.generatedXPost || listing.generatedEmail || (listing.generatedFlyers && listing.generatedFlyers.length > 0)) && (
+        {(listing.generatedDescription || listing.generatedFacebookPost || listing.generatedInstagramCaption || listing.generatedXPost || listing.generatedEmail || (listing.generatedFlyers && listing.generatedFlyers.length > 0) || (listing.generatedRoomDesigns && listing.generatedRoomDesigns.length > 0)) && (
           <div className="mt-8 space-y-8 overflow-hidden">
             {/* Property Description Section */}
             {listing.generatedDescription && (
@@ -587,6 +587,69 @@ const ListingDetailPage: React.FC = () => {
                   <div className="text-brand-text-secondary leading-relaxed whitespace-pre-line break-words">
                     {listing.generatedEmail}
                   </div>
+                </div>
+              </section>
+            )}
+
+            {/* Interior Reimagined Section */}
+            {listing.generatedRoomDesigns && listing.generatedRoomDesigns.length > 0 && (
+              <section className="bg-brand-panel border border-brand-border rounded-xl p-6 sm:p-8 shadow-xl overflow-hidden">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 overflow-hidden">
+                  <div className="mb-4 sm:mb-0 min-w-0 flex-1">
+                    <h3 className="text-2xl font-bold text-brand-text-primary mb-2 break-words">Interior Reimagined</h3>
+                    <div className="flex items-center">
+                      <span className="bg-brand-secondary h-2 w-2 rounded-full mr-2"></span>
+                      <span className="text-sm font-medium text-brand-secondary break-words">
+                        {listing.generatedRoomDesigns.length} redesign{listing.generatedRoomDesigns.length > 1 ? 's' : ''} generated
+                      </span>
+                    </div>
+                  </div>
+                  <Link to={`/listings/${listing.id}/ai/room-redesign`} className="flex-shrink-0">
+                    <Button 
+                      variant='edit' 
+                      leftIcon={<PencilSquareIcon className='h-4 w-4' />} 
+                      size="md"
+                    >
+                      Generate New Design
+                    </Button>
+                  </Link>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 overflow-hidden">
+                  {listing.generatedRoomDesigns.map((design, index) => {
+                    const style: AiDesignStyle | undefined = AI_DESIGN_STYLES.find(s => s.id === design.styleId);
+                    return (
+                      <div key={index} className="bg-brand-background/30 border border-brand-border/50 rounded-lg overflow-hidden">
+                        <div className="relative overflow-hidden">
+                          <img 
+                            src={design.redesignedImageUrl} 
+                            alt={`Redesigned Room ${index + 1}`} 
+                            className="w-full aspect-[4/3] object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                            onClick={() => {
+                              // Download redesigned image
+                              const link = document.createElement('a');
+                              link.href = design.redesignedImageUrl;
+                              link.download = `room-redesign-${index + 1}.png`;
+                              link.click();
+                            }}
+                          />
+                          <div className="absolute top-2 left-2 bg-brand-primary text-white text-xs px-2 py-1 rounded-full font-medium capitalize">
+                            {style ? style.name : design.styleId}
+                          </div>
+                          <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-full">
+                            Click to Download
+                          </div>
+                        </div>
+                        <div className="p-3 sm:p-4 overflow-hidden">
+                          <h4 className="font-semibold text-brand-text-primary text-sm sm:text-base mb-1 break-words">{style ? style.name : design.styleId}</h4>
+                          <p className="text-xs text-brand-text-tertiary break-words mb-2">{new Date(design.createdAt ?? '').toLocaleDateString()}</p>
+                          {design.prompt && (
+                            <p className="text-sm text-brand-text-secondary italic break-words">"{design.prompt}"</p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </section>
             )}
