@@ -99,6 +99,17 @@ const ListingDescriptionGeneratorPage: React.FC = () => {
     setCharCount(generatedDescription.length);
   }, [generatedDescription]);
 
+  const runSearch = async (query: string) => {
+    // Assuming setGeneratedDescription is the state setter for the output
+    const res = await fetch('/api/ollama/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query })
+    });
+    const { answer } = await res.json();
+    setGeneratedDescription(answer);
+  };
+
   const handleGenerateDescription = async () => {
     if (!listing) return;
     setIsGenerating(true);

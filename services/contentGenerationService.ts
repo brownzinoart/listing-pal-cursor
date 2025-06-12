@@ -53,6 +53,7 @@ export type SocialPlatform = 'facebook' | 'instagram' | 'linkedin' | 'twitter';
 
 export class ContentGenerationService {
   private static baseURL = '/api/listings';
+  private static openaiURL = '/api/openai';
 
   static async generateDescription(propertyData: PropertyData, style: WritingStyle = 'professional'): Promise<ContentGenerationResponse> {
     try {
@@ -72,6 +73,53 @@ export class ContentGenerationService {
       return await response.json();
     } catch (error) {
       console.error('Description generation error:', error);
+      throw error;
+    }
+  }
+
+  static async generateNeighborhoodInsights(address: string): Promise<any> {
+    try {
+      const response = await fetch('/api/openai/neighborhood-insights', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ address })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate neighborhood insights');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Neighborhood insights generation error:', error);
+      throw error;
+    }
+  }
+
+  static async enrichPropertyData(address: string, existingData: Partial<PropertyData> = {}): Promise<{ success: boolean; enrichedData: any; originalData: any }> {
+    try {
+      const response = await fetch(`${this.openaiURL}/enrich-property`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          address,
+          propertyData: existingData
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to enrich property data');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Property data enrichment error:', error);
       throw error;
     }
   }

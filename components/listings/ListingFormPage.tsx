@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeftIcon as ArrowLeft, DocumentIcon as Save, ArrowUpTrayIcon as Upload, XMarkIcon as X, SparklesIcon } from "@heroicons/react/24/outline";
+import { ArrowLeftIcon as ArrowLeft, DocumentIcon as Save, ArrowUpTrayIcon as Upload, XMarkIcon as X, SparklesIcon, ChevronDownIcon, ExclamationTriangleIcon } from "@heroicons/react/24/outline";
 import { useAuth } from "../../contexts/AuthContext";
 import * as listingService from "../../services/listingService";
 import Button from "../shared/Button";
@@ -8,6 +8,75 @@ import AddressAutocomplete from "../shared/AddressAutocomplete";
 import NeighborhoodInsights from '../shared/NeighborhoodInsights';
 import { ContextCard } from '../../types/locationContext';
 
+// Helper function to extract the first number from a string (e.g., "3-4" -> 3, "1500 sq ft" -> 1500)
+const parseNumericValue = (value: any): number => {
+  if (typeof value === 'number') return value;
+  if (typeof value !== 'string') return 0;
+  
+  // This regex looks for the first sequence of digits, allowing for a decimal point.
+  const match = value.match(/(\d+(\.\d+)?)/);
+  return match ? parseFloat(match[0]) : 0;
+};
+
+// Helper function to parse price strings like "$1.5M", "550k", "$1,200,000"
+const parsePrice = (price: any): number => {
+    if (typeof price === 'number') return price;
+    if (typeof price !== 'string') return 0;
+
+    // Remove common currency symbols, commas, and take the first part of a range
+    const sanitized = price.split('-')[0].trim().replace(/[\s$,]/g, '').toLowerCase();
+    
+    // Match the number and any multiplier (k, m)
+    const match = sanitized.match(/(\d+(\.\d+)?)(\w)?/);
+    if (!match) return 0;
+
+    let num = parseFloat(match[1]);
+    const multiplier = match[3];
+
+    if (multiplier === 'm') {
+        num *= 1000000;
+    } else if (multiplier === 'k') {
+        num *= 1000;
+    }
+
+    return Math.round(num);
+};
+
+// Smart listing type detection based on price and other factors
+const detectListingType = (price: number, propertyType?: string): string => {
+  if (price <= 0) return '';
+  
+  // Very clear indicators
+  if (price < 5000) return 'rental';      // Almost certainly monthly rent
+  if (price >= 100000) return 'sale';     // Almost certainly sale price
+  
+  // Moderate confidence ranges
+  if (price < 10000) return 'rental';     // Likely monthly rent
+  if (price >= 50000) return 'sale';      // Likely sale price
+  
+  // Ambiguous range (10k-50k) - could be either
+  // Consider property type if available
+  if (propertyType) {
+    const lowerPropType = propertyType.toLowerCase();
+    if (lowerPropType.includes('condo') || lowerPropType.includes('apartment')) {
+      return price < 30000 ? 'rental' : 'sale';
+    }
+  }
+  
+  return ''; // Let user decide
+};
+
+// Property type options
+const PROPERTY_TYPE_OPTIONS = [
+  'Single Family Home',
+  'Townhouse',
+  'Condo/Apartment',
+  'Multi-Family',
+  'Mobile Home',
+  'Land/Lot',
+  'Commercial',
+  'Other'
+];
 
 // Define form data type to match new structure
 type FormData = {
@@ -24,8 +93,175 @@ type FormData = {
   sqFt: number;
   yearBuilt: number;
   propertyType: string;
+  listingType: string; // 'sale' or 'rental'
   keyFeatures: string;
   imageUrls: string[];
+};
+
+// Enhanced Dropdown Component
+const EnhancedDropdown: React.FC<{
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: { value: string; label: string }[];
+  placeholder?: string;
+  autoDetected?: boolean;
+  required?: boolean;
+  needsInput?: boolean;
+  onNeedsInputChange?: (needs: boolean) => void;
+  disabled?: boolean;
+  disabledPlaceholder?: string;
+}> = ({ 
+  label, 
+  value, 
+  onChange, 
+  options, 
+  placeholder = "Select...", 
+  autoDetected = false,
+  required = false,
+  needsInput = false,
+  onNeedsInputChange,
+  disabled = false,
+  disabledPlaceholder = "Enter address first"
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [customValue, setCustomValue] = useState('');
+  const [showCustomInput, setShowCustomInput] = useState(needsInput);
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSelect = (optionValue: string) => {
+    if (optionValue === '__custom__') {
+      setShowCustomInput(true);
+      setIsOpen(false);
+      onNeedsInputChange?.(true);
+    } else {
+      onChange(optionValue);
+      setIsOpen(false);
+      setShowCustomInput(false);
+      onNeedsInputChange?.(false);
+    }
+  };
+
+  const handleCustomSubmit = () => {
+    if (customValue.trim()) {
+      onChange(customValue.trim());
+      setShowCustomInput(false);
+      onNeedsInputChange?.(false);
+    }
+  };
+
+  const selectedOption = options.find(opt => opt.value === value);
+  const displayValue = disabled 
+    ? disabledPlaceholder 
+    : (selectedOption?.label || value || placeholder);
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+             <label className="block text-brand-text-secondary text-sm font-medium mb-3">
+         {label}
+         {required && <span className="text-red-500 ml-1">*</span>}
+       </label>
+      
+      {showCustomInput ? (
+        <div className="space-y-2">
+                     <input
+             type="text"
+             value={customValue}
+             onChange={(e) => setCustomValue(e.target.value)}
+             placeholder={`Enter custom ${label.toLowerCase()}...`}
+             className="w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-3 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all duration-200"
+             autoFocus
+             onKeyDown={(e) => {
+               if (e.key === 'Enter') {
+                 e.preventDefault();
+                 handleCustomSubmit();
+               } else if (e.key === 'Escape') {
+                 setShowCustomInput(false);
+                 setCustomValue('');
+                 onNeedsInputChange?.(false);
+               }
+             }}
+           />
+           <div className="flex gap-2">
+             <button
+               type="button"
+               onClick={handleCustomSubmit}
+               className="px-3 py-1 bg-brand-primary text-white text-sm rounded-md hover:bg-brand-primary/90 transition-colors"
+             >
+               Add
+             </button>
+             <button
+               type="button"
+               onClick={() => {
+                 setShowCustomInput(false);
+                 setCustomValue('');
+                 onNeedsInputChange?.(false);
+               }}
+               className="px-3 py-1 bg-gray-300 text-gray-700 text-sm rounded-md hover:bg-gray-400 transition-colors"
+             >
+               Cancel
+             </button>
+           </div>
+        </div>
+      ) : (
+                 <div className="relative">
+           <button
+             type="button"
+             onClick={() => !disabled && setIsOpen(!isOpen)}
+             disabled={disabled}
+             className={`w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-left text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary ${
+               disabled 
+                 ? 'cursor-not-allowed opacity-50' 
+                 : ''
+             } ${
+               !value && !disabled ? 'text-brand-text-tertiary' : ''
+             }`}
+           >
+            <div className="flex items-center justify-between">
+              <span className="truncate">{displayValue}</span>
+                             <ChevronDownIcon className={`h-4 w-4 text-brand-text-tertiary transition-transform duration-200 ${isOpen ? 'rotate-180' : ''} ${disabled ? 'opacity-50' : ''}`} />
+            </div>
+          </button>
+          
+                     {isOpen && !disabled && (
+            <div className="absolute z-10 w-full mt-1 bg-white border border-brand-border rounded-lg shadow-lg max-h-60 overflow-auto">
+              {options.map((option) => (
+                                 <button
+                   key={option.value}
+                   type="button"
+                   onClick={() => handleSelect(option.value)}
+                   className={`w-full px-4 py-2 text-left hover:bg-brand-accent/10 transition-colors duration-150 ${
+                     value === option.value ? 'bg-brand-accent/20 text-brand-accent font-medium' : 'text-brand-text-primary'
+                   }`}
+                 >
+                   {option.label}
+                 </button>
+              ))}
+                             <button
+                 type="button"
+                 onClick={() => handleSelect('__custom__')}
+                 className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors duration-150 text-gray-600 border-t border-gray-200 font-medium"
+               >
+                 + Add custom option
+               </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
 };
 
 export default function ListingFormPage() {
@@ -41,6 +277,10 @@ export default function ListingFormPage() {
   const [contextInsightsAdded, setContextInsightsAdded] = useState(false);
   const [contextError, setContextError] = useState<string | null>(null);
   const [insightsAddress, setInsightsAddress] = useState('');
+  const [priceSource, setPriceSource] = useState<string>('');
+  const [propertyTypeNeedsInput, setPropertyTypeNeedsInput] = useState(false);
+  const [listingTypeAutoDetected, setListingTypeAutoDetected] = useState(false);
+  const [hasAttemptedAutoFill, setHasAttemptedAutoFill] = useState(false);
 
   const isEditing = !!listingId;
 
@@ -56,15 +296,40 @@ export default function ListingFormPage() {
       bedrooms: 0,
     bathrooms: 0,
     sqFt: 0,
-    yearBuilt: new Date().getFullYear(),
+    yearBuilt: 0,
     propertyType: "",
+    listingType: "",
     keyFeatures: "",
     imageUrls: [],
   });
 
+  // Auto-detect listing type when price changes
+  useEffect(() => {
+    if (formData.price > 0 && !formData.listingType) {
+      const detectedType = detectListingType(formData.price, formData.propertyType);
+      if (detectedType) {
+        setFormData(prev => ({ ...prev, listingType: detectedType }));
+        setListingTypeAutoDetected(true);
+      }
+    }
+  }, [formData.price, formData.propertyType, formData.listingType]);
+
+  // Check if property type needs input (only show after we've tried to auto-fill)
+  useEffect(() => {
+    if (!formData.propertyType && formData.address && priceSource) {
+      // Only suggest manual input if we've tried auto-filling but property type is still missing
+      setPropertyTypeNeedsInput(true);
+    } else if (formData.propertyType) {
+      setPropertyTypeNeedsInput(false);
+    }
+  }, [formData.propertyType, formData.address, priceSource]);
+
   useEffect(() => {
     if (isEditing && listingId) {
       setIsFetching(true);
+      // Set this immediately for editing mode - we don't want auto-fill behavior
+      setHasAttemptedAutoFill(true);
+      
       listingService.getListingById(listingId)
         .then(listing => {
           if (listing && listing.userId === user?.id) {
@@ -77,16 +342,18 @@ export default function ListingFormPage() {
               streetAddress: addressParts[0] || "",
               city: addressParts[1] || "",
               state: addressParts[2] || "",
-                              zipCode: addressParts[3] || "",
-                price: listing.price,
-                bedrooms: listing.bedrooms,
+              zipCode: addressParts[3] || "",
+              price: listing.price,
+              bedrooms: listing.bedrooms,
               bathrooms: typeof listing.bathrooms === 'string' ? parseFloat(listing.bathrooms) : listing.bathrooms,
               sqFt: listing.squareFootage,
               yearBuilt: listing.yearBuilt,
-              propertyType: "Single Family", // Default since not in old structure
+              propertyType: listing.propertyType || "Single Family Home", // Use proper default
+              listingType: listing.listingType || "sale",
               keyFeatures: listing.keyFeatures,
               imageUrls: listing.images?.map(img => img.url) || [],
             });
+            setInsightsAddress(listing.address);
             if (listing.images && listing.images.length > 0) {
               setUploadedImages(listing.images.map(img => img.url));
             }
@@ -165,44 +432,56 @@ export default function ListingFormPage() {
       
       if (details) {
         console.log('🏠 Processing details:');
-        console.log('  - Price from API:', details.price, '→ Parsed:', parseInt(details.price));
+        console.log('  - Estimated Value from API:', details.estimatedValue, '→ Parsed:', parsePrice(details.estimatedValue));
         console.log('  - Property Type from API:', details.propertyType);
-        console.log('  - Bedrooms from API:', details.bedrooms, '→ Parsed:', parseInt(details.bedrooms));
-        console.log('  - Bathrooms from API:', details.bathrooms, '→ Parsed:', parseFloat(details.bathrooms));
-        console.log('  - Square Footage from API:', details.squareFootage, '→ Parsed:', parseInt(details.squareFootage));
-        console.log('  - Year Built from API:', details.yearBuilt, '→ Parsed:', parseInt(details.yearBuilt));
+        console.log('  - Bedrooms from API:', details.bedrooms, '→ Parsed:', parseNumericValue(details.bedrooms));
+        console.log('  - Bathrooms from API:', details.bathrooms, '→ Parsed:', parseNumericValue(details.bathrooms));
+        console.log('  - Square Footage from API:', details.squareFootage, '→ Parsed:', parseNumericValue(details.squareFootage));
+        console.log('  - Year Built from API:', details.yearBuilt, '→ Parsed:', parseNumericValue(details.yearBuilt));
         
         // Use the addressFormData (which has the address) as base, not the old formData
         const finalFormData = {
           ...addressFormData,  // This preserves the address and location data
-          price: parseInt(details.price) || addressFormData.price,
-          bedrooms: parseInt(details.bedrooms) || addressFormData.bedrooms,
-          bathrooms: parseFloat(details.bathrooms) || addressFormData.bathrooms,
-          sqFt: parseInt(details.squareFootage) || addressFormData.sqFt,
-          yearBuilt: parseInt(details.yearBuilt) || addressFormData.yearBuilt,
+          price: parsePrice(details.estimatedValue) || addressFormData.price,
+          bedrooms: parseNumericValue(details.bedrooms) || addressFormData.bedrooms,
+          bathrooms: parseNumericValue(details.bathrooms) || addressFormData.bathrooms,
+          sqFt: parseNumericValue(details.squareFootage) || addressFormData.sqFt,
+          yearBuilt: parseNumericValue(details.yearBuilt) || addressFormData.yearBuilt,
           propertyType: details.propertyType || addressFormData.propertyType,
+          listingType: details.listingType || addressFormData.listingType,
         };
+        
+        // Set price source info for display
+        if (details._priceSource) {
+          setPriceSource(details._priceSource);
+        } else if (finalFormData.price > 0) {
+          setPriceSource('Auto-filled from property data');
+        }
         
         console.log('📝 Address form data:', addressFormData);
         console.log('📝 Final combined form data:', finalFormData);
         
         setFormData(finalFormData);
-      } else {
-        console.log('⚠️ No details returned from API');
-      }
+        setHasAttemptedAutoFill(true);
+              } else {
+          console.log('⚠️ No details returned from API');
+          setHasAttemptedAutoFill(true);
+        }
     } catch (error: any) {
       // Enhanced error logging for debugging
       console.error('❌ Auto-fill error details:');
       console.error('  - Error message:', error.message || 'Unknown error');
       console.error('  - Error object:', error);
       console.error('  - Error response:', error.response?.data);
+      setFormError(`Auto-fill failed: ${error.message || 'Could not retrieve all property details.'}`);
       console.log("🔄 Auto-fill attempt completed with limited data - check logs above for details");
+      setHasAttemptedAutoFill(true);
     } finally {
       setIsFetchingDetails(false);
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     let parsedValue: string | number = value;
     
@@ -215,7 +494,43 @@ export default function ListingFormPage() {
       }
     }
     
-    setFormData(prev => ({ ...prev, [name]: parsedValue }));
+    // Update form data
+    let updatedFormData = { ...formData, [name]: parsedValue };
+    
+    // Smart listing type detection based on price
+    if (name === 'price' && typeof parsedValue === 'number' && parsedValue > 0) {
+      const price = parsedValue;
+      // Auto-detect listing type if not manually set or if price changed significantly
+      if (!formData.listingType || listingTypeAutoDetected) {
+        const detectedType = detectListingType(price, formData.propertyType);
+        if (detectedType) {
+          updatedFormData.listingType = detectedType;
+          setListingTypeAutoDetected(true);
+        }
+      }
+    }
+    
+    setFormData(updatedFormData);
+  };
+
+  // Handle dropdown changes
+  const handleDropdownChange = (name: string, value: string) => {
+    const updatedFormData = { ...formData, [name]: value };
+    
+    // If listing type is manually selected, turn off auto-detection
+    if (name === 'listingType') {
+      setListingTypeAutoDetected(false);
+    }
+    
+    // If property type is selected and it affects listing type detection
+    if (name === 'propertyType' && formData.price > 0 && listingTypeAutoDetected) {
+      const detectedType = detectListingType(formData.price, value);
+      if (detectedType && detectedType !== formData.listingType) {
+        updatedFormData.listingType = detectedType;
+      }
+    }
+    
+    setFormData(updatedFormData);
   };
 
   const handleSelectChange = (name: string, value: string) => {
@@ -350,6 +665,7 @@ export default function ListingFormPage() {
       squareFootage: formData.sqFt,
       yearBuilt: formData.yearBuilt,
       propertyType: formData.propertyType,
+      listingType: formData.listingType,
       keyFeatures: formData.keyFeatures,
       images: uploadedImages.map(url => ({ url, label: '' })), // New image format
       // No need to include fields that aren't in the core Listing type unless you extend it
@@ -406,39 +722,42 @@ export default function ListingFormPage() {
         <div className="bg-brand-panel rounded-2xl shadow-2xl border border-brand-border">
           <div className="p-8">
             <form onSubmit={onSubmit} className="space-y-8">
-              {/* Address Search */}
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-brand-text-secondary flex items-center">
-                  Listing Address
-                  {isFetchingDetails && (
-                    <span className="ml-2 flex items-center text-xs text-brand-text-tertiary">
-                      <SparklesIcon className="h-4 w-4 mr-1 animate-pulse text-brand-accent"/>
-                      Auto-filling details...
-                    </span>
-                  )}
-                </label>
-                <div className="flex-grow">
-                  <AddressAutocomplete
-                    onAddressSelect={handleAddressSelect}
-                    value={formData.address}
-                  />
-                </div>
-                <p className="text-xs text-brand-text-tertiary">
-                  Start typing to search for an address. Select one to auto-fill location and property details.
-                </p>
-              </div>
-
-              {/* Listing Details Section */}
+              {/* Agent Inputs Section */}
               <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-brand-text-primary border-b border-brand-border pb-3">
-                  Listing Details
-                </h2>
+                <div className="border-b border-brand-border pb-4">
+                  <h2 className="text-2xl font-bold text-brand-text-primary mb-2">Agent Inputs</h2>
+                  <p className="text-sm text-brand-text-tertiary">Primary information required from agent</p>
+                </div>
                 
-                {/* First Row: Price - Bedrooms - Bathrooms */}
+                {/* Address (2 columns) + Price (1 column) Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* Price */}
-                  <div>
-                    <label className="block text-brand-text-secondary text-sm font-medium mb-3">Price ($)</label>
+                  {/* Address - Takes 2 columns */}
+                  <div className="md:col-span-2 space-y-2">
+                    <label className="block text-sm font-medium text-brand-text-secondary flex items-center">
+                      Property Address
+                      {isFetchingDetails && (
+                        <span className="ml-2 flex items-center text-xs text-brand-text-tertiary">
+                          <SparklesIcon className="h-4 w-4 mr-1 animate-pulse text-brand-accent"/>
+                          Auto-filling details...
+                        </span>
+                      )}
+                    </label>
+                    <div className="flex-grow">
+                      <AddressAutocomplete
+                        onAddressSelect={handleAddressSelect}
+                        value={formData.address}
+                      />
+                    </div>
+                    <p className="text-xs text-brand-text-tertiary">
+                      Start typing to search for an address. Property details will auto-fill below.
+                    </p>
+                  </div>
+
+                  {/* Price - Takes 1 column */}
+                  <div className="space-y-2">
+                    <label className="block text-brand-text-secondary text-sm font-medium">
+                      Asking Price ($)
+                    </label>
                     <input
                       type="number"
                       name="price"
@@ -447,7 +766,32 @@ export default function ListingFormPage() {
                       placeholder="e.g., 500000"
                       className="w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
                     />
+                    <p className="text-xs text-brand-text-tertiary">
+                      Set your listing price
+                    </p>
                   </div>
+                </div>
+              </div>
+
+              {/* Auto-Filled Property Details Section */}
+              <div className="space-y-6">
+                <div className="border-b border-brand-border pb-4">
+                  <h2 className="text-2xl font-bold text-brand-text-primary mb-2 flex items-center">
+                    Property Details
+                    {!isEditing && (
+                      <span className="ml-3 text-sm font-normal text-brand-text-tertiary flex items-center">
+                        <SparklesIcon className="h-4 w-4 mr-1 text-brand-accent"/>
+                        Auto-filled from address
+                      </span>
+                    )}
+                  </h2>
+                  <p className="text-sm text-brand-text-tertiary">
+                    {isEditing ? 'Review and edit the property information' : 'Review and edit the auto-filled property information'}
+                  </p>
+                </div>
+                
+                {/* First Row: Bedrooms - Bathrooms - Square Feet */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {/* Bedrooms */}
                   <div>
                     <label className="block text-brand-text-secondary text-sm font-medium mb-3">Bedrooms</label>
@@ -473,10 +817,6 @@ export default function ListingFormPage() {
                       className="w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
                     />
                   </div>
-                </div>
-
-                {/* Second Row: Sq Ft - Year Built - Listing Type */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {/* Square Feet */}
                   <div>
                     <label className="block text-brand-text-secondary text-sm font-medium mb-3">Square Feet</label>
@@ -489,6 +829,10 @@ export default function ListingFormPage() {
                       className="w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
                     />
                   </div>
+                </div>
+
+                {/* Second Row: Year Built - Property Type - Listing Type */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {/* Year Built */}
                   <div>
                     <label className="block text-brand-text-secondary text-sm font-medium mb-3">Year Built</label>
@@ -501,19 +845,46 @@ export default function ListingFormPage() {
                       className="w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
                     />
                   </div>
+                  {/* Property Type */}
+                  <EnhancedDropdown
+                    label="Property Type"
+                    value={formData.propertyType}
+                    onChange={(value) => handleDropdownChange('propertyType', value)}
+                    options={PROPERTY_TYPE_OPTIONS.map(type => ({ value: type, label: type }))}
+                    placeholder="Select property type"
+                    needsInput={propertyTypeNeedsInput}
+                    onNeedsInputChange={setPropertyTypeNeedsInput}
+                    disabled={!hasAttemptedAutoFill}
+                    disabledPlaceholder="Enter address to auto-fill"
+                  />
+                  
                   {/* Listing Type */}
-                  <div>
-                    <label className="block text-brand-text-secondary text-sm font-medium mb-3">Listing Type</label>
-                    <input
-                      type="text"
-                      name="propertyType"
-                      value={formData.propertyType}
-                      onChange={handleInputChange}
-                      placeholder="e.g., Single Family"
-                      className="w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
-                    />
-                  </div>
+                  <EnhancedDropdown
+                    label="Listing Type"
+                    value={formData.listingType}
+                    onChange={(value) => handleDropdownChange('listingType', value)}
+                    options={[
+                      { value: 'sale', label: 'For Sale' },
+                      { value: 'rental', label: 'For Rent' }
+                    ]}
+                    placeholder="Select listing type"
+                    autoDetected={listingTypeAutoDetected}
+                    disabled={!hasAttemptedAutoFill}
+                    disabledPlaceholder="Enter address and price first"
+                  />
                 </div>
+
+                {/* Data Source Indicator */}
+                {priceSource && !isEditing && (
+                  <div className="bg-brand-accent/10 border border-brand-accent/20 rounded-lg p-4">
+                    <div className="flex items-center text-sm">
+                      <SparklesIcon className="h-4 w-4 mr-2 text-brand-accent"/>
+                      <span className="text-brand-text-secondary">
+                        Property data auto-filled from: <span className="font-medium text-brand-accent">{priceSource}</span>
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Neighborhood Insights */}
@@ -521,37 +892,10 @@ export default function ListingFormPage() {
                 <NeighborhoodInsights 
                   address={insightsAddress}
                   listingPrice={formData.price}
-                  onSectionAdd={(section, content) => handleContextSelection([{ 
-                    id: section, 
-                    title: section, 
-                    category: section,
-                    marketingCopy: content
-                  } as ContextCard])}
-                  onSectionRemove={(section) => handleContextSelection([])}
+                  listingType={formData.listingType}
                 />
               )}
               
-              {/* Key Features / Description */}
-              <div className="space-y-3">
-                <h2 className="text-2xl font-bold text-brand-text-primary border-b border-brand-border pb-3">
-                  Listing Description & Key Features
-                </h2>
-                <label className="block text-brand-text-secondary text-sm font-medium">
-                  Describe the listing's unique features, amenities, and selling points
-                </label>
-                <textarea
-                  name="keyFeatures"
-                  value={formData.keyFeatures}
-                  onChange={handleInputChange}
-                  rows={8}
-                  placeholder="Enter key features, listing description, and neighborhood highlights..."
-                  className="w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
-                />
-                <p className="text-xs text-brand-text-tertiary">
-                  Tip: Neighborhood insights added above will automatically be included in this description
-                </p>
-              </div>
-
               {/* Image Upload */}
               <div className="space-y-6">
                 <h2 className="text-2xl font-bold text-brand-text-primary border-b border-brand-border pb-3">
@@ -565,7 +909,7 @@ export default function ListingFormPage() {
                       <div className="flex text-sm text-brand-text-secondary">
                         <label
                           htmlFor="file-upload"
-                          className="relative cursor-pointer bg-brand-background rounded-md font-medium text-brand-primary hover:text-brand-accent focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-brand-primary"
+                          className="relative cursor-pointer bg-transparent rounded-md font-medium text-brand-primary hover:text-brand-accent focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-brand-primary"
                         >
                           <span>Upload files</span>
                           <input id="file-upload" name="file-upload" type="file" className="sr-only" multiple onChange={handleImageUpload} />
@@ -605,6 +949,24 @@ export default function ListingFormPage() {
                   </div>
                 </div>
               )}
+
+              {/* Additional Features */}
+              <div className="space-y-3 mt-8">
+                <h2 className="text-2xl font-bold text-brand-text-primary border-b border-brand-border pb-3">
+                  Additional Features
+                </h2>
+                <label className="block text-brand-text-secondary text-sm font-medium">
+                  Anything else we should know? Add details that will help us generate richer marketing content for this listing.
+                </label>
+                <textarea
+                  name="keyFeatures"
+                  value={formData.keyFeatures}
+                  onChange={handleInputChange}
+                  rows={8}
+                  placeholder="Add any additional features, notes, or context..."
+                  className="w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                />
+              </div>
 
               {/* Form Actions */}
               <div className="flex justify-end space-x-4 pt-8 border-t border-brand-border">

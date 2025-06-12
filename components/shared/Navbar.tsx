@@ -28,14 +28,6 @@ const Navbar: React.FC = () => {
           <div className="flex items-center space-x-3">
             {user ? (
               <>
-                <Button 
-                  variant="primary" 
-                  size="sm"
-                  onClick={() => navigate('/listings/new')}
-                  leftIcon={<PlusIcon className="h-4 w-4" />}
-                >
-                  New Listing
-                </Button>
                 <Button
                   variant="ghost"
                   size="sm"

@@ -50,7 +50,8 @@ export interface Listing {
   price: number;
   keyFeatures: string;
   images: ListingImage[]; 
-  propertyType?: string; 
+  propertyType?: string;
+  listingType?: string; // 'sale' or 'rental' 
   generatedDescription?: string;
   generatedFacebookPost?: string;
   generatedInstagramCaption?: string;

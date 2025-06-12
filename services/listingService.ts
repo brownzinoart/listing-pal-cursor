@@ -92,26 +92,40 @@ export const deleteListing = async (id: string): Promise<boolean> => {
 };
 
 export const fetchPropertyDetails = async (address: string): Promise<any> => {
-  console.log('🌐 Making API call to /api/fetch-property-details with address:', address);
-  
-  const response = await fetch('/api/fetch-property-details', {
+  // Use RentCast API to get real property data
+  console.log('🏠 Making API call to /api/property (RentCast) with address:', address);
+  const response = await fetch('/api/property', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ address }),
+    body: JSON.stringify({ address })
   });
 
-  console.log('📡 API Response status:', response.status, response.statusText);
+  console.log('📡 RentCast API Response status:', response.status, response.statusText);
 
   if (!response.ok) {
-    const errorData = await response.json();
-    console.error('❌ API Error response:', errorData);
+    const errorData = await response.json().catch(() => ({}));
+    console.error('❌ RentCast API Error response:', errorData);
     throw errorData;
   }
 
   const data = await response.json();
-  console.log('✅ API Success response:', data);
-  return data;
+  console.log('✅ RentCast API Success response:', data);
+  
+  // Map RentCast response to expected format
+  const mappedData = {
+    estimatedValue: data.lastSalePrice || data.price || data.estimatedPrice,
+    bedrooms: data.bedrooms,
+    bathrooms: data.bathrooms, 
+    squareFootage: data.squareFootage,
+    yearBuilt: data.yearBuilt,
+    propertyType: data.propertyType,
+    // Include original RentCast data for debugging
+    _rentcastData: data
+  };
+  
+  console.log('🔄 Mapped RentCast data:', mappedData);
+  return mappedData;
 };
     
