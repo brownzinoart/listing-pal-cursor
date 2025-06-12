@@ -392,7 +392,7 @@ const ListingDetailPage: React.FC = () => {
         />
 
         {/* Generated Content Sections */}
-        {(listing.generatedDescription || listing.generatedFacebookPost || listing.generatedInstagramCaption || listing.generatedXPost || listing.generatedEmail || (listing.generatedFlyers && listing.generatedFlyers.length > 0) || (listing.generatedRoomDesigns && listing.generatedRoomDesigns.length > 0)) && (
+        {(listing.generatedDescription || listing.generatedFacebookPost || listing.generatedInstagramCaption || listing.generatedXPost || listing.generatedEmail || (listing.generatedFlyers && listing.generatedFlyers.length > 0) || (listing.generatedRoomDesigns && listing.generatedRoomDesigns.length > 0) || (listing.generatedAdCopy && listing.generatedAdCopy.length > 0)) && (
           <div className="mt-8 space-y-8 overflow-hidden">
             {/* Property Description Section */}
             {listing.generatedDescription && (
@@ -723,7 +723,55 @@ const ListingDetailPage: React.FC = () => {
               </section>
             )}
 
-            
+            {/* Paid Ad Campaigns Section */}
+            {listing.generatedAdCopy && listing.generatedAdCopy.length > 0 && (
+              <section className="bg-brand-panel border border-brand-border rounded-xl p-6 sm:p-8 shadow-xl overflow-hidden">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 overflow-hidden">
+                  <div className="mb-4 sm:mb-0 min-w-0 flex-1">
+                    <h3 className="text-2xl font-bold text-brand-text-primary mb-2 break-words">Paid Ad Campaigns</h3>
+                    <div className="flex items-center">
+                      <span className="bg-brand-secondary h-2 w-2 rounded-full mr-2"></span>
+                      <span className="text-sm font-medium text-brand-secondary break-words">
+                        {listing.generatedAdCopy.length} campaign{listing.generatedAdCopy.length > 1 ? 's' : ''} generated
+                      </span>
+                    </div>
+                  </div>
+                  <Link to={`/listings/${listing.id}/ai/paid-ads`} className="flex-shrink-0">
+                    <Button 
+                      variant='edit' 
+                      leftIcon={<PencilSquareIcon className='h-4 w-4' />} 
+                      size="md"
+                    >
+                      Create New Campaign
+                    </Button>
+                  </Link>
+                </div>
+
+                <div className="space-y-4 overflow-hidden">
+                  {listing.generatedAdCopy.map((ad, index) => (
+                    <div key={index} className="bg-brand-background/30 border border-brand-border/50 rounded-lg p-4 sm:p-6 overflow-hidden">
+                      <div className="flex items-center justify-between mb-3 overflow-hidden">
+                        <div className="flex items-center space-x-2 min-w-0">
+                          <BuildingOfficeIcon className="h-5 w-5 text-brand-primary flex-shrink-0" />
+                          <h4 className="font-semibold text-brand-text-primary text-base truncate capitalize">{ad.platform} • {ad.objective.toLowerCase().replace('_',' ')}</h4>
+                        </div>
+                        <Button 
+                          variant='secondary' 
+                          size='sm'
+                          onClick={() => {
+                            const text = `${ad.headline}\n\n${ad.body}\n\n${ad.cta}`;
+                            navigator.clipboard.writeText(text);
+                          }}
+                        >Copy</Button>
+                      </div>
+                      <p className="text-brand-text-primary font-medium mb-1 break-words">{ad.headline}</p>
+                      <p className="text-brand-text-secondary text-sm mb-2 whitespace-pre-line break-words">{ad.body}</p>
+                      <p className="text-brand-primary text-sm font-semibold break-words">{ad.cta}</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
           </div>
         )}
       </div>
