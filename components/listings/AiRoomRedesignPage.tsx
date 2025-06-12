@@ -272,21 +272,31 @@ const AiRoomRedesignPage: React.FC = () => {
       return;
     }
 
-    // Create a new image object
+    // Prepare redesigned image object for images array
     const newImage = {
-      // For now, we are just saving the URL. In a real app, you'd upload this to your own storage.
-      url: generatedRedesign, 
+      url: generatedRedesign,
       label: `${selectedDesignStyle} Redesign of ${selectedRoomType}`,
       isRedesign: true,
       originalImageUrl: uploadedImage,
     };
 
-    // Add the new image to the existing list of images
+    // Prepare generatedRoomDesign entry (to power workflow status)
+    const newRoomDesign = {
+      originalImageUrl: uploadedImage!,
+      styleId: selectedDesignStyle!,
+      redesignedImageUrl: generatedRedesign,
+      prompt: designPrompt,
+      createdAt: new Date().toISOString(),
+    };
+
     const updatedImages = [...(listing.images || []), newImage];
+    const updatedRoomDesigns = [...(listing.generatedRoomDesigns || []), newRoomDesign];
 
     try {
-      await listingService.updateListing(listingId, { images: updatedImages });
-      // Optionally, navigate away or show a success message
+      await listingService.updateListing(listingId, {
+        images: updatedImages,
+        generatedRoomDesigns: updatedRoomDesigns,
+      });
       navigate(`/listings/${listingId}`);
     } catch (error) {
       console.error("Failed to save redesigned image:", error);

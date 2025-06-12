@@ -9,6 +9,8 @@ export interface ListingImage {
   id: string; // a unique id for the image itself, e.g. for key prop
   url: string; // base64 data URL
   name?: string; // original file name, optional
+  isRedesign?: boolean; // flag if the image is AI-generated redesign
+  originalImageUrl?: string; // if redesign, reference to original
 }
 
 export interface FlyerTemplate {
