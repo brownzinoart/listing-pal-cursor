@@ -52,6 +52,8 @@ const ToolkitPlaceholder: React.FC<ToolkitPlaceholderProps> = ({ listing }) => {
     email: 'bg-teal-600',
     interior: 'bg-pink-600',
     flyer: 'bg-orange-600',
+    print: 'bg-indigo-600',
+    paid_ads: 'bg-green-600',
   };
 
   // Content type descriptions matching the specification
@@ -63,7 +65,9 @@ const ToolkitPlaceholder: React.FC<ToolkitPlaceholderProps> = ({ listing }) => {
       case 'x': return 'Concise X posts';
       case 'email': return 'Professional email campaigns';
       case 'flyer': return 'Custom marketing flyers';
+      case 'print': return 'Lawn signs, postcards & more';
       case 'interior': return 'AI interior styling';
+      case 'paid_ads': return 'Generate paid ad copy';
       default: return 'Generate content for your listing';
     }
   };

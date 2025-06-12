@@ -16,6 +16,7 @@ import XPostGeneratorPage from './components/listings/generation/XPostGeneratorP
 import EmailGeneratorPage from './components/listings/generation/EmailGeneratorPage';
 import FlyerGeneratorPage from './components/listings/generation/FlyerGeneratorPage';
 import PaidAdGeneratorPage from './components/listings/generation/PaidAdGeneratorPage';
+import PrintGeneratorPage from './components/print/PrintGeneratorPage';
 import { OllamaStatusProvider } from './contexts/OllamaStatusContext';
 
 const PrivateRoute: React.FC<{ children: React.ReactElement }> = ({ children }) => {
@@ -73,6 +74,10 @@ const AppRoutes = () => {
           <Route
             path="/listings/:id/generate/paid-ad"
             element={<PrivateRoute><PaidAdGeneratorPage /></PrivateRoute>}
+          />
+          <Route
+            path="/listings/:id/print"
+            element={<PrivateRoute><PrintGeneratorPage /></PrivateRoute>}
           />
           <Route
             path="/listings/:id/ai/room-redesign"

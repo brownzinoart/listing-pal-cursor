@@ -1,4 +1,4 @@
-import { LightBulbIcon, SparklesIcon as SparklesIconOutline, HomeModernIcon, SunIcon, PaintBrushIcon, WrenchScrewdriverIcon, ChatBubbleLeftRightIcon, DocumentTextIcon, EnvelopeIcon, PhotoIcon, MegaphoneIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline';
+import { LightBulbIcon, SparklesIcon as SparklesIconOutline, HomeModernIcon, SunIcon, PaintBrushIcon, WrenchScrewdriverIcon, ChatBubbleLeftRightIcon, DocumentTextIcon, EnvelopeIcon, PhotoIcon, MegaphoneIcon, CurrencyDollarIcon, PrinterIcon } from '@heroicons/react/24/outline';
 import { AiDesignStyle, AiWorkflowTool } from './types';
 
 
@@ -14,6 +14,7 @@ export const TOOLKIT_TOOLS = [
   { id: "email", name: "Introductory Email", pathSuffix: "/generate/email", enabled: true, color: "bg-teal-600", icon: EnvelopeIcon, subtitle: "Professional email campaigns" },
   { id: "interior", name: "Interior Reimagined", pathSuffix: "/ai/room-redesign", enabled: true, color: "bg-pink-600", icon: LightBulbIcon, subtitle: "AI interior styling" },
   { id: "flyer", name: "Flyer Generator", pathSuffix: "/generate/flyer", enabled: true, color: "bg-orange-600", icon: PaintBrushIcon, subtitle: "Custom marketing flyers" },
+  { id: "print", name: "Print Materials", pathSuffix: "/print", enabled: true, color: "bg-indigo-600", icon: PrinterIcon, subtitle: "Lawn signs, postcards & more" },
   { id: "paid_ads", name: "Paid Ad Campaigns", pathSuffix: "/generate/paid-ad", enabled: true, color: "bg-green-600", icon: CurrencyDollarIcon, subtitle: "Generate paid ad copy" },
 ];
 
