@@ -92,8 +92,8 @@ export const deleteListing = async (id: string): Promise<boolean> => {
 };
 
 export const fetchPropertyDetails = async (address: string): Promise<any> => {
-  // Use RentCast API to get real property data
-  console.log('🏠 Making API call to /api/property (RentCast) with address:', address);
+  // Use ATTOM-powered API to get real property data
+  console.log('🏠 Making API call to /api/property (ATTOM) with address:', address);
   const response = await fetch('/api/property', {
     method: 'POST',
     headers: {
@@ -102,18 +102,18 @@ export const fetchPropertyDetails = async (address: string): Promise<any> => {
     body: JSON.stringify({ address })
   });
 
-  console.log('📡 RentCast API Response status:', response.status, response.statusText);
+  console.log('📡 ATTOM API Response status:', response.status, response.statusText);
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    console.error('❌ RentCast API Error response:', errorData);
+    console.error('❌ ATTOM API Error response:', errorData);
     throw errorData;
   }
 
   const data = await response.json();
-  console.log('✅ RentCast API Success response:', data);
+  console.log('✅ ATTOM API Success response:', data);
   
-  // Map RentCast response to expected format
+  // Map ATTOM response to expected format
   const mappedData = {
     estimatedValue: data.lastSalePrice || data.price || data.estimatedPrice,
     bedrooms: data.bedrooms,
@@ -121,11 +121,11 @@ export const fetchPropertyDetails = async (address: string): Promise<any> => {
     squareFootage: data.squareFootage,
     yearBuilt: data.yearBuilt,
     propertyType: data.propertyType,
-    // Include original RentCast data for debugging
-    _rentcastData: data
+    // Include original ATTOM data for debugging
+    _attomData: data
   };
   
-  console.log('🔄 Mapped RentCast data:', mappedData);
+  console.log('🔄 Mapped ATTOM data:', mappedData);
   return mappedData;
 };
     

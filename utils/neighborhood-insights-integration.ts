@@ -7,7 +7,6 @@
 /* ---------- ENV EXPECTATIONS ------------------ */
 // WS_API_KEY              = <walk score key> (optional)
 // GEOAPIFY_API_KEY        = 11c892c511b94bbea562a1a768df5af9  <- new
-// RENTCAST_API_KEY        = 9a8c7ab9c52a4c91bdcb08f350d04c40
 // FBI_API_KEY             = mWhmAmBRTq8kspJNw6UvEhUzPHnOAnlQuygN8lnc
 // CENSUS_API_KEY          = 39777ef1581c0b65f8dd55868da60cfe7c1036d1
 // VITE_GOOGLE_MAPS_API_KEY= AIzaSyAgoBdklj6usuAOlMdUEvWX-6TiZ5mODqc
@@ -33,7 +32,6 @@ const cache = new NodeCacheClass({ stdTTL: 60 * 60 * 24 * 7 }); // 7‑day TTL
 
 // ------- Cost tracking & WebSocket push -------
 const costPerReq: Record<string, number> = {
-  rentcast: 0.01,
   walkscore: 0.005,
   geoapify: 0.002,
   fbi: 0,
@@ -67,16 +65,6 @@ async function guardedFetch(vendor: string, url: string, opts: RequestInit = {})
 }
 
 /* ---------- SERVICE WRAPPERS ------------------ */
-export async function rentcastBundle(address: string, zip: string) {
-  const headers = { "X-Api-Key": process.env.RENTCAST_API_KEY! };
-  const base = "https://api.rentcast.io/v1";
-  const [property, market] = await Promise.all([
-    guardedFetch("rentcast", `${base}/properties?address=${encodeURIComponent(address)}`, { headers }),
-    guardedFetch("rentcast", `${base}/markets?postalCode=${zip}`, { headers }),
-  ]);
-  return { property, market };
-}
-
 // --- Google‑based derived fallback ----------
 async function derivedGoogleWalk(lat: number, lon: number) {
   const cats = ["restaurant", "grocery_or_supermarket", "park", "cafe", "gym", "hospital"];
@@ -196,15 +184,14 @@ neighborhoodRouter.get("/:listingId", async (req: Request, res: Response) => {
   try {
     const { listingId } = req.params;
     const { address, zip, lat, lon } = await getListingFromDB(listingId);
-    const [rentcast, walk, crime, places, census, schools] = await Promise.all([
-      rentcastBundle(address, zip),
+    const [walk, crime, places, census, schools] = await Promise.all([
       walkabilityBundle(lat, lon, address),
       crimeBundle(zip),
       placesBundle(lat, lon),
       censusBundle(lat, lon),
       schoolsBundle(lat, lon),
     ]);
-    res.json({ rentcast, walk, crime, places, census, schools });
+    res.json({ walk, crime, places, census, schools });
   } catch (e) {
     console.error(e);
     res.status(502).json({ status: "unavailable" });

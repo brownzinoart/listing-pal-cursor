@@ -15,7 +15,15 @@ import {
   Settings,
   X,
   AlertCircle,
-  Search
+  Search,
+  Clock,
+  Package,
+  Zap,
+  Calculator,
+  Database,
+  TrendingDown,
+  BarChart3,
+  Home
 } from 'lucide-react';
 
 // Real-time neighborhood data structure
@@ -47,7 +55,8 @@ const emptyNeighborhoodData = {
     priceChange: "0%",
     daysOnMarket: 0,
     inventory: "Unknown",
-    pricePerSqFt: 0
+    pricePerSqFt: 0,
+    marketType: 'Balanced Market' as 'Seller\'s Market' | 'Buyer\'s Market' | 'Balanced Market'
   },
   propertyEstimate: {
     value: 0,
@@ -56,6 +65,8 @@ const emptyNeighborhoodData = {
     rentRange: '',
     comparablesCount: 0
   },
+  comparables: [] as Array<{ address: string; price: number; pricePerSqFt: number }>,
+  marketInsights: [] as Array<{ title: string; message: string; tone: 'info' | 'success' | 'warning' | 'neutral' }>,
   highlights: [] as string[],
   schoolDistrictSummary: "",
   crimeData: {
@@ -323,7 +334,7 @@ const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({
           address: address,
           lat: lat_coord,
           lng: lng_coord,
-          zip: zip_code
+          zip: zip_code || null
         })
       });
 
@@ -464,16 +475,21 @@ const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({
       
       console.log('🎓 Processed schools:', schools.length, 'items');
       
-      // Try to get market data from Rentcast first (more reliable)
+      // Market data from ATTOM (embedded in neighborhood-insights response)
       let marketTrends = {
-        medianPrice: 0,
-        medianRent: 0,
-        priceChange: "0%",
-        daysOnMarket: 0,
-        inventory: "Unknown",
-        pricePerSqFt: 0
+        medianPrice: insights.marketTrends?.medianSale || 0,
+        medianRent: insights.marketTrends?.medianRent || 0,
+        priceChange: insights.marketTrends?.yoyPrice ?
+          `${insights.marketTrends.yoyPrice > 0 ? '+' : ''}${insights.marketTrends.yoyPrice.toFixed(1)}%` : "0%",
+        daysOnMarket: insights.marketTrends?.daysOnMarket || 0,
+        inventory: insights.marketTrends?.daysOnMarket ?
+                    (insights.marketTrends.daysOnMarket < 20 ? "Low" :
+                     insights.marketTrends.daysOnMarket < 40 ? "Moderate" : "High") : "Unknown",
+        pricePerSqFt: 0,
+        marketType: 'Balanced Market' as 'Seller\'s Market' | 'Buyer\'s Market' | 'Balanced Market'
       };
-      
+
+      // Get property estimate from our new market analysis endpoint
       let propertyEstimate = {
         value: 0,
         valueRange: '',
@@ -481,63 +497,97 @@ const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({
         rentRange: '',
         comparablesCount: 0
       };
-      
+
+      // Fetch additional market data including property estimates
       try {
-        console.log('💰 Fetching market data from Rentcast...');
-        const rentcastResponse = await fetch('/api/rentcast/market-analysis', {
+        console.log('📊 Fetching market analysis data...');
+        // Extract ZIP from address if available
+        const zipMatch = address?.match(/\b\d{5}(?:-\d{4})?\b/);
+        const zipCode = zipMatch ? zipMatch[0].substring(0, 5) : null;
+        
+        const marketResponse = await fetch('/api/market-analysis', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             address: address,
-            lat: lat_coord,
-            lng: lng_coord
+            lat: typeof lat_coord === 'number' ? lat_coord : lat,
+            lng: typeof lng_coord === 'number' ? lng_coord : lng,
+            zip: zip_code || zipCode || null
           })
         });
-        
-        if (rentcastResponse.ok) {
-          const rentcastData = await rentcastResponse.json();
-          console.log('✅ Rentcast market data received:', rentcastData);
+
+        if (marketResponse.ok) {
+          const marketData = await marketResponse.json();
+          console.log('✅ Market analysis data received:', marketData);
           
-          marketTrends = {
-            medianPrice: rentcastData.marketTrends.medianPrice || 0,
-            medianRent: rentcastData.marketTrends.medianRent || 0,
-            priceChange: rentcastData.marketTrends.priceChange || "0%",
-            daysOnMarket: rentcastData.marketTrends.daysOnMarket || 0,
-            inventory: rentcastData.marketTrends.inventory || "Unknown",
-            pricePerSqFt: rentcastData.marketTrends.pricePerSqFt || 0
-          };
+          // Update market trends with more detailed data
+          if (marketData.marketTrends) {
+            marketTrends = {
+              ...marketTrends,
+              ...marketData.marketTrends
+            };
+          }
           
-          propertyEstimate = rentcastData.propertyEstimate || propertyEstimate;
+          // Update property estimate with real data
+          if (marketData.propertyEstimate) {
+            propertyEstimate = marketData.propertyEstimate;
+          }
         } else {
-          console.warn('⚠️ Rentcast market data failed, falling back to insights API');
-          // Fallback to insights API market data
-          marketTrends = {
-            medianPrice: insights.marketTrends?.medianSale || 0,
-            medianRent: insights.marketTrends?.medianRent || 0,
-            priceChange: insights.marketTrends?.yoyPrice ? 
-              `${insights.marketTrends.yoyPrice > 0 ? '+' : ''}${insights.marketTrends.yoyPrice.toFixed(1)}%` : "0%",
-            daysOnMarket: insights.marketTrends?.daysOnMarket || 0,
-            inventory: insights.marketTrends?.daysOnMarket ? 
-                      (insights.marketTrends.daysOnMarket < 20 ? "Low" : 
-                       insights.marketTrends.daysOnMarket < 40 ? "Moderate" : "High") : "Unknown",
-            pricePerSqFt: 0
-          };
+          console.warn('⚠️ Market analysis endpoint failed:', marketResponse.status);
         }
-      } catch (rentcastError) {
-        console.error('❌ Rentcast market data error:', rentcastError);
-        // Fallback to insights API market data
-        marketTrends = {
-          medianPrice: insights.marketTrends?.medianSale || 0,
-          medianRent: insights.marketTrends?.medianRent || 0,
-          priceChange: insights.marketTrends?.yoyPrice ? 
-            `${insights.marketTrends.yoyPrice > 0 ? '+' : ''}${insights.marketTrends.yoyPrice.toFixed(1)}%` : "0%",
-          daysOnMarket: insights.marketTrends?.daysOnMarket || 0,
-          inventory: insights.marketTrends?.daysOnMarket ? 
-                    (insights.marketTrends.daysOnMarket < 20 ? "Low" : 
-                     insights.marketTrends.daysOnMarket < 40 ? "Moderate" : "High") : "Unknown",
-          pricePerSqFt: 0
-        };
+      } catch (marketError) {
+        console.warn('⚠️ Market analysis request failed:', marketError);
       }
+
+      // ---- Helper – determine market type -----
+      const determineMarketType = (tr: typeof marketTrends) => {
+        const priceChg = parseFloat(tr.priceChange);
+        if (tr.inventory === 'Low' && priceChg >= 0) return "Seller's Market";
+        if (tr.inventory === 'High' && priceChg < 0) return "Buyer's Market";
+        return 'Balanced Market';
+      };
+
+      marketTrends.marketType = determineMarketType(marketTrends);
+
+      // ---- Generate actionable insights cards -----
+      const insightsArray: Array<{ title: string; message: string; tone: 'info' | 'success' | 'warning' | 'neutral' }> = [];
+
+      // Pricing Strategy
+      if (listingPrice && marketTrends.medianPrice > 0) {
+        const diffPct = ((listingPrice - marketTrends.medianPrice) / marketTrends.medianPrice) * 100;
+        let msg = '';
+        if (Math.abs(diffPct) < 5) {
+          msg = 'Based on comparable properties, the current asking price is competitive.';
+        } else if (diffPct > 5) {
+          msg = `Your price is roughly ${diffPct.toFixed(1)}% above the area median. Highlight unique features to justify the premium.`;
+        } else {
+          msg = `Listing price is ~${Math.abs(diffPct).toFixed(1)}% below median—could attract multiple buyers but leave room for negotiation.`;
+        }
+        insightsArray.push({ title: 'Pricing Strategy', message: msg, tone: 'info' });
+      }
+
+      // Market Timing
+      if (marketTrends.daysOnMarket > 0) {
+        const msg = `With only ${marketTrends.daysOnMarket} average days on market, this is an excellent time to list. Inventory is ${marketTrends.inventory.toLowerCase()} and buyer demand is strong.`;
+        insightsArray.push({ title: 'Market Timing', message: msg, tone: 'success' });
+      }
+
+      // Marketing Focus – generic for now
+      insightsArray.push({
+        title: 'Marketing Focus',
+        message: 'Emphasize the property\'s standout features and modern amenities to appeal to today\'s buyers.',
+        tone: 'warning',
+      });
+
+      // Competition Level
+      insightsArray.push({
+        title: 'Competition Level',
+        message: `Inventory is currently ${marketTrends.inventory.toLowerCase()}, indicating a ${marketTrends.inventory === 'Low' ? 'competitive' : marketTrends.inventory === 'High' ? 'less competitive' : 'moderately competitive'} environment for sellers.`,
+        tone: 'neutral'
+      });
+
+      // Generate simple mock comparables (until real comps endpoint is wired)
+      const compsData = Array.isArray(insights.comparables) ? insights.comparables : [];
 
       const transformedData = {
         walkScore: insights.walkability?.walk || 0,
@@ -550,6 +600,8 @@ const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({
         marketTrends: marketTrends,
         
         propertyEstimate: propertyEstimate,
+        comparables: compsData,
+        marketInsights: insightsArray,
         
         crimeData: {
           score: insights.crime ? Math.max(0, 100 - (insights.crime.violent || 0) - (insights.crime.property || 0)) : 85,
@@ -569,7 +621,7 @@ const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({
           `${amenities.length} nearby amenities including restaurants, groceries, and parks`,
           `${schools.length} schools in the area with ratings and distance information`,
           insights.crime ? `Crime safety score of ${Math.max(0, 100 - (insights.crime.violent || 0) - (insights.crime.property || 0))}/100` : 'Safety information available',
-          marketTrends.medianPrice > 0 ? `Market median price: $${marketTrends.medianPrice.toLocaleString()} (via Rentcast)` : 'Market trends data available'
+          marketTrends.medianPrice > 0 ? `Market median price: $${marketTrends.medianPrice.toLocaleString()} (via ATTOM)` : 'Market trends data available'
         ],
         
         schoolDistrictSummary: schools.length > 0 ? 
@@ -589,7 +641,7 @@ const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({
           schools: schools.length > 0 ? 'api' : 'none',
           amenities: amenities.length > 0 ? 'api' : 'none',  
           walkability: insights.walkability ? 'api' : 'none',
-          market: marketTrends.medianPrice > 0 ? 'rentcast' : 'none',
+          market: marketTrends.medianPrice > 0 ? 'api' : 'none',
           crime: insights.crime ? 'api' : 'ai'
         }
       };
@@ -597,8 +649,33 @@ const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({
       console.log('📊 Final transformed data:', transformedData);
       setData(transformedData);
       setDataQuality(calculateDataQuality(transformedData));
-      
-      // Generate naturalized content using Ollama/Mistral for content enhancement
+
+      // Enhance market insight cards via Gemini for richer language
+      try {
+        const refineResp = await fetch('/api/gemini/neighborhood-insights', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: `Act as an expert real-estate coach. Using the following JSON metrics for ${address} generate three actionable recommendation cards. Each card must be an object with keys title, message, tone (one of success, warning, info). Focus on: pricing strategy, timing, and competition level. Be concise (30-40 words per message) and include specific numbers when relevant. Metrics: ${JSON.stringify({
+              medianPrice: marketTrends.medianPrice,
+              priceChange: marketTrends.priceChange,
+              daysOnMarket: marketTrends.daysOnMarket,
+              inventory: marketTrends.inventory,
+              listingPrice,
+            })}`
+          })
+        });
+
+        if (refineResp.ok) {
+          const refineJson = await refineResp.json();
+          const newCards = JSON.parse(refineJson.content);
+          if (Array.isArray(newCards) && newCards.length === 3) {
+            setData(prev => ({ ...prev, marketInsights: newCards }));
+          }
+        }
+      } catch (e) { console.warn('Gemini market-insights enhancement failed', e); }
+
+      // Generate overview highlights
       await generateNaturalizedContent(address, transformedData);
       
     } catch (error: any) {
@@ -1209,135 +1286,336 @@ ${data.amenities.map(amenity =>
               )}
             </div>
 
-            {/* Property Valuation Section */}
-            {data.propertyEstimate && (data.propertyEstimate.value > 0 || data.propertyEstimate.rent > 0) && (
-              <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
-                <h4 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-                  <svg className="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16l-3-3m3 3l3-3" />
-                  </svg>
-                  Property Valuation Estimate
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {data.propertyEstimate.value > 0 && (
-                    <div className="text-center p-3 bg-white rounded-lg border border-blue-200">
-                      <div className="text-2xl font-bold text-blue-700">${data.propertyEstimate.value.toLocaleString()}</div>
-                      <div className="text-sm text-gray-600">Estimated Value</div>
-                      {data.propertyEstimate.valueRange && (
-                        <div className="text-xs text-gray-500 mt-1">{data.propertyEstimate.valueRange}</div>
-                      )}
-                      {data.marketTrends.medianPrice > 0 && listingPrice && listingPrice > 0 && (
-                        <div className={`text-xs font-medium mt-1 ${
-                          listingPrice > data.marketTrends.medianPrice 
-                            ? 'text-red-600' 
-                            : listingPrice < data.marketTrends.medianPrice 
-                            ? 'text-green-600' 
-                            : 'text-gray-600'
-                        }`}>
-                          {(() => {
-                            const percentDiff = ((listingPrice - data.marketTrends.medianPrice) / data.marketTrends.medianPrice * 100);
-                            if (percentDiff > 0) {
-                              return `${percentDiff.toFixed(1)}% above median`;
-                            } else if (percentDiff < 0) {
-                              return `${Math.abs(percentDiff).toFixed(1)}% below median`;
-                            } else {
-                              return `0.0% at median`;
-                            }
-                          })()}
-                        </div>
-                      )}
+            {/* Hero Market Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Median Sale Price Card */}
+              <div className="relative overflow-hidden bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 rounded-2xl p-6 text-white shadow-xl">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16"></div>
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                      <Home className="w-6 h-6" />
                     </div>
-                  )}
-                  {data.propertyEstimate.rent > 0 && (
-                    <div className="text-center p-3 bg-white rounded-lg border border-blue-200">
-                      <div className="text-2xl font-bold text-green-700">${data.propertyEstimate.rent.toLocaleString()}/mo</div>
-                      <div className="text-sm text-gray-600">Estimated Rent</div>
-                      {data.propertyEstimate.rentRange && (
-                        <div className="text-xs text-gray-500 mt-1">{data.propertyEstimate.rentRange}</div>
-                      )}
-                      {data.marketTrends.medianRent > 0 && data.propertyEstimate.rent > 0 && (
-                        <div className={`text-xs font-medium mt-1 ${
-                          data.propertyEstimate.rent > data.marketTrends.medianRent 
-                            ? 'text-green-600' 
-                            : data.propertyEstimate.rent < data.marketTrends.medianRent 
-                            ? 'text-red-600' 
-                            : 'text-gray-600'
-                        }`}>
-                          {(() => {
-                            const percentDiff = ((data.propertyEstimate.rent - data.marketTrends.medianRent) / data.marketTrends.medianRent * 100);
-                            if (percentDiff > 0) {
-                              return `${percentDiff.toFixed(1)}% above median`;
-                            } else if (percentDiff < 0) {
-                              return `${Math.abs(percentDiff).toFixed(1)}% below median`;
-                            } else {
-                              return `0.0% at median`;
-                            }
-                          })()}
-                        </div>
-                      )}
+                    <div className="text-right">
+                      <div className="text-xs opacity-80">MEDIAN SALE</div>
+                      <div className="text-2xl font-bold">
+                        {data.marketTrends.medianPrice > 0 ? `$${(data.marketTrends.medianPrice / 1000).toFixed(0)}K` : 'N/A'}
+                      </div>
                     </div>
-                  )}
-                </div>
-                {data.propertyEstimate.comparablesCount > 0 && (
-                  <div className="text-center mt-3 text-sm text-gray-600">
-                    Based on {data.propertyEstimate.comparablesCount} comparable properties
                   </div>
-                )}
+                  <div className="text-sm opacity-90">
+                    {data.marketTrends.medianPrice > 0 ? `$${data.marketTrends.medianPrice.toLocaleString()}` : 'Data not available'}
+                  </div>
+                </div>
+              </div>
+
+              {/* YoY Price Change Card */}
+              <div className={`relative overflow-hidden rounded-2xl p-6 text-white shadow-xl ${
+                parseFloat(data.marketTrends.priceChange) >= 0 
+                  ? 'bg-gradient-to-br from-green-500 via-green-600 to-green-700'
+                  : 'bg-gradient-to-br from-red-500 via-red-600 to-red-700'
+              }`}>
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16"></div>
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                      {parseFloat(data.marketTrends.priceChange) >= 0 ? (
+                        <TrendingUp className="w-6 h-6" />
+                      ) : (
+                        <TrendingDown className="w-6 h-6" />
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xs opacity-80">YoY CHANGE</div>
+                      <div className="text-2xl font-bold">{data.marketTrends.priceChange}</div>
+                    </div>
+                  </div>
+                  <div className="text-sm opacity-90">
+                    {parseFloat(data.marketTrends.priceChange) >= 0 ? 'Market appreciating' : 'Market declining'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Days on Market Card */}
+              <div className="relative overflow-hidden bg-gradient-to-br from-purple-500 via-purple-600 to-purple-700 rounded-2xl p-6 text-white shadow-xl">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16"></div>
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                      <Clock className="w-6 h-6" />
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xs opacity-80">AVG DAYS</div>
+                      <div className="text-2xl font-bold">
+                        {data.marketTrends.daysOnMarket > 0 ? data.marketTrends.daysOnMarket : 'N/A'}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-sm opacity-90">
+                    {data.marketTrends.daysOnMarket > 0 
+                      ? data.marketTrends.daysOnMarket < 30 ? 'Fast-moving market' : 'Standard pace'
+                      : 'Data not available'
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Market Insights Tidbits */}
+            {data.marketInsights && data.marketInsights.length > 0 && (
+              <div className="space-y-6 mt-8">
+                <h4 className="text-lg font-semibold text-brand-text-primary mb-2 flex items-center">
+                  <AlertCircle className="w-5 h-5 mr-2 text-brand-accent" />
+                  Market Insights
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {data.marketInsights.map((insight, idx) => (
+                    <div
+                      key={idx}
+                      className={`bg-white rounded-xl p-5 border-l-4 shadow-sm ${
+                        insight.tone === 'success'
+                          ? 'border-green-500'
+                          : insight.tone === 'warning'
+                          ? 'border-yellow-500'
+                          : insight.tone === 'neutral'
+                          ? 'border-gray-400'
+                          : 'border-blue-500'
+                      }`}
+                    >
+                      <h5 className="font-semibold mb-2 text-gray-800">{insight.title}</h5>
+                      <p className="text-sm text-gray-700 leading-relaxed">{insight.message}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
-            {/* Market Stats Grid - Adaptive based on listing type */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {listingType === 'rental' ? (
-                // Rental-focused stats
-                <>
-                  <div className="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg hover:shadow-lg transition-all duration-200">
-                    <div className="text-2xl font-bold text-green-700">
-                      {data.marketTrends.medianRent > 0 ? `$${data.marketTrends.medianRent.toLocaleString()}` : 'N/A'}
-                    </div>
-                    <div className="text-sm text-green-600">Median Rent</div>
-                    <div className="text-xs text-green-600 mt-1">via Rentcast</div>
-                  </div>
-                  <div className="text-center p-4 bg-white border border-gray-200 rounded-lg hover:shadow-lg transition-all duration-200">
-                    <div className="text-2xl font-bold text-gray-900">
-                      {data.marketTrends.medianPrice > 0 ? `$${(data.marketTrends.medianPrice / 1000).toFixed(0)}k` : 'N/A'}
-                    </div>
-                    <div className="text-sm text-gray-600">Property Values</div>
-                    <div className="text-xs text-green-600 mt-1">via Rentcast</div>
-                  </div>
-                </>
-              ) : (
-                // Sale-focused stats
-                <>
-                  <div className="text-center p-4 bg-white border border-gray-200 rounded-lg hover:shadow-lg transition-all duration-200">
-                    <div className="text-2xl font-bold text-gray-900">
-                      {data.marketTrends.medianPrice > 0 ? `$${(data.marketTrends.medianPrice / 1000).toFixed(0)}k` : 'N/A'}
-                    </div>
-                    <div className="text-sm text-gray-600">Median Sale Price</div>
-                    <div className="text-xs text-green-600 mt-1">via Rentcast</div>
-                  </div>
-                  <div className="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg hover:shadow-lg transition-all duration-200">
-                    <div className="text-2xl font-bold text-green-700">
-                      {data.marketTrends.medianRent > 0 ? `$${data.marketTrends.medianRent.toLocaleString()}` : 'N/A'}
-                    </div>
-                    <div className="text-sm text-green-600">Rental Potential</div>
-                    <div className="text-xs text-green-600 mt-1">via Rentcast</div>
-                  </div>
-                </>
-              )}
-              <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg hover:shadow-lg transition-all duration-200">
-                <div className="text-2xl font-bold text-blue-700">
-                  {data.marketTrends.daysOnMarket > 0 ? `${data.marketTrends.daysOnMarket}` : 'N/A'}
-                </div>
-                <div className="text-sm text-blue-600">Days on Market</div>
-                <div className="text-xs text-blue-600 mt-1">via Rentcast</div>
+            {/* Detailed Market Insights */}
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+              <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
+                <h4 className="text-lg font-semibold text-gray-900 flex items-center">
+                  <BarChart3 className="w-5 h-5 mr-2 text-brand-primary" />
+                  Market Breakdown
+                </h4>
               </div>
-              <div className="text-center p-4 bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200 rounded-lg hover:shadow-lg transition-all duration-200">
-                <div className="text-2xl font-bold text-orange-700">
-                  {data.marketTrends.pricePerSqFt > 0 ? `$${data.marketTrends.pricePerSqFt}` : 'N/A'}
+              
+              <div className="p-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Left Column - Price Metrics */}
+                  <div className="space-y-6">
+                    <div>
+                      <h5 className="text-sm font-semibold text-gray-700 mb-4 uppercase tracking-wide">Price Analysis</h5>
+                      
+                      {/* Median Sale Price Bar */}
+                      <div className="mb-4">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-sm text-gray-600">Median Sale Price</span>
+                          <span className="text-sm font-semibold text-gray-900">
+                            {data.marketTrends.medianPrice > 0 ? `$${data.marketTrends.medianPrice.toLocaleString()}` : 'N/A'}
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all duration-1000"
+                            style={{ 
+                              width: data.marketTrends.medianPrice > 0 
+                                ? `${Math.min((data.marketTrends.medianPrice / 1000000) * 100, 100)}%` 
+                                : '0%' 
+                            }}
+                          ></div>
+                        </div>
+                      </div>
+
+                      {/* Median Rent Bar */}
+                      <div className="mb-4">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-sm text-gray-600">Median Rent</span>
+                          <span className="text-sm font-semibold text-gray-900">
+                            {data.marketTrends.medianRent > 0 ? `$${data.marketTrends.medianRent.toLocaleString()}/mo` : 'N/A'}
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-gradient-to-r from-green-500 to-green-600 h-2 rounded-full transition-all duration-1000"
+                            style={{ 
+                              width: data.marketTrends.medianRent > 0 
+                                ? `${Math.min((data.marketTrends.medianRent / 5000) * 100, 100)}%` 
+                                : '0%' 
+                            }}
+                          ></div>
+                        </div>
+                      </div>
+
+                      {/* Price per Sq Ft */}
+                      {data.marketTrends.pricePerSqFt > 0 && (
+                        <div className="mb-4">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-sm text-gray-600">Price per Sq Ft</span>
+                            <span className="text-sm font-semibold text-gray-900">
+                              ${data.marketTrends.pricePerSqFt.toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div 
+                              className="bg-gradient-to-r from-purple-500 to-purple-600 h-2 rounded-full transition-all duration-1000"
+                              style={{ 
+                                width: `${Math.min((data.marketTrends.pricePerSqFt / 500) * 100, 100)}%`
+                              }}
+                            ></div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Listing vs Median */}
+                      {listingPrice && data.marketTrends.medianPrice > 0 && (
+                        <div className="mb-4">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-sm text-gray-600">Listing vs Median</span>
+                            <span className={`text-sm font-semibold ${listingPrice > data.marketTrends.medianPrice ? 'text-red-600' : 'text-green-600'}`}>
+                              {((listingPrice - data.marketTrends.medianPrice) / data.marketTrends.medianPrice * 100).toFixed(1)}%
+                            </span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2 relative">
+                            {/* Median marker */}
+                            <div
+                              className="absolute h-2 bg-gray-400 rounded-full"
+                              style={{ width: '100%', opacity: 0.2 }}
+                            ></div>
+                            {/* Listing position */}
+                            <div
+                              className={`h-2 rounded-full transition-all duration-1000 ${listingPrice > data.marketTrends.medianPrice ? 'bg-red-500' : 'bg-green-500'}`}
+                              style={{ width: `${Math.min((listingPrice / (data.marketTrends.medianPrice * 1.5)) * 100, 100)}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Comparable Properties */}
+                      {data.comparables && data.comparables.length > 0 && (
+                        <div className="mb-4">
+                          <h6 className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Comparable Properties</h6>
+                          <table className="w-full text-xs">
+                            <thead>
+                              <tr className="text-gray-500 text-left">
+                                <th className="py-1">Address</th>
+                                <th className="py-1 text-right">Price</th>
+                                <th className="py-1 text-right">$/SqFt</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {data.comparables.map((c,idx)=>(
+                                <tr key={idx} className="border-t border-gray-200">
+                                  <td className="py-1 pr-2 truncate max-w-[80px]">{c.address}</td>
+                                  <td className="py-1 text-right">${c.price.toLocaleString()}</td>
+                                  <td className="py-1 text-right">${c.pricePerSqFt}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Right Column - Market Conditions */}
+                  <div className="space-y-6">
+                    <div>
+                      <h5 className="text-sm font-semibold text-gray-700 mb-4 uppercase tracking-wide">Market Conditions</h5>
+                      
+                      {/* Inventory Level */}
+                      <div className="bg-gray-50 rounded-xl p-4 mb-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <Package className="w-5 h-5 text-gray-500 mr-2" />
+                            <span className="text-sm text-gray-600">Inventory Level</span>
+                          </div>
+                          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                            data.marketTrends.inventory === 'Low' ? 'bg-red-100 text-red-800' :
+                            data.marketTrends.inventory === 'High' ? 'bg-green-100 text-green-800' :
+                            'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {data.marketTrends.inventory}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Market Type */}
+                      <div className="bg-gray-50 rounded-xl p-4 mb-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <Home className="w-5 h-5 text-gray-500 mr-2" />
+                            <span className="text-sm text-gray-600">Market Type</span>
+                          </div>
+                          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                            data.marketTrends.marketType === "Seller's Market" ? 'bg-purple-100 text-purple-800' :
+                            data.marketTrends.marketType === "Buyer's Market" ? 'bg-blue-100 text-blue-800' :
+                            'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {data.marketTrends.marketType}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Market Velocity */}
+                      <div className="bg-gray-50 rounded-xl p-4 mb-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <Zap className="w-5 h-5 text-gray-500 mr-2" />
+                            <span className="text-sm text-gray-600">Market Velocity</span>
+                          </div>
+                          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                            data.marketTrends.daysOnMarket < 30 ? 'bg-green-100 text-green-800' :
+                            data.marketTrends.daysOnMarket < 60 ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                            {data.marketTrends.daysOnMarket < 30 ? 'Fast' :
+                             data.marketTrends.daysOnMarket < 60 ? 'Moderate' : 'Slow'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Property Estimates (if available) */}
+                      {(data.propertyEstimate?.value || data.propertyEstimate?.rent) && (
+                        <div className="bg-gradient-to-r from-brand-primary/5 to-brand-accent/5 rounded-xl p-4 border border-brand-primary/20">
+                          <h6 className="text-sm font-semibold text-brand-primary mb-3 flex items-center">
+                            <Calculator className="w-4 h-4 mr-2" />
+                            ATTOM Property Estimates
+                          </h6>
+                          {data.propertyEstimate.value && (
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="text-sm text-gray-600">Estimated Value</span>
+                              <span className="text-sm font-semibold text-gray-900">
+                                ${data.propertyEstimate.value.toLocaleString()}
+                              </span>
+                            </div>
+                          )}
+                          {data.propertyEstimate.rent && (
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-gray-600">Estimated Rent</span>
+                              <span className="text-sm font-semibold text-gray-900">
+                                ${data.propertyEstimate.rent.toLocaleString()}/mo
+                              </span>
+                            </div>
+                          )}
+                          {data.propertyEstimate.valueRange && (
+                            <p className="text-xs text-gray-500 mt-2">Range: {data.propertyEstimate.valueRange}</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <div className="text-sm text-orange-600">Price per Sq Ft</div>
-                <div className="text-xs text-orange-600 mt-1">via Rentcast</div>
+
+                {/* Data Source Footer */}
+                <div className="mt-8 pt-4 border-t border-gray-200">
+                  <div className="flex items-center justify-between text-xs text-gray-500">
+                    <div className="flex items-center">
+                      <Database className="w-4 h-4 mr-1" />
+                      <span>Powered by ATTOM Data</span>
+                    </div>
+                    <span>Updated {new Date().toLocaleDateString()}</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
