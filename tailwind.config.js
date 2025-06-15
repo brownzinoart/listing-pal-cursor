@@ -29,9 +29,9 @@ module.exports = {
         '4xl': ['2.25rem', { lineHeight: '2.5rem' }],
       },
       colors: {
-        'brand-background': '#171E2B', // Deep blue/gray
-        'brand-panel': '#242B40',    // Lighter panel background
-        'brand-card': '#2D374F',     // Card backgrounds
+        'brand-background': '#1F273A', // Lighter navy
+        'brand-panel': '#2A3247',    // Adjusted panel background
+        'brand-card': '#343D55',     // Adjusted card background
         'brand-primary': '#4A55C7',  // Primary blue/purple for buttons, interactive elements
         'brand-secondary': '#38A169', // Green for prices, success, active states
         'brand-accent': '#805AD5',    // Purple accent
