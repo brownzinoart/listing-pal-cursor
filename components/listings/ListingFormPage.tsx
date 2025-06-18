@@ -690,6 +690,13 @@ export default function ListingFormPage() {
     }
   };
 
+  // Helper to highlight fields missing after auto
+  const isFieldMissing = (field: keyof FormData) => {
+    const val: any = formData[field];
+    if (!hasAttemptedAutoFill) return false; // highlight only after auto-fill attempt
+    return val === null || val === undefined || val === '' || val === 0;
+  };
+
   if (isFetching) {
     return (
       <div className="min-h-screen bg-brand-background flex items-center justify-center">
@@ -767,7 +774,7 @@ export default function ListingFormPage() {
                       value={formData.price || ''}
                       onChange={handleInputChange}
                       placeholder="e.g., 500000"
-                      className="w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                      className={`w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary ${isFieldMissing('price') ? 'border-red-500' : ''}`}
                     />
                     <p className="text-xs text-brand-text-tertiary">
                       Set your listing price
@@ -804,7 +811,7 @@ export default function ListingFormPage() {
                       value={formData.bedrooms || ''}
                       onChange={handleInputChange}
                       placeholder="e.g., 3"
-                      className="w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                      className={`w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary ${isFieldMissing('bedrooms') ? 'border-red-500' : ''}`}
                     />
                   </div>
                   {/* Bathrooms */}
@@ -817,7 +824,7 @@ export default function ListingFormPage() {
                       value={formData.bathrooms || ''}
                       onChange={handleInputChange}
                       placeholder="e.g., 2.5"
-                      className="w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                      className={`w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary ${isFieldMissing('bathrooms') ? 'border-red-500' : ''}`}
                     />
                   </div>
                   {/* Square Feet */}
@@ -829,7 +836,7 @@ export default function ListingFormPage() {
                       value={formData.sqFt || ''}
                       onChange={handleInputChange}
                       placeholder="e.g., 1800"
-                      className="w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                      className={`w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary ${isFieldMissing('sqFt') ? 'border-red-500' : ''}`}
                     />
                   </div>
                 </div>
@@ -845,7 +852,7 @@ export default function ListingFormPage() {
                       value={formData.yearBuilt || ''}
                       onChange={handleInputChange}
                       placeholder="e.g., 1998"
-                      className="w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                      className={`w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary ${isFieldMissing('yearBuilt') ? 'border-red-500' : ''}`}
                     />
                   </div>
                   {/* Property Type */}
@@ -971,7 +978,7 @@ export default function ListingFormPage() {
                   onChange={handleInputChange}
                   rows={8}
                   placeholder="Add any additional features, notes, or context..."
-                  className="w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                  className={`w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary ${isFieldMissing('keyFeatures') ? 'border-red-500' : ''}`}
                 />
               </div>
 

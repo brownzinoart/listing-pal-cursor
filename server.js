@@ -1461,15 +1461,11 @@ app.post('/api/property', async (req, res) => {
     // ================================================================
     // 2️⃣ RentCast fallback (if key provided)
     // ================================================================
-    console.log('🏠 RentCast API - Fetching property details for:', address);
-
-    if (!process.env.RENTCAST_API_KEY) {
-        console.log('⚠️ RENTCAST_API_KEY not found in environment variables');
-        return res.status(500).json({ 
-            error: 'No property data provider configured',
-            details: 'Please add ATTOM_API_KEY or RENTCAST_API_KEY to your .env file.'
-        });
-    }
+    console.log('⚠️ ATTOM lookup failed or no ATTOM_API_KEY, returning empty property details');
+    return res.status(404).json({
+        error: 'Property details not found',
+        details: 'ATTOM API returned no data for this address.'
+    });
 
     try {
         // Use RentCast API to get real property data
