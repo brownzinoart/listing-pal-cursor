@@ -1440,14 +1440,20 @@ app.post('/api/property', async (req, res) => {
                 const mapped = {
                     estimatedValue: p?.avm?.amount?.value || null,
                     bedrooms: p?.building?.rooms?.beds || null,
-                    bathrooms: p?.building?.rooms?.bathstotal || null,
-                    squareFootage: p?.building?.size?.livingsize || p?.building?.size?.universalsize || null,
-                    yearBuilt: p?.summary?.yearbuilt || null,
-                    propertyType: p?.summary?.propclass || p?.summary?.proptype || null,
+                    bathrooms: p?.building?.rooms?.bathsTotal || null,
+                    squareFootage: p?.building?.size?.livingSize || p?.building?.size?.universalSize || null,
+                    yearBuilt: p?.summary?.yearBuilt || null,
+                    propertyType: p?.summary?.propClass || p?.summary?.propType || null,
                     _attomData: p,
                     _priceSource: p?.avm?.amount?.value ? 'ATTOM AVM' : 'ATTOM'
                 };
                 console.log('✅ ATTOM data mapped', mapped);
+                console.log('🔍 DEBUG - ATTOM mapped values:', {
+                    bedrooms: mapped.bedrooms,
+                    bathrooms: mapped.bathrooms,
+                    squareFootage: mapped.squareFootage,
+                    yearBuilt: mapped.yearBuilt
+                });
                 const complete = await fillMissingPropertyData(address, mapped);
                 return res.json(complete);
             }
@@ -1795,6 +1801,126 @@ app.post('/api/gemini/neighborhood-insights', async (req, res) => {
   }
 });
 
+// OpenAI agent tips endpoint
+app.post('/api/openai/agent-tips', async (req, res) => {
+  if (!process.env.OPENAI_API_KEY) {
+    return res.status(500).json({ 
+      success: false, 
+      error: 'OpenAI API key not configured' 
+    });
+  }
+
+  const { address, neighborhoodData } = req.body;
+
+  if (!address || !neighborhoodData) {
+    return res.status(400).json({ 
+      success: false, 
+      error: 'Address and neighborhood data are required' 
+    });
+  }
+
+  try {
+    const prompt = `You are an expert real estate coach helping agents create compelling talking points. Based on the neighborhood data below, generate exactly 3 actionable tips that a real estate agent can use when presenting this property/area to potential buyers.
+
+PROPERTY ADDRESS: ${address}
+
+NEIGHBORHOOD DATA:
+- Walk Score: ${neighborhoodData.walkScore}/100
+- Transit Score: ${neighborhoodData.transitScore}/100  
+- Bike Score: ${neighborhoodData.bikeScore}/100
+- Number of Schools: ${neighborhoodData.schools?.length || 0} (Average Rating: ${neighborhoodData.schools?.length > 0 ? (neighborhoodData.schools.reduce((acc, s) => acc + s.rating, 0) / neighborhoodData.schools.length).toFixed(1) : 'N/A'}/10)
+- Crime Safety Score: ${neighborhoodData.crimeData?.score || 'N/A'}/100
+- Family Friendly Score: ${neighborhoodData.demographics?.familyFriendly || 'N/A'}/10
+- Median Income: $${neighborhoodData.demographics?.medianIncome?.toLocaleString() || 'N/A'}
+- Market Median Price: $${neighborhoodData.marketTrends?.medianPrice?.toLocaleString() || 'N/A'}
+- 1-Year Price Growth: ${neighborhoodData.marketTrends?.priceGrowth1Year || 'N/A'}%
+- Days on Market: ${neighborhoodData.marketTrends?.daysOnMarket || 'N/A'} days
+- Available Amenities: ${neighborhoodData.amenities?.length || 0} nearby
+
+Requirements:
+1. Each tip should be 15-25 words maximum
+2. Focus on actionable strategies agents can immediately use in conversations
+3. Look at the data holistically to find the strongest selling points
+4. Make tips specific to this neighborhood's strengths
+5. Frame as advice for conversations with buyers
+6. Be practical and results-oriented
+
+Format as a simple array:
+["Tip 1 text here", "Tip 2 text here", "Tip 3 text here"]
+
+Generate the 3 agent tips now:`;
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'gpt-4',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a top-performing real estate coach who specializes in helping agents convert leads through strategic conversation tactics and neighborhood positioning.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        max_tokens: 300,
+        temperature: 0.7
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      throw new Error('Invalid OpenAI response structure');
+    }
+    
+    const content = data.choices[0].message.content.trim();
+    
+    try {
+      const tips = JSON.parse(content);
+      res.status(200).json({ 
+        success: true, 
+        tips: Array.isArray(tips) ? tips : [tips] 
+      });
+    } catch (parseError) {
+      // Fallback: extract tips from text response
+      const tipLines = content.split('\n').filter(line => 
+        line.trim().length > 0 && 
+        (line.includes('"') || line.match(/^\d+\./) || line.startsWith('•'))
+      );
+      const fallbackTips = tipLines.slice(0, 3).map(tip => 
+        tip.replace(/^\d+\.\s*/, '').replace(/^•\s*/, '').replace(/"/g, '').trim()
+      );
+      
+      res.status(200).json({ 
+        success: true, 
+        tips: fallbackTips.length > 0 ? fallbackTips : [
+          "Emphasize the walkability and convenience for daily errands",
+          "Highlight school quality and family-friendly neighborhood features", 
+          "Position market timing based on current price trends and inventory"
+        ]
+      });
+    }
+
+  } catch (error) {
+    console.error('Error generating agent tips:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to generate agent tips',
+      details: error.message 
+    });
+  }
+});
+
 // OpenAI service for filling missing property data gaps
 const fillMissingPropertyData = async (address, existingData) => {
     if (!process.env.OPENAI_API_KEY) {
@@ -1804,6 +1930,16 @@ const fillMissingPropertyData = async (address, existingData) => {
 
     console.log('🤖 Using OpenAI to fill missing property data for:', address);
     console.log('📊 Existing data:', existingData);
+    console.log('🔍 DEBUG - Checking field values:', {
+        bedrooms: existingData.bedrooms,
+        bathrooms: existingData.bathrooms,
+        squareFootage: existingData.squareFootage,
+        yearBuilt: existingData.yearBuilt,
+        bedroomsType: typeof existingData.bedrooms,
+        bathroomsType: typeof existingData.bathrooms,
+        squareFootageType: typeof existingData.squareFootage,
+        yearBuiltType: typeof existingData.yearBuilt
+    });
 
     // Identify what structural data is missing (excluding price - agents should set that manually)
     const missingFields = [];
@@ -2046,48 +2182,103 @@ async function getPropertyDataForAutoFill(address) {
         propertyType: 'low'
     };
 
-    // 1. Try RentCast first (highest confidence)
-    try {
-        console.log('🏠 Attempting RentCast lookup...');
-        const rentcastHeaders = { 'X-Api-Key': process.env.RENTCAST_API_KEY };
-        const propertyUrl = `https://api.rentcast.io/v1/properties?address=${encodeURIComponent(address)}`;
-        const propertyResponse = await axios.get(propertyUrl, { headers: rentcastHeaders });
-        
-        if (propertyResponse.data && propertyResponse.data.length > 0) {
-            const property = propertyResponse.data[0];
-            console.log('✅ RentCast data found');
-            
-            if (property.bedrooms) {
-                data.bedrooms = property.bedrooms;
-                sources.bedrooms = 'RentCast';
-                confidence.bedrooms = 'high';
+    // 1. Try ATTOM API first (highest confidence)
+    if (process.env.ATTOM_API_KEY) {
+        try {
+            console.log('🏠 Attempting ATTOM lookup...');
+            const attomHeaders = {
+                apikey: process.env.ATTOM_API_KEY,
+                Accept: 'application/json'
+            };
+            const attomUrl = `https://api.gateway.attomdata.com/propertyapi/v1.0.0/property/basicprofile?address=${encodeURIComponent(address)}`;
+            const attomResponse = await axios.get(attomUrl, { headers: attomHeaders });
+
+            if (attomResponse.data && attomResponse.data.property && attomResponse.data.property.length) {
+                const p = attomResponse.data.property[0];
+                console.log('✅ ATTOM data found');
+                
+                if (p?.building?.rooms?.beds) {
+                    data.bedrooms = p.building.rooms.beds;
+                    sources.bedrooms = 'ATTOM';
+                    confidence.bedrooms = 'high';
+                }
+                if (p?.building?.rooms?.bathsTotal) {
+                    data.bathrooms = p.building.rooms.bathsTotal;
+                    sources.bathrooms = 'ATTOM';
+                    confidence.bathrooms = 'high';
+                }
+                if (p?.building?.size?.livingSize || p?.building?.size?.universalSize) {
+                    data.squareFootage = p.building.size.livingSize || p.building.size.universalSize;
+                    sources.squareFootage = 'ATTOM';
+                    confidence.squareFootage = 'high';
+                }
+                if (p?.summary?.yearBuilt) {
+                    data.yearBuilt = p.summary.yearBuilt;
+                    sources.yearBuilt = 'ATTOM';
+                    confidence.yearBuilt = 'high';
+                }
+                if (p?.summary?.propClass || p?.summary?.propType) {
+                    data.propertyType = p.summary.propClass || p.summary.propType;
+                    sources.propertyType = 'ATTOM';
+                    confidence.propertyType = 'high';
+                }
             }
-            if (property.bathrooms) {
-                data.bathrooms = property.bathrooms;
-                sources.bathrooms = 'RentCast';
-                confidence.bathrooms = 'high';
-            }
-            if (property.squareFootage) {
-                data.squareFootage = property.squareFootage;
-                sources.squareFootage = 'RentCast';
-                confidence.squareFootage = 'high';
-            }
-            if (property.yearBuilt) {
-                data.yearBuilt = property.yearBuilt;
-                sources.yearBuilt = 'RentCast';
-                confidence.yearBuilt = 'high';
-            }
-            if (property.propertyType) {
-                data.propertyType = property.propertyType;
-                sources.propertyType = 'RentCast';
-                confidence.propertyType = 'high';
-            }
+        } catch (error) {
+            console.log('⚠️ ATTOM lookup failed:', error.message);
         }
-    } catch (error) {
-        console.log('⚠️ RentCast lookup failed:', error.message);
     }
 
-    // 2. Fill remaining gaps with OpenAI (medium confidence)
+    // 2. Try RentCast for any missing fields (high confidence)
+    const missingAfterAttom = [];
+    if (!data.bedrooms) missingAfterAttom.push('bedrooms');
+    if (!data.bathrooms) missingAfterAttom.push('bathrooms');
+    if (!data.squareFootage) missingAfterAttom.push('squareFootage');
+    if (!data.yearBuilt) missingAfterAttom.push('yearBuilt');
+    if (!data.propertyType) missingAfterAttom.push('propertyType');
+
+    if (missingAfterAttom.length > 0) {
+        try {
+            console.log('🏠 Attempting RentCast lookup for missing fields:', missingAfterAttom);
+            const rentcastHeaders = { 'X-Api-Key': process.env.RENTCAST_API_KEY };
+            const propertyUrl = `https://api.rentcast.io/v1/properties?address=${encodeURIComponent(address)}`;
+            const propertyResponse = await axios.get(propertyUrl, { headers: rentcastHeaders });
+            
+            if (propertyResponse.data && propertyResponse.data.length > 0) {
+                const property = propertyResponse.data[0];
+                console.log('✅ RentCast data found');
+                
+                if (property.bedrooms && !data.bedrooms) {
+                    data.bedrooms = property.bedrooms;
+                    sources.bedrooms = 'RentCast';
+                    confidence.bedrooms = 'high';
+                }
+                if (property.bathrooms && !data.bathrooms) {
+                    data.bathrooms = property.bathrooms;
+                    sources.bathrooms = 'RentCast';
+                    confidence.bathrooms = 'high';
+                }
+                if (property.squareFootage && !data.squareFootage) {
+                    data.squareFootage = property.squareFootage;
+                    sources.squareFootage = 'RentCast';
+                    confidence.squareFootage = 'high';
+                }
+                if (property.yearBuilt && !data.yearBuilt) {
+                    data.yearBuilt = property.yearBuilt;
+                    sources.yearBuilt = 'RentCast';
+                    confidence.yearBuilt = 'high';
+                }
+                if (property.propertyType && !data.propertyType) {
+                    data.propertyType = property.propertyType;
+                    sources.propertyType = 'RentCast';
+                    confidence.propertyType = 'high';
+                }
+            }
+        } catch (error) {
+            console.log('⚠️ RentCast lookup failed:', error.message);
+        }
+    }
+
+    // 3. Fill remaining gaps with OpenAI (medium confidence)
     const missingFields = [];
     if (!data.bedrooms) missingFields.push('bedrooms');
     if (!data.bathrooms) missingFields.push('bathrooms');

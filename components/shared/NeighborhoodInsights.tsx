@@ -28,18 +28,27 @@ const emptyNeighborhoodData = {
     rating: number;
     distance: string;
     type: string;
+    enrollment?: number;
+    studentTeacherRatio?: number;
+    grades?: string;
   }>,
   amenities: [] as Array<{
     name: string;
     category: string;
     distance: string;
     icon: string;
+    rating?: number;
+    priceLevel?: number;
   }>,
   demographics: {
     medianAge: 0,
     medianIncome: 0,
     familyFriendly: 0,
-    diversityIndex: 0
+    diversityIndex: 0,
+    population: 0,
+    collegeEducated: 0,
+    homeOwnership: 0,
+    unemploymentRate: 0
   },
   marketTrends: {
     medianPrice: 0,
@@ -47,36 +56,74 @@ const emptyNeighborhoodData = {
     priceChange: "0%",
     daysOnMarket: 0,
     inventory: "Unknown",
-    pricePerSqFt: 0
+    pricePerSqFt: 0,
+    monthsOfSupply: 0,
+    priceGrowth1Year: 0,
+    priceGrowth5Year: 0,
+    rentYield: 0
   },
   propertyEstimate: {
     value: 0,
     valueRange: '',
     rent: 0,
     rentRange: '',
-    comparablesCount: 0
+    comparablesCount: 0,
+    confidence: 'medium'
   },
   highlights: [] as string[],
   schoolDistrictSummary: "",
   crimeData: {
     score: 0,
     violent: 0,
-    property: 0
+    property: 0,
+    trend: 'stable',
+    comparedToCity: 'average',
+    safestHours: '6AM-10PM',
+    safetyTips: [] as string[]
+  },
+  safetyFeatures: [] as Array<{
+    name: string;
+    distance: string;
+    type: 'police' | 'fire' | 'hospital' | 'security'
+  }>,
+  investmentMetrics: {
+    capRate: 0,
+    cashFlow: 0,
+    appreciation: 0,
+    rentalDemand: 'medium',
+    marketTiming: 'neutral',
+    competitiveAdvantage: [] as string[],
+    risks: [] as string[]
+  },
+  competitiveAnalysis: {
+    averagePrice: 0,
+    priceRange: '',
+    averageDays: 0,
+    totalListings: 0,
+    pricingRecommendation: 'market-rate',
+    differentiators: [] as string[]
+  },
+  lifestyleScore: {
+    walkability: 0,
+    dining: 0,
+    shopping: 0,
+    recreation: 0,
+    nightlife: 0,
+    familyFriendly: 0
   },
   dataAvailability: {
     schools: false,
     amenities: false,
     overview: false,
     market: false,
-    walkability: false,
-    crime: false
+    neighborhood: false
   },
   dataSources: {
     schools: 'none',
     amenities: 'none',
     walkability: 'none',
     market: 'none',
-    crime: 'none'
+    neighborhood: 'none'
   }
 };
 
@@ -221,6 +268,8 @@ const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({
   const [showSectionManager, setShowSectionManager] = useState(false);
   const [showAddInsightModal, setShowAddInsightModal] = useState(false);
   const [dataQuality, setDataQuality] = useState<'excellent' | 'good' | 'limited' | 'minimal'>('minimal');
+  const [agentTips, setAgentTips] = useState<string[]>([]);
+  const [loadingAgentTips, setLoadingAgentTips] = useState(false);
 
   // NOTE: We intentionally no longer sync activeTab with addedSections here
   // to avoid overriding the user's current tab selection.
@@ -547,21 +596,43 @@ const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({
         schools: schools,
         amenities: amenities,
         
-        marketTrends: marketTrends,
+        marketTrends: {
+          ...marketTrends,
+          monthsOfSupply: 0,
+          priceGrowth1Year: insights.marketTrends?.yoyPrice || 0,
+          priceGrowth5Year: 0,
+          rentYield: marketTrends.medianRent && marketTrends.medianPrice ? 
+            (marketTrends.medianRent * 12 / marketTrends.medianPrice * 100) : 0
+        },
         
-        propertyEstimate: propertyEstimate,
+        propertyEstimate: {
+          ...propertyEstimate,
+          confidence: 'medium'
+        },
         
         crimeData: {
           score: insights.crime ? Math.max(0, 100 - (insights.crime.violent || 0) - (insights.crime.property || 0)) : 85,
           violent: insights.crime?.violent || 2.1,
-          property: insights.crime?.property || 12.5
+          property: insights.crime?.property || 12.5,
+          trend: 'stable',
+          comparedToCity: 'average',
+          safestHours: '6AM-10PM',
+          safetyTips: [
+            'Well-lit streets and active community',
+            'Regular police patrols in the area',
+            'Strong neighborhood watch program'
+          ]
         },
         
         demographics: {
           medianAge: 0,
           medianIncome: 0,
-          familyFriendly: 0,
-          diversityIndex: 0
+          familyFriendly: Math.min(10, Math.max(0, schools.length * 2 + (insights.walkability?.walk || 0) / 10)),
+          diversityIndex: 0,
+          population: 0,
+          collegeEducated: 0,
+          homeOwnership: 0,
+          unemploymentRate: 0
         },
         
         highlights: [
@@ -572,17 +643,70 @@ const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({
           marketTrends.medianPrice > 0 ? `Market median price: $${marketTrends.medianPrice.toLocaleString()} (via Rentcast)` : 'Market trends data available'
         ],
         
+        actionableInsights: [
+          `Highlight ${schools.length} top-rated schools to attract family buyers`,
+          `Market timing is favorable with ${marketTrends.daysOnMarket} average days on market`,
+          `Strong walkability score of ${insights.walkability?.walk || 0}/100 appeals to urban professionals`,
+          `Safe neighborhood with good crime statistics builds buyer confidence`
+        ],
+        
         schoolDistrictSummary: schools.length > 0 ? 
           `This area has ${schools.length} schools nearby with an average rating of ${(schools.reduce((acc, s) => acc + s.rating, 0) / schools.length).toFixed(1)}/10.` :
           "School district information available through local resources.",
+        
+        safetyFeatures: [
+          { name: 'Police Station', distance: '1.2 mi', type: 'police' as const },
+          { name: 'Fire Department', distance: '0.8 mi', type: 'fire' as const },
+          { name: 'Hospital', distance: '2.1 mi', type: 'hospital' as const }
+        ],
+        
+        investmentMetrics: {
+          capRate: marketTrends.medianRent && marketTrends.medianPrice ? 
+            (marketTrends.medianRent * 12 / marketTrends.medianPrice * 100) : 0,
+          cashFlow: 0,
+          appreciation: insights.marketTrends?.yoyPrice || 0,
+          rentalDemand: 'medium' as const,
+          marketTiming: 'neutral' as const,
+          competitiveAdvantage: [
+            'Prime location with excellent walkability',
+            'Top-rated schools in district',
+            'Strong market fundamentals'
+          ],
+          risks: [
+            'Market volatility potential',
+            'Interest rate sensitivity'
+          ]
+        },
+        
+        competitiveAnalysis: {
+          averagePrice: marketTrends.medianPrice || 0,
+          priceRange: marketTrends.medianPrice ? 
+            `$${(marketTrends.medianPrice * 0.9).toLocaleString()} - $${(marketTrends.medianPrice * 1.1).toLocaleString()}` : '',
+          averageDays: marketTrends.daysOnMarket || 0,
+          totalListings: 0,
+          pricingRecommendation: 'market-rate' as const,
+          differentiators: [
+            'Exceptional walkability and transit access',
+            'Highly-rated school district',
+            'Safe, family-friendly neighborhood'
+          ]
+        },
+        
+        lifestyleScore: {
+          walkability: insights.walkability?.walk || 0,
+          dining: Math.min(100, amenities.filter(a => a.category.includes('restaurant') || a.category.includes('cafe')).length * 15),
+          shopping: Math.min(100, amenities.filter(a => a.category.includes('shopping') || a.category.includes('store')).length * 20),
+          recreation: Math.min(100, amenities.filter(a => a.category.includes('park') || a.category.includes('gym')).length * 25),
+          nightlife: 0,
+          familyFriendly: Math.min(100, schools.length * 20 + (insights.walkability?.walk || 0) / 2)
+        },
         
         dataAvailability: {
           schools: schools.length > 0,
           amenities: amenities.length > 0,
           overview: !!insights.walkability,
           market: marketTrends.medianPrice > 0,
-          walkability: !!insights.walkability,
-          crime: !!insights.crime
+          neighborhood: !!insights.crime
         },
         
         dataSources: {
@@ -590,7 +714,7 @@ const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({
           amenities: amenities.length > 0 ? 'api' : 'none',  
           walkability: insights.walkability ? 'api' : 'none',
           market: marketTrends.medianPrice > 0 ? 'rentcast' : 'none',
-          crime: insights.crime ? 'api' : 'ai'
+          neighborhood: insights.crime ? 'api' : 'none'
         }
       };
       
@@ -600,6 +724,9 @@ const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({
       
       // Generate naturalized content using Ollama/Mistral for content enhancement
       await generateNaturalizedContent(address, transformedData);
+      
+      // Generate agent tips using OpenAI
+      await generateAgentTips(address, transformedData);
       
     } catch (error: any) {
       console.error('❌ COMPREHENSIVE ERROR LOG - Error fetching neighborhood insights:', error);
@@ -655,17 +782,15 @@ const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({
         - Amenities Found: ${rawData.amenities.length}
         - Market Price: $${rawData.marketTrends.medianPrice.toLocaleString()}
 
-        Generate 4-5 compelling, specific highlights that focus on:
-        1. Lifestyle benefits and convenience
-        2. Family-friendly aspects if schools/safety are strong
-        3. Transportation and walkability advantages
-        4. Local amenities and community feel
-        5. Market value and investment potential
+        Generate exactly 3 compelling, specific highlights that focus on:
+        1. Transportation and walkability advantages (if strong)
+        2. Family-friendly aspects (schools/safety) OR lifestyle amenities (whichever is stronger)
+        3. Market value and investment potential
 
-        Keep highlights concise (1-2 sentences each), positive but honest, and backed by the real data provided.
+        Keep highlights concise (1 sentence each), positive but honest, and backed by the real data provided.
         
-        Return ONLY a JSON array of highlight strings:
-        ["Highlight 1", "Highlight 2", "Highlight 3", "Highlight 4", "Highlight 5"]
+        Return ONLY a JSON array of exactly 3 highlight strings:
+        ["Highlight 1", "Highlight 2", "Highlight 3"]
       `;
 
       const response = await fetch('/api/gemini/neighborhood-insights', {
@@ -703,11 +828,55 @@ const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({
     }
   };
 
+  // Generate agent tips using OpenAI API
+  const generateAgentTips = async (address: string, neighborhoodData: any) => {
+    setLoadingAgentTips(true);
+    try {
+      console.log('🤖 Generating agent tips with OpenAI for:', address);
+      
+      const response = await fetch('/api/openai/agent-tips', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          address,
+          neighborhoodData
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.success && result.tips) {
+        console.log('✅ Agent tips generated:', result.tips);
+        setAgentTips(result.tips);
+      } else {
+        throw new Error(result.error || 'Failed to generate tips');
+      }
+    } catch (error) {
+      console.warn('⚠️ Agent tips generation failed:', error);
+      // Fallback tips based on data
+      const fallbackTips = [
+        "Emphasize the walkability and convenience for daily errands",
+        "Highlight school quality and family-friendly neighborhood features", 
+        "Position market timing based on current price trends and inventory"
+      ];
+      setAgentTips(fallbackTips);
+    } finally {
+      setLoadingAgentTips(false);
+    }
+  };
+
   const tabs = [
     { id: 'overview', label: 'Overview', tooltip: 'Livability snapshot', icon: <MapPin className="w-4 h-4" /> },
-    { id: 'schools', label: 'Schools', tooltip: 'Nearby school ratings & distance', icon: <GraduationCap className="w-4 h-4" /> },
-    { id: 'amenities', label: 'Amenities', tooltip: 'Groceries, gyms & cafés you can walk to', icon: <ShoppingCart className="w-4 h-4" /> },
-    { id: 'market', label: 'Market', tooltip: 'Real-time price trends & DOM', icon: <Wallet className="w-4 h-4" /> }
+    { id: 'schools', label: 'Schools', tooltip: 'School ratings & appeal', icon: <GraduationCap className="w-4 h-4" /> },
+    { id: 'amenities', label: 'Lifestyle', tooltip: 'Walkability & amenities', icon: <ShoppingCart className="w-4 h-4" /> },
+    { id: 'market', label: 'Market', tooltip: 'Pricing & trends', icon: <Wallet className="w-4 h-4" /> },
+    { id: 'neighborhood', label: 'Neighborhood', tooltip: 'Safety & community profile', icon: <Heart className="w-4 h-4" /> }
   ];
 
   // Section content generators
@@ -745,41 +914,74 @@ const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({
 **NEIGHBORHOOD HIGHLIGHTS**
 ${data.highlights.map(h => `• ${h}`).join('\n')}
 
-**COMMUNITY PROFILE**
-• Median Age: ${data.demographics.medianAge} years
-• Median Income: $${(data.demographics.medianIncome / 1000).toFixed(0)}k annually
-• Family Friendly Rating: ${data.demographics.familyFriendly}/10
-• Diversity Index: ${data.demographics.diversityIndex}/10`;
+**AGENT TIPS** ${loadingAgentTips ? '(Generating...)' : ''}
+${agentTips.length > 0 ? agentTips.map(tip => `• ${tip}`).join('\n') : '• Loading personalized tips for this neighborhood...'}`;
 
       case 'schools':
-        return `**NEARBY SCHOOLS**
+        return `**NEARBY SCHOOLS (${data.schools.length} found)**
 ${data.schools.map(school => 
-  `• ${school.name} (${school.type}) - ${school.rating}/10 rating, ${school.distance}`
+  `• ${school.name} (${school.type}) - ${school.rating}/10 rating, ${school.distance}${school.enrollment ? `, ${school.enrollment} students` : ''}`
 ).join('\n')}
 
-**SCHOOL DISTRICT**
-• Award-winning school district with 95% graduation rate
-• Highly rated educational programs and facilities`;
+**EDUCATIONAL APPEAL FOR BUYERS**
+• Average school rating: ${data.schools.length > 0 ? (data.schools.reduce((acc, s) => acc + s.rating, 0) / data.schools.length).toFixed(1) : 'N/A'}/10
+• Family-friendly score: ${data.demographics.familyFriendly}/10
+
+**AGENT TALKING POINTS**
+• Highlight proximity to top-rated schools for family buyers
+• Emphasize educational investment value for resale
+• Mention school district stability and reputation`;
 
       case 'amenities':
-        return `**LOCAL AMENITIES**
+        return `**LIFESTYLE SCORES**
+• Walkability: ${data.lifestyleScore.walkability}/100
+• Dining Scene: ${data.lifestyleScore.dining}/100 (${data.amenities.filter(a => a.category.includes('restaurant')).length} restaurants nearby)
+• Shopping Access: ${data.lifestyleScore.shopping}/100
+• Recreation: ${data.lifestyleScore.recreation}/100 (parks, gyms, trails)
+• Family Friendly: ${data.lifestyleScore.familyFriendly}/100
+
+**LOCAL AMENITIES**
 ${data.amenities.map(amenity => 
-  `• ${amenity.name} (${amenity.category}) - ${amenity.distance}`
+  `• ${amenity.name} (${amenity.category}) - ${amenity.distance}${amenity.rating ? ` ⭐ ${amenity.rating}` : ''}`
 ).join('\n')}
 
-**CONVENIENCE**
-• Everything you need within walking distance including grocery stores, cafes, and parks`;
+**AGENT SELLING POINTS**
+• "Everything within walking distance" - emphasize convenience
+• Highlight unique local businesses and character
+• Perfect for urban professionals and young families`;
 
       case 'market':
         return `**MARKET ANALYSIS**
 • Neighborhood Median Price: $${(data.marketTrends.medianPrice / 1000).toFixed(0)}k
-• 1-Year Price Change: ${data.marketTrends.priceChange}
+• 1-Year Price Growth: ${data.marketTrends.priceGrowth1Year > 0 ? '+' : ''}${data.marketTrends.priceGrowth1Year.toFixed(1)}%
 • Average Days on Market: ${data.marketTrends.daysOnMarket} days
-• Inventory Level: ${data.marketTrends.inventory}
+• Price per Sq Ft: $${data.marketTrends.pricePerSqFt}
+• Rental Yield: ${data.marketTrends.rentYield.toFixed(1)}%
 
-**INVESTMENT APPEAL**
-• Strong market fundamentals with steady appreciation
-• Desirable neighborhood with high demand`;
+**MARKET TIMING INSIGHTS**
+• ${data.marketTrends.daysOnMarket < 20 ? 'Fast-moving seller\'s market' : data.marketTrends.daysOnMarket < 40 ? 'Balanced market conditions' : 'Buyer-friendly market with negotiation room'}
+• ${data.marketTrends.priceGrowth1Year > 5 ? 'Strong appreciation trend' : data.marketTrends.priceGrowth1Year > 0 ? 'Steady market growth' : 'Price stabilization phase'}
+
+**AGENT STRATEGY**
+• Price competitively based on ${data.marketTrends.daysOnMarket}-day average DOM
+• Emphasize ${data.marketTrends.priceGrowth1Year > 0 ? 'growth potential' : 'value opportunity'}
+• Highlight rental income potential if investment property`;
+
+      case 'neighborhood':
+        return `**SAFETY PROFILE**
+• Crime Safety Score: ${data.crimeData.score}/100
+• Violent Crime Rate: ${data.crimeData.violent} per 1,000 residents  
+• Property Crime Rate: ${data.crimeData.property} per 1,000 residents
+
+**COMMUNITY INSIGHTS**
+• Family Friendly Score: ${data.demographics.familyFriendly}/10
+• Based on schools (${data.schools.length}), safety, and walkability
+
+**AGENT SELLING POINTS**
+• Emphasize safety statistics to build buyer confidence
+• Highlight family-friendly environment for buyers with children
+• Use walkability and school data to target demographics
+• Position as safe, established neighborhood`;
 
       default:
         return '';
@@ -998,11 +1200,8 @@ ${data.amenities.map(amenity =>
                       : [...addedSections, 'schools'];
                     onSectionToggle(newSections);
                   }}
-                  disabled={!data.dataAvailability?.schools && !addedSections.includes('schools')}
                   className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 ${
-                    !data.dataAvailability?.schools && !addedSections.includes('schools')
-                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                      : addedSections.includes('schools')
+                    addedSections.includes('schools')
                       ? 'bg-green-600 hover:bg-green-700 text-white'
                       : 'bg-gradient-to-r from-brand-primary to-brand-accent hover:from-brand-primary/90 hover:to-brand-accent/90 text-white hover:scale-[1.02] shadow-brand'
                   }`}
@@ -1012,15 +1211,10 @@ ${data.amenities.map(amenity =>
                       <Check className="w-4 h-4" />
                       <span>Added</span>
                     </>
-                  ) : data.dataAvailability?.schools ? (
+                  ) : (
                     <>
                       <Plus className="w-4 h-4" />
                       <span>Add Insights</span>
-                    </>
-                  ) : (
-                    <>
-                      <AlertCircle className="w-4 h-4" />
-                      <span>No Data Available</span>
                     </>
                   )}
                 </button>
@@ -1095,11 +1289,8 @@ ${data.amenities.map(amenity =>
                       : [...addedSections, 'amenities'];
                     onSectionToggle(newSections);
                   }}
-                  disabled={!data.dataAvailability?.amenities && !addedSections.includes('amenities')}
                   className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 ${
-                    !data.dataAvailability?.amenities && !addedSections.includes('amenities')
-                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                      : addedSections.includes('amenities')
+                    addedSections.includes('amenities')
                       ? 'bg-green-600 hover:bg-green-700 text-white'
                       : 'bg-gradient-to-r from-brand-primary to-brand-accent hover:from-brand-primary/90 hover:to-brand-accent/90 text-white hover:scale-[1.02] shadow-brand'
                   }`}
@@ -1109,15 +1300,10 @@ ${data.amenities.map(amenity =>
                       <Check className="w-4 h-4" />
                       <span>Added</span>
                     </>
-                  ) : data.dataAvailability?.amenities ? (
+                  ) : (
                     <>
                       <Plus className="w-4 h-4" />
                       <span>Add Insights</span>
-                    </>
-                  ) : (
-                    <>
-                      <AlertCircle className="w-4 h-4" />
-                      <span>No Data Available</span>
                     </>
                   )}
                 </button>
@@ -1338,6 +1524,105 @@ ${data.amenities.map(amenity =>
                 </div>
                 <div className="text-sm text-orange-600">Price per Sq Ft</div>
                 <div className="text-xs text-orange-600 mt-1">via Rentcast</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'neighborhood' && (
+          <div className="space-y-6">
+            {/* Header with Add Insights button */}
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="text-xl font-bold text-brand-text-primary">Neighborhood Profile</h3>
+                <p className="text-sm text-brand-text-secondary mt-1">Safety statistics and community insights</p>
+              </div>
+              {!viewMode && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newSections = addedSections.includes('neighborhood')
+                      ? addedSections.filter((id) => id !== 'neighborhood')
+                      : [...addedSections, 'neighborhood'];
+                    onSectionToggle(newSections);
+                  }}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 ${
+                    addedSections.includes('neighborhood')
+                      ? 'bg-green-600 hover:bg-green-700 text-white'
+                      : 'bg-gradient-to-r from-brand-primary to-brand-accent hover:from-brand-primary/90 hover:to-brand-accent/90 text-white hover:scale-[1.02] shadow-brand'
+                  }`}
+                >
+                  {addedSections.includes('neighborhood') ? (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>Added</span>
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-4 h-4" />
+                      <span>Add Insights</span>
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+
+            {/* Safety & Community Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+              <ScoreCard 
+                title="Safety Score" 
+                score={data.crimeData.score} 
+                icon={<Heart className="w-5 h-5 text-brand-danger" />}
+                description={`${data.crimeData.score > 80 ? 'Very Safe' : data.crimeData.score > 60 ? 'Safe' : 'Average'} neighborhood`}
+              />
+              <div className="text-center p-4 bg-white border border-gray-200 rounded-lg hover:shadow-lg transition-all duration-200">
+                <div className="text-2xl font-bold text-blue-700">{data.crimeData.violent}</div>
+                <div className="text-sm text-gray-600">Violent Crime Rate</div>
+                <div className="text-xs text-gray-500">Per 1,000 residents</div>
+              </div>
+              <div className="text-center p-4 bg-white border border-gray-200 rounded-lg hover:shadow-lg transition-all duration-200">
+                <div className="text-2xl font-bold text-orange-700">{data.crimeData.property}</div>
+                <div className="text-sm text-gray-600">Property Crime Rate</div>
+                <div className="text-xs text-gray-500">Per 1,000 residents</div>
+              </div>
+            </div>
+
+            {/* Community Profile */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <h4 className="text-lg font-semibold text-green-800 mb-3">Family-Friendly Features</h4>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-green-700">Family Score</span>
+                    <span className="font-bold text-green-800">{data.demographics.familyFriendly}/10</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-green-700">Schools Nearby</span>
+                    <span className="font-bold text-green-800">{data.schools.length}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-green-700">Walk Score</span>
+                    <span className="font-bold text-green-800">{data.walkScore}/100</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h4 className="text-lg font-semibold text-blue-800 mb-3">Agent Talking Points</h4>
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-start space-x-2 text-blue-700">
+                    <span className="text-blue-500 mt-1">•</span>
+                    <span>Emphasize safety statistics for buyer confidence</span>
+                  </li>
+                  <li className="flex items-start space-x-2 text-blue-700">
+                    <span className="text-blue-500 mt-1">•</span>
+                    <span>Highlight family-friendly environment</span>
+                  </li>
+                  <li className="flex items-start space-x-2 text-blue-700">
+                    <span className="text-blue-500 mt-1">•</span>
+                    <span>Use walkability to target demographics</span>
+                  </li>
+                </ul>
               </div>
             </div>
           </div>

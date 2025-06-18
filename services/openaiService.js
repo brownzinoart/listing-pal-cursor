@@ -459,6 +459,80 @@ Important: Provide realistic, conservative estimates based on general knowledge 
     }
   }
 
+  // Generate actionable agent tips for neighborhood overview
+  async generateAgentTips(address, neighborhoodData) {
+    try {
+      const prompt = `You are an expert real estate coach helping agents create compelling talking points. Based on the neighborhood data below, generate exactly 3 actionable tips that a real estate agent can use when presenting this property/area to potential buyers.
+
+PROPERTY ADDRESS: ${address}
+
+NEIGHBORHOOD DATA:
+- Walk Score: ${neighborhoodData.walkScore}/100
+- Transit Score: ${neighborhoodData.transitScore}/100  
+- Bike Score: ${neighborhoodData.bikeScore}/100
+- Number of Schools: ${neighborhoodData.schools?.length || 0} (Average Rating: ${neighborhoodData.schools?.length > 0 ? (neighborhoodData.schools.reduce((acc, s) => acc + s.rating, 0) / neighborhoodData.schools.length).toFixed(1) : 'N/A'}/10)
+- Crime Safety Score: ${neighborhoodData.crimeData?.score || 'N/A'}/100
+- Family Friendly Score: ${neighborhoodData.demographics?.familyFriendly || 'N/A'}/10
+- Median Income: $${neighborhoodData.demographics?.medianIncome?.toLocaleString() || 'N/A'}
+- Market Median Price: $${neighborhoodData.marketTrends?.medianPrice?.toLocaleString() || 'N/A'}
+- 1-Year Price Growth: ${neighborhoodData.marketTrends?.priceGrowth1Year || 'N/A'}%
+- Days on Market: ${neighborhoodData.marketTrends?.daysOnMarket || 'N/A'} days
+- Available Amenities: ${neighborhoodData.amenities?.length || 0} nearby
+
+Requirements:
+1. Each tip should be 15-25 words maximum
+2. Focus on actionable strategies agents can immediately use in conversations
+3. Look at the data holistically to find the strongest selling points
+4. Make tips specific to this neighborhood's strengths
+5. Frame as advice for conversations with buyers
+6. Be practical and results-oriented
+
+Format as a simple array:
+["Tip 1 text here", "Tip 2 text here", "Tip 3 text here"]
+
+Generate the 3 agent tips now:`;
+
+      const completion = await this.openai.chat.completions.create({
+        model: 'gpt-4',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a top-performing real estate coach who specializes in helping agents convert leads through strategic conversation tactics and neighborhood positioning.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        max_tokens: 300,
+        temperature: 0.7,
+      });
+
+      try {
+        const tips = JSON.parse(completion.choices[0].message.content);
+        return Array.isArray(tips) ? tips : [tips];
+      } catch (parseError) {
+        // Fallback: extract tips from text response
+        const response = completion.choices[0].message.content;
+        const tipLines = response.split('\n').filter(line => 
+          line.trim().length > 0 && 
+          (line.includes('"') || line.match(/^\d+\./) || line.startsWith('•'))
+        );
+        return tipLines.slice(0, 3).map(tip => 
+          tip.replace(/^\d+\.\s*/, '').replace(/^•\s*/, '').replace(/"/g, '').trim()
+        );
+      }
+    } catch (error) {
+      console.error('OpenAI Agent Tips Generation Error:', error);
+      // Return fallback tips
+      return [
+        "Emphasize the walkability and convenience for daily errands",
+        "Highlight school quality and family-friendly neighborhood features", 
+        "Position market timing based on current price trends and inventory"
+      ];
+    }
+  }
+
   // Test connection method
   async testConnection() {
     try {
