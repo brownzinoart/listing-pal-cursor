@@ -1,6 +1,6 @@
-import { Listing, ListingImage } from '../types';
+import { Listing, ListingImage } from "../types";
 
-const LISTINGS_KEY = 'realtyboost_listings';
+const LISTINGS_KEY = "realtyboost_listings";
 
 const generateId = (): string => Math.random().toString(36).substring(2, 11);
 
@@ -15,8 +15,8 @@ const saveAllStoredListings = (listings: Listing[]): void => {
   localStorage.setItem(LISTINGS_KEY, JSON.stringify(listings));
 };
 
-const DEMO_ADDRESS = '123 Main St, Apex, NC 27523';
-const DEMO_ADDRESS_ALT = '123 Demo St, Apex, NC 27523';
+const DEMO_ADDRESS = "123 Main St, Apex, NC 27523";
+const DEMO_ADDRESS_ALT = "123 Demo St, Apex, NC 27523";
 
 const createDemoListing = (userId: string): Listing => ({
   id: generateId(),
@@ -27,28 +27,33 @@ const createDemoListing = (userId: string): Listing => ({
   squareFootage: 1850,
   yearBuilt: 1998,
   price: 465000,
-  keyFeatures: '• Spacious open-concept living area, perfect for entertaining.\n• Recently updated kitchen with quartz countertops & stainless appliances.\n• Primary suite with vaulted ceiling & walk-in closet.\n• Large fenced backyard with deck & mature trees.\n• Minutes to downtown Apex, parks, and top-rated schools.',
+  keyFeatures:
+    "• Spacious open-concept living area, perfect for entertaining.\n• Recently updated kitchen with quartz countertops & stainless appliances.\n• Primary suite with vaulted ceiling & walk-in closet.\n• Large fenced backyard with deck & mature trees.\n• Minutes to downtown Apex, parks, and top-rated schools.",
   images: [
     {
       id: generateId(),
-      url: 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=1200&q=60',
-      name: 'front-exterior.jpg'
+      url: "https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=1200&q=60",
+      name: "front-exterior.jpg",
     },
     {
       id: generateId(),
-      url: 'https://images.unsplash.com/photo-1505691723518-36a9e4d8bb06?auto=format&fit=crop&w=1200&q=60',
-      name: 'living-room.jpg'
-    }
+      url: "https://images.unsplash.com/photo-1505691723518-36a9e4d8bb06?auto=format&fit=crop&w=1200&q=60",
+      name: "living-room.jpg",
+    },
   ],
-  listingType: 'sale',
-  propertyType: 'Single Family',
-  neighborhoodSections: ['walkability','places']
+  listingType: "sale",
+  propertyType: "Single Family",
+  neighborhoodSections: ["walkability", "places"],
 });
 
 // Ensure demo listing exists for current user
 const ensureDemoListing = (userId: string) => {
   const all = getAllStoredListings();
-  const hasDemo = all.some(l => (l.address === DEMO_ADDRESS || l.address === DEMO_ADDRESS_ALT) && l.userId === userId);
+  const hasDemo = all.some(
+    (l) =>
+      (l.address === DEMO_ADDRESS || l.address === DEMO_ADDRESS_ALT) &&
+      l.userId === userId,
+  );
   if (!hasDemo) {
     all.push(createDemoListing(userId));
     saveAllStoredListings(all);
@@ -56,28 +61,31 @@ const ensureDemoListing = (userId: string) => {
 };
 
 export const getListings = async (userId: string): Promise<Listing[]> => {
-  await new Promise(resolve => setTimeout(resolve, 300)); // Simulate network delay
+  await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate network delay
   ensureDemoListing(userId);
   const allListings = getAllStoredListings();
-  return allListings.filter(listing => listing.userId === userId);
+  return allListings.filter((listing) => listing.userId === userId);
 };
 
 export const getListingById = async (id: string): Promise<Listing | null> => {
-  await new Promise(resolve => setTimeout(resolve, 200));
+  await new Promise((resolve) => setTimeout(resolve, 200));
   const allListings = getAllStoredListings();
-  const listing = allListings.find(l => l.id === id);
+  const listing = allListings.find((l) => l.id === id);
   return listing || null;
 };
 
-type CreateListingData = Omit<Listing, 'id' | 'images'> & { images: Omit<ListingImage, 'id'>[] };
+type CreateListingData = Omit<Listing, "id" | "images"> & {
+  images: Omit<ListingImage, "id">[];
+};
 type UpdateListingData = Partial<CreateListingData>;
 
-
-export const createListing = async (listingData: CreateListingData): Promise<Listing> => {
-  await new Promise(resolve => setTimeout(resolve, 500));
+export const createListing = async (
+  listingData: CreateListingData,
+): Promise<Listing> => {
+  await new Promise((resolve) => setTimeout(resolve, 500));
   const allListings = getAllStoredListings();
-  
-  const newImages: ListingImage[] = listingData.images.map(img => ({
+
+  const newImages: ListingImage[] = listingData.images.map((img) => ({
     ...img,
     id: generateId(),
   }));
@@ -87,44 +95,48 @@ export const createListing = async (listingData: CreateListingData): Promise<Lis
     id: generateId(),
     images: newImages,
   };
-  
+
   allListings.push(newListing);
   saveAllStoredListings(allListings);
   return newListing;
 };
 
-export const updateListing = async (id: string, listingUpdateData: UpdateListingData): Promise<Listing | null> => {
-  await new Promise(resolve => setTimeout(resolve, 500));
+export const updateListing = async (
+  id: string,
+  listingUpdateData: UpdateListingData,
+): Promise<Listing | null> => {
+  await new Promise((resolve) => setTimeout(resolve, 500));
   let allListings = getAllStoredListings();
-  const listingIndex = allListings.findIndex(l => l.id === id);
+  const listingIndex = allListings.findIndex((l) => l.id === id);
 
   if (listingIndex === -1) {
     return null; // Or throw error
   }
 
-  const updatedImages = listingUpdateData.images ? listingUpdateData.images.map(img => ({
-    ...img,
-    id: (img as ListingImage).id || generateId(), // Keep existing id or generate new one
-  })) : allListings[listingIndex].images;
-
+  const updatedImages = listingUpdateData.images
+    ? listingUpdateData.images.map((img) => ({
+        ...img,
+        id: (img as ListingImage).id || generateId(), // Keep existing id or generate new one
+      }))
+    : allListings[listingIndex].images;
 
   const updatedListing: Listing = {
     ...allListings[listingIndex],
     ...listingUpdateData,
     images: updatedImages,
   };
-  
+
   allListings[listingIndex] = updatedListing;
   saveAllStoredListings(allListings);
   return updatedListing;
 };
 
 export const deleteListing = async (id: string): Promise<boolean> => {
-  await new Promise(resolve => setTimeout(resolve, 300));
+  await new Promise((resolve) => setTimeout(resolve, 300));
   let allListings = getAllStoredListings();
   const initialLength = allListings.length;
-  allListings = allListings.filter(l => l.id !== id);
-  
+  allListings = allListings.filter((l) => l.id !== id);
+
   if (allListings.length < initialLength) {
     saveAllStoredListings(allListings);
     return true;
@@ -134,7 +146,11 @@ export const deleteListing = async (id: string): Promise<boolean> => {
 
 export const fetchPropertyDetails = async (address: string): Promise<any> => {
   const normalized = address.toLowerCase();
-  if ((normalized.includes('123 main st') || normalized.includes('123 demo st')) && normalized.includes('apex')) {
+  if (
+    (normalized.includes("123 main st") ||
+      normalized.includes("123 demo st")) &&
+    normalized.includes("apex")
+  ) {
     // Return mock data immediately for demo
     return {
       estimatedValue: 465000,
@@ -142,44 +158,50 @@ export const fetchPropertyDetails = async (address: string): Promise<any> => {
       bathrooms: 2,
       squareFootage: 1850,
       yearBuilt: 1998,
-      propertyType: 'Single Family',
+      propertyType: "Single Family",
       _mockData: true,
     };
   }
   // Use RentCast API to get real property data
-  console.log('🏠 Making API call to /api/property (RentCast) with address:', address);
-  const response = await fetch('/api/property', {
-    method: 'POST',
+  console.log(
+    "🏠 Making API call to /api/property (RentCast) with address:",
+    address,
+  );
+  const response = await fetch("/api/property", {
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
-    body: JSON.stringify({ address })
+    body: JSON.stringify({ address }),
   });
 
-  console.log('📡 RentCast API Response status:', response.status, response.statusText);
+  console.log(
+    "📡 RentCast API Response status:",
+    response.status,
+    response.statusText,
+  );
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    console.error('❌ RentCast API Error response:', errorData);
+    console.error("❌ RentCast API Error response:", errorData);
     throw errorData;
   }
 
   const data = await response.json();
-  console.log('✅ RentCast API Success response:', data);
-  
+  console.log("✅ RentCast API Success response:", data);
+
   // Map RentCast response to expected format
   const mappedData = {
     estimatedValue: data.lastSalePrice || data.price || data.estimatedPrice,
     bedrooms: data.bedrooms,
-    bathrooms: data.bathrooms, 
+    bathrooms: data.bathrooms,
     squareFootage: data.squareFootage,
     yearBuilt: data.yearBuilt,
     propertyType: data.propertyType,
     // Include original RentCast data for debugging
-    _rentcastData: data
+    _rentcastData: data,
   };
-  
-  console.log('🔄 Mapped RentCast data:', mappedData);
+
+  console.log("🔄 Mapped RentCast data:", mappedData);
   return mappedData;
 };
-    
