@@ -1422,13 +1422,52 @@ app.post('/api/property', async (req, res) => {
         return res.status(400).json({ error: 'Address is required' });
     }
 
+    // ================================================================
+    // 1️⃣ ATTOM API (preferred if API key provided)
+    // ================================================================
+    if (process.env.ATTOM_API_KEY) {
+        try {
+            console.log('🏠 ATTOM API - Fetching property details for:', address);
+            const attomHeaders = {
+                apikey: process.env.ATTOM_API_KEY,
+                Accept: 'application/json'
+            };
+            const attomUrl = `https://api.gateway.attomdata.com/propertyapi/v1.0.0/property/basicprofile?address=${encodeURIComponent(address)}`;
+            const attomResponse = await axios.get(attomUrl, { headers: attomHeaders });
+
+            if (attomResponse.data && attomResponse.data.property && attomResponse.data.property.length) {
+                const p = attomResponse.data.property[0];
+                const mapped = {
+                    estimatedValue: p?.avm?.amount?.value || null,
+                    bedrooms: p?.building?.rooms?.beds || null,
+                    bathrooms: p?.building?.rooms?.bathstotal || null,
+                    squareFootage: p?.building?.size?.livingsize || p?.building?.size?.universalsize || null,
+                    yearBuilt: p?.summary?.yearbuilt || null,
+                    propertyType: p?.summary?.propclass || p?.summary?.proptype || null,
+                    _attomData: p,
+                    _priceSource: p?.avm?.amount?.value ? 'ATTOM AVM' : 'ATTOM'
+                };
+                console.log('✅ ATTOM data mapped', mapped);
+                const complete = await fillMissingPropertyData(address, mapped);
+                return res.json(complete);
+            }
+            console.log('⚠️ No results from ATTOM');
+        } catch (error) {
+            console.error('❌ ATTOM error:', error.response?.data || error.message);
+            // Continue to RentCast fallback
+        }
+    }
+
+    // ================================================================
+    // 2️⃣ RentCast fallback (if key provided)
+    // ================================================================
     console.log('🏠 RentCast API - Fetching property details for:', address);
 
     if (!process.env.RENTCAST_API_KEY) {
         console.log('⚠️ RENTCAST_API_KEY not found in environment variables');
         return res.status(500).json({ 
-            error: 'RentCast API key not configured',
-            details: 'Please add RENTCAST_API_KEY to your .env file to enable property auto-fill features.'
+            error: 'No property data provider configured',
+            details: 'Please add ATTOM_API_KEY or RENTCAST_API_KEY to your .env file.'
         });
     }
 
