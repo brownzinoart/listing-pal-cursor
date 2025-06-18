@@ -42,7 +42,7 @@ export class OllamaService {
     }
   }
 
-  private cleanAIResponse(response: string, contentType: string = 'general'): string {
+  private cleanAIResponse(response: string, contentType = 'general'): string {
     // This function cleans up valid AI responses.
     let cleaned = response;
     
@@ -132,7 +132,7 @@ export class OllamaService {
     return cleaned;
   }
 
-  async generatePropertyDescription(listing: Listing, style: string = 'professional'): Promise<string> {
+  async generatePropertyDescription(listing: Listing, style = 'professional'): Promise<string> {
     const prompt = `Write a ${style} property description for a real estate listing with the following details:
     
 Address: ${listing.address}
@@ -235,7 +235,7 @@ Write ONLY the X post content. Do not include any introductory text or explanato
     return this.cleanAIResponse(response, 'social');
   }
 
-  async generateIntroEmail(listing: Listing, emailType: string = 'new-listing'): Promise<string> {
+  async generateIntroEmail(listing: Listing, emailType = 'new-listing'): Promise<string> {
     const prompt = `Write an introductory email for this real estate listing:
     
 Address: ${listing.address}  
