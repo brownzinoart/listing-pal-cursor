@@ -28,28 +28,32 @@ A modern real estate AI platform featuring intelligent room redesign, listing ge
 ## 🔧 Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/brownzinoart/realtyboost-ai-phase-1.git
    cd realtyboost-ai-phase-1
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Set up environment variables**
-   
+
    Create a `.env` file in the root directory:
+
    ```bash
    cp env.template .env
    ```
-   
+
    Update the `.env` file with your API keys:
+
    ```env
    # Decor8AI - Interior Design AI
    DECOR8AI_API_KEY=your_decor8ai_api_key_here
-   
+
    # Cloudinary - Image Storage
    CLOUDINARY_CLOUD_NAME=your_cloud_name_here
    CLOUDINARY_API_KEY=your_api_key_here
@@ -61,11 +65,13 @@ A modern real estate AI platform featuring intelligent room redesign, listing ge
 ### Development Mode
 
 1. **Start the backend server**
+
    ```bash
    npm run server:dev
    ```
 
 2. **Start the frontend (in a new terminal)**
+
    ```bash
    npm run dev
    ```
@@ -84,11 +90,13 @@ npm start
 ## 🔑 API Configuration
 
 ### Decor8AI Setup
+
 1. Visit [decor8.ai](https://www.decor8.ai) to get your API key
 2. Add your API key to the `.env` file
 3. The API supports room redesign with various styles and room types
 
 ### Cloudinary Setup
+
 1. Create account at [cloudinary.com](https://cloudinary.com)
 2. Get your cloud name, API key, and secret from the dashboard
 3. Add credentials to `.env` file
@@ -114,6 +122,7 @@ realtyboost-ai-phase-1/
 ## 🎨 Room Redesign Feature
 
 The AI Room Redesign feature allows users to:
+
 - Upload room photos
 - Select room type (bedroom, living room, kitchen, etc.)
 - Choose design style (modern, scandinavian, industrial, etc.)
@@ -123,11 +132,13 @@ The AI Room Redesign feature allows users to:
 ## 🧪 Testing
 
 ### Health Check
+
 ```bash
 curl http://localhost:3001/api/health
 ```
 
 ### API Endpoints
+
 - `GET /api/health` - Service health check
 - `GET /api/styles` - Available room types and design styles
 - `POST /api/redesign` - Upload and redesign room image
@@ -136,16 +147,19 @@ curl http://localhost:3001/api/health
 ## 🔄 Development Workflow
 
 1. **Create feature branch**
+
    ```bash
    git checkout -b feature/your-feature-name
    ```
 
 2. **Make changes and test**
+
    ```bash
    npm run dev
    ```
 
 3. **Commit changes**
+
    ```bash
    git add .
    git commit -m "Add your feature description"
@@ -158,23 +172,25 @@ curl http://localhost:3001/api/health
 
 ## 📝 Environment Variables
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `DECOR8AI_API_KEY` | Decor8AI API key for room redesign | Yes |
-| `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name | Yes |
-| `CLOUDINARY_API_KEY` | Cloudinary API key | Yes |
-| `CLOUDINARY_API_SECRET` | Cloudinary API secret | Yes |
-| `PORT` | Server port (default: 3001) | No |
+| Variable                | Description                        | Required |
+| ----------------------- | ---------------------------------- | -------- |
+| `DECOR8AI_API_KEY`      | Decor8AI API key for room redesign | Yes      |
+| `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name              | Yes      |
+| `CLOUDINARY_API_KEY`    | Cloudinary API key                 | Yes      |
+| `CLOUDINARY_API_SECRET` | Cloudinary API secret              | Yes      |
+| `PORT`                  | Server port (default: 3001)        | No       |
 
 ## 🐛 Troubleshooting
 
 ### Common Issues
 
 1. **"Unexpected end of JSON input"**
+
    - Ensure backend server is running on port 3001
    - Check proxy configuration in vite.config.ts
 
 2. **Cloudinary upload errors**
+
    - Verify cloudinary credentials in .env
    - Check network connection
 

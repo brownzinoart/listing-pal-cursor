@@ -48,99 +48,114 @@ export interface BatchContentResponse {
   details?: string;
 }
 
-export type WritingStyle = 'professional' | 'luxury' | 'casual' | 'modern' | 'family';
-export type SocialPlatform = 'facebook' | 'instagram' | 'linkedin' | 'twitter';
+export type WritingStyle =
+  | "professional"
+  | "luxury"
+  | "casual"
+  | "modern"
+  | "family";
+export type SocialPlatform = "facebook" | "instagram" | "linkedin" | "twitter";
 
 export class ContentGenerationService {
-  private static baseURL = '/api/listings';
-  private static openaiURL = '/api/openai';
+  private static baseURL = "/api/listings";
+  private static openaiURL = "/api/openai";
 
-  static async generateDescription(propertyData: PropertyData, style: WritingStyle = 'professional'): Promise<ContentGenerationResponse> {
+  static async generateDescription(
+    propertyData: PropertyData,
+    style: WritingStyle = "professional",
+  ): Promise<ContentGenerationResponse> {
     try {
       const response = await fetch(`${this.baseURL}/generate-description`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ propertyData, style })
+        body: JSON.stringify({ propertyData, style }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate description');
+        throw new Error(errorData.error || "Failed to generate description");
       }
 
       return await response.json();
     } catch (error) {
-      console.error('Description generation error:', error);
+      console.error("Description generation error:", error);
       throw error;
     }
   }
 
   static async generateNeighborhoodInsights(address: string): Promise<any> {
     try {
-      const response = await fetch('/api/openai/neighborhood-insights', {
-        method: 'POST',
+      const response = await fetch("/api/openai/neighborhood-insights", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ address })
+        body: JSON.stringify({ address }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate neighborhood insights');
+        throw new Error(
+          errorData.error || "Failed to generate neighborhood insights",
+        );
       }
 
       return await response.json();
     } catch (error) {
-      console.error('Neighborhood insights generation error:', error);
+      console.error("Neighborhood insights generation error:", error);
       throw error;
     }
   }
 
-  static async enrichPropertyData(address: string, existingData: Partial<PropertyData> = {}): Promise<{ success: boolean; enrichedData: any; originalData: any }> {
+  static async enrichPropertyData(
+    address: string,
+    existingData: Partial<PropertyData> = {},
+  ): Promise<{ success: boolean; enrichedData: any; originalData: any }> {
     try {
       const response = await fetch(`${this.openaiURL}/enrich-property`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           address,
-          propertyData: existingData
-        })
+          propertyData: existingData,
+        }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to enrich property data');
+        throw new Error(errorData.error || "Failed to enrich property data");
       }
 
       return await response.json();
     } catch (error) {
-      console.error('Property data enrichment error:', error);
+      console.error("Property data enrichment error:", error);
       throw error;
     }
   }
 
   static async generateSocialContent(
-    propertyData: PropertyData, 
-    platform: SocialPlatform, 
-    style: WritingStyle = 'professional'
+    propertyData: PropertyData,
+    platform: SocialPlatform,
+    style: WritingStyle = "professional",
   ): Promise<ContentGenerationResponse> {
     try {
       const response = await fetch(`${this.baseURL}/generate-social`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ propertyData, platform, style })
+        body: JSON.stringify({ propertyData, platform, style }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || `Failed to generate ${platform} content`);
+        throw new Error(
+          errorData.error || `Failed to generate ${platform} content`,
+        );
       }
 
       return await response.json();
@@ -150,76 +165,87 @@ export class ContentGenerationService {
     }
   }
 
-  static async generateEmailContent(propertyData: PropertyData, style: WritingStyle = 'professional'): Promise<ContentGenerationResponse> {
+  static async generateEmailContent(
+    propertyData: PropertyData,
+    style: WritingStyle = "professional",
+  ): Promise<ContentGenerationResponse> {
     try {
       const response = await fetch(`${this.baseURL}/generate-email`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ propertyData, style })
+        body: JSON.stringify({ propertyData, style }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate email content');
+        throw new Error(errorData.error || "Failed to generate email content");
       }
 
       return await response.json();
     } catch (error) {
-      console.error('Email generation error:', error);
+      console.error("Email generation error:", error);
       throw error;
     }
   }
 
-  static async generateFlyerContent(propertyData: PropertyData, style: WritingStyle = 'professional'): Promise<ContentGenerationResponse> {
+  static async generateFlyerContent(
+    propertyData: PropertyData,
+    style: WritingStyle = "professional",
+  ): Promise<ContentGenerationResponse> {
     try {
       const response = await fetch(`${this.baseURL}/generate-flyer`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ propertyData, style })
+        body: JSON.stringify({ propertyData, style }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate flyer content');
+        throw new Error(errorData.error || "Failed to generate flyer content");
       }
 
       return await response.json();
     } catch (error) {
-      console.error('Flyer generation error:', error);
+      console.error("Flyer generation error:", error);
       throw error;
     }
   }
 
   static async generateAllContent(
-    propertyData: PropertyData, 
-    style: WritingStyle = 'professional',
-    platforms: SocialPlatform[] = ['facebook', 'instagram', 'linkedin', 'twitter']
+    propertyData: PropertyData,
+    style: WritingStyle = "professional",
+    platforms: SocialPlatform[] = [
+      "facebook",
+      "instagram",
+      "linkedin",
+      "twitter",
+    ],
   ): Promise<BatchContentResponse> {
     try {
       const response = await fetch(`${this.baseURL}/generate-all-content`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ 
-          propertyData, 
+        body: JSON.stringify({
+          propertyData,
           style,
-          platforms
-        })
+          platforms,
+        }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate all content');
+        throw new Error(errorData.error || "Failed to generate all content");
       }
 
       return await response.json();
     } catch (error) {
-      console.error('Batch generation error:', error);
+      console.error("Batch generation error:", error);
       throw error;
     }
   }
@@ -229,90 +255,103 @@ export class ContentGenerationService {
    */
   static formatPropertyData(listingData: any): PropertyData {
     return {
-      address: listingData.address || '',
-      price: listingData.price || '',
+      address: listingData.address || "",
+      price: listingData.price || "",
       bedrooms: listingData.bedrooms || 0,
       bathrooms: listingData.bathrooms || 0,
       squareFootage: listingData.squareFootage || 0,
-      propertyType: listingData.propertyType || 'Single Family Home',
-      keyFeatures: listingData.keyFeatures ? 
-        (Array.isArray(listingData.keyFeatures) ? 
-          listingData.keyFeatures : 
-          listingData.keyFeatures.split('\n').filter((f: string) => f.trim())
-        ) : [],
+      propertyType: listingData.propertyType || "Single Family Home",
+      keyFeatures: listingData.keyFeatures
+        ? Array.isArray(listingData.keyFeatures)
+          ? listingData.keyFeatures
+          : listingData.keyFeatures.split("\n").filter((f: string) => f.trim())
+        : [],
       amenities: listingData.amenities || [],
-      neighborhood: listingData.neighborhood || '',
-      schoolDistrict: listingData.schoolDistrict || '',
+      neighborhood: listingData.neighborhood || "",
+      schoolDistrict: listingData.schoolDistrict || "",
       yearBuilt: listingData.yearBuilt || new Date().getFullYear(),
-      lotSize: listingData.lotSize || '',
-      parking: listingData.parking || '',
-      hvac: listingData.hvac || '',
-      flooring: listingData.flooring || '',
+      lotSize: listingData.lotSize || "",
+      parking: listingData.parking || "",
+      hvac: listingData.hvac || "",
+      flooring: listingData.flooring || "",
       appliances: listingData.appliances || [],
       exteriorFeatures: listingData.exteriorFeatures || [],
       interiorFeatures: listingData.interiorFeatures || [],
-      locationHighlights: listingData.locationHighlights || []
+      locationHighlights: listingData.locationHighlights || [],
     };
   }
 
   /**
    * Get available writing styles with descriptions
    */
-  static getWritingStyles(): { value: WritingStyle; label: string; description: string }[] {
+  static getWritingStyles(): {
+    value: WritingStyle;
+    label: string;
+    description: string;
+  }[] {
     return [
       {
-        value: 'professional',
-        label: 'Professional',
-        description: 'Industry-standard, informative, and authoritative. Focuses on facts and investment value.'
+        value: "professional",
+        label: "Professional",
+        description:
+          "Industry-standard, informative, and authoritative. Focuses on facts and investment value.",
       },
       {
-        value: 'luxury',
-        label: 'Luxury',
-        description: 'Sophisticated and aspirational. Emphasizes exclusivity, prestige, and premium lifestyle.'
+        value: "luxury",
+        label: "Luxury",
+        description:
+          "Sophisticated and aspirational. Emphasizes exclusivity, prestige, and premium lifestyle.",
       },
       {
-        value: 'casual',
-        label: 'Casual',
-        description: 'Friendly and conversational. Focuses on comfort, livability, and everyday benefits.'
+        value: "casual",
+        label: "Casual",
+        description:
+          "Friendly and conversational. Focuses on comfort, livability, and everyday benefits.",
       },
       {
-        value: 'modern',
-        label: 'Modern',
-        description: 'Clean and contemporary. Emphasizes innovation, efficiency, and sleek design.'
+        value: "modern",
+        label: "Modern",
+        description:
+          "Clean and contemporary. Emphasizes innovation, efficiency, and sleek design.",
       },
       {
-        value: 'family',
-        label: 'Family-Focused',
-        description: 'Warm and nurturing. Emphasizes safety, community, and spaces for family activities.'
-      }
+        value: "family",
+        label: "Family-Focused",
+        description:
+          "Warm and nurturing. Emphasizes safety, community, and spaces for family activities.",
+      },
     ];
   }
 
   /**
    * Get platform-specific content guidelines
    */
-  static getPlatformGuidelines(): Record<SocialPlatform, { charLimit: number; tone: string; features: string }> {
+  static getPlatformGuidelines(): Record<
+    SocialPlatform,
+    { charLimit: number; tone: string; features: string }
+  > {
     return {
       facebook: {
         charLimit: 500,
-        tone: 'Engaging and community-focused',
-        features: 'Use emojis strategically, encourage engagement, include call-to-action'
+        tone: "Engaging and community-focused",
+        features:
+          "Use emojis strategically, encourage engagement, include call-to-action",
       },
       instagram: {
         charLimit: 300,
-        tone: 'Visual and lifestyle-focused',
-        features: 'Hashtag-friendly, emoji-heavy, lifestyle appeal'
+        tone: "Visual and lifestyle-focused",
+        features: "Hashtag-friendly, emoji-heavy, lifestyle appeal",
       },
       linkedin: {
         charLimit: 400,
-        tone: 'Professional and investment-focused',
-        features: 'Business value, market insights, professional language'
+        tone: "Professional and investment-focused",
+        features: "Business value, market insights, professional language",
       },
       twitter: {
         charLimit: 280,
-        tone: 'Concise and engaging',
-        features: 'Punchy, immediate impact, relevant hashtags'
-      }
+        tone: "Concise and engaging",
+        features: "Punchy, immediate impact, relevant hashtags",
+      },
     };
   }
-} 
+}

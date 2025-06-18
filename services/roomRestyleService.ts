@@ -23,54 +23,56 @@ export interface RestyleOptions {
  * @returns Promise resolving to image URL
  */
 export async function restyleRoom(
-  file: File, 
+  file: File,
   prompt: string,
   roomType?: string,
   style?: string,
-  options?: RestyleOptions
+  options?: RestyleOptions,
 ): Promise<RestyleResponse> {
   try {
     // Validate inputs
     if (!file) {
-      throw new Error('No image file provided');
+      throw new Error("No image file provided");
     }
 
     const formData = new FormData();
-    formData.append('image', file);
-    
+    formData.append("image", file);
+
     // Map the roomType and style to the expected format
     const mappedRoomType = mapRoomTypeToAPI(roomType);
     const mappedStyle = mapStyleToAPI(style);
-    
-    formData.append('room_type', mappedRoomType);
-    formData.append('style', mappedStyle);
 
-    console.log('Sending request to /api/redesign with:', {
+    formData.append("room_type", mappedRoomType);
+    formData.append("style", mappedStyle);
+
+    console.log("Sending request to /api/redesign with:", {
       fileName: file.name,
       fileSize: file.size,
       room_type: mappedRoomType,
-      style: mappedStyle
+      style: mappedStyle,
     });
 
-    const response = await fetch('/api/redesign', {
-      method: 'POST',
+    const response = await fetch("/api/redesign", {
+      method: "POST",
       body: formData,
     });
 
-    console.log('Response status:', response.status);
-    console.log('Response ok:', response.ok);
+    console.log("Response status:", response.status);
+    console.log("Response ok:", response.ok);
 
     // Get response text first to see what we're getting
     const responseText = await response.text();
-    console.log('Response text:', responseText);
+    console.log("Response text:", responseText);
 
     // Try to parse as JSON
     let result;
     try {
       result = JSON.parse(responseText);
     } catch (parseError) {
-      console.error('Failed to parse response as JSON:', parseError);
-      throw new Error(`Invalid JSON response: ${responseText.substring(0, 100)}`);
+      console.error("Failed to parse response as JSON:", parseError);
+      throw new Error(
+        `Invalid JSON response: ${responseText.substring(0, 100)}`,
+      );
     }
 
     if (!response.ok) {
@@ -78,18 +80,18 @@ export async function restyleRoom(
     }
 
     if (result.success && result.imageUrl) {
-    return {
-      success: true,
-        imageUrl: result.imageUrl
-    };
+      return {
+        success: true,
+        imageUrl: result.imageUrl,
+      };
     } else {
-      throw new Error(result.error || 'No image received from API');
+      throw new Error(result.error || "No image received from API");
     }
   } catch (error) {
-    console.error('Room restyle error:', error);
+    console.error("Room restyle error:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred'
+      error: error instanceof Error ? error.message : "Unknown error occurred",
     };
   }
 }
@@ -99,17 +101,17 @@ export async function restyleRoom(
  */
 function mapRoomTypeToAPI(roomType?: string): string {
   const mapping: Record<string, string> = {
-    'livingroom': 'Living Room',
-    'bedroom': 'Bedroom',
-    'kitchen': 'Kitchen',
-    'bathroom': 'Bathroom',
-    'diningroom': 'Dining Room',
-    'homeoffice': 'Office',
-    'nursery': 'Bedroom',
-    'basement': 'Living Room'
+    livingroom: "Living Room",
+    bedroom: "Bedroom",
+    kitchen: "Kitchen",
+    bathroom: "Bathroom",
+    diningroom: "Dining Room",
+    homeoffice: "Office",
+    nursery: "Bedroom",
+    basement: "Living Room",
   };
-  
-  return mapping[roomType || 'livingroom'] || 'Living Room';
+
+  return mapping[roomType || "livingroom"] || "Living Room";
 }
 
 /**
@@ -117,21 +119,21 @@ function mapRoomTypeToAPI(roomType?: string): string {
  */
 function mapStyleToAPI(style?: string): string {
   const mapping: Record<string, string> = {
-    'modern': 'Modern',
-    'scandinavian': 'Scandinavian',
-    'minimalist': 'Minimalist',
-    'industrial': 'Industrial',
-    'bohemian': 'Bohemian',
-    'traditional': 'Traditional',
-    'midcenturymodern': 'Mid-Century Modern',
-    'glamorous': 'Luxury',
-    'rustic': 'Rustic',
-    'contemporary': 'Contemporary',
-    'eclectic': 'Contemporary',
-    'farmhouse': 'Farmhouse'
+    modern: "Modern",
+    scandinavian: "Scandinavian",
+    minimalist: "Minimalist",
+    industrial: "Industrial",
+    bohemian: "Bohemian",
+    traditional: "Traditional",
+    midcenturymodern: "Mid-Century Modern",
+    glamorous: "Luxury",
+    rustic: "Rustic",
+    contemporary: "Contemporary",
+    eclectic: "Contemporary",
+    farmhouse: "Farmhouse",
   };
-  
-  return mapping[style || 'modern'] || 'Modern';
+
+  return mapping[style || "modern"] || "Modern";
 }
 
 /**
@@ -142,29 +144,40 @@ export async function getAvailableStyles(): Promise<{
   designStyles: string[];
 }> {
   try {
-    const response = await fetch('/api/styles');
+    const response = await fetch("/api/styles");
     if (response.ok) {
       const data = await response.json();
       return {
         roomTypes: data.roomTypes || [],
-        designStyles: data.styles || []
+        designStyles: data.styles || [],
       };
     }
   } catch (error) {
-    console.error('Failed to fetch styles:', error);
+    console.error("Failed to fetch styles:", error);
   }
-  
+
   // Fallback to default values
   return {
     roomTypes: [
-      'Living Room', 'Bedroom', 'Kitchen', 'Dining Room', 
-      'Office', 'Bathroom'
+      "Living Room",
+      "Bedroom",
+      "Kitchen",
+      "Dining Room",
+      "Office",
+      "Bathroom",
     ],
     designStyles: [
-      'Modern', 'Scandinavian', 'Industrial', 'Minimalist', 
-      'Mid-Century Modern', 'Bohemian', 'Contemporary',
-      'Rustic', 'Traditional', 'Farmhouse'
-    ]
+      "Modern",
+      "Scandinavian",
+      "Industrial",
+      "Minimalist",
+      "Mid-Century Modern",
+      "Bohemian",
+      "Contemporary",
+      "Rustic",
+      "Traditional",
+      "Farmhouse",
+    ],
   };
 }
 
@@ -173,32 +186,35 @@ export async function getAvailableStyles(): Promise<{
  */
 export async function checkServiceHealth(): Promise<{
   available: boolean;
-  apiType: 'paid' | 'local';
+  apiType: "paid" | "local";
   error?: string;
 }> {
   try {
-    const response = await fetch('/api/health');
-    
+    const response = await fetch("/api/health");
+
     if (response.ok) {
       const data = await response.json();
       return {
         available: data.hasApiToken && data.hasCloudinary,
-        apiType: 'paid',
-        error: !data.hasApiToken ? 'API token not configured' : 
-               !data.hasCloudinary ? 'Cloudinary not configured' : undefined
+        apiType: "paid",
+        error: !data.hasApiToken
+          ? "API token not configured"
+          : !data.hasCloudinary
+            ? "Cloudinary not configured"
+            : undefined,
       };
     } else {
-    return {
+      return {
         available: false,
-        apiType: 'paid',
-        error: `Health check failed: ${response.status}`
-    };
+        apiType: "paid",
+        error: `Health check failed: ${response.status}`,
+      };
     }
   } catch (error) {
     return {
       available: false,
-      apiType: 'paid',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      apiType: "paid",
+      error: error instanceof Error ? error.message : "Unknown error",
     };
   }
 }
@@ -208,25 +224,35 @@ export async function checkServiceHealth(): Promise<{
  */
 export function generatePrompt(roomType: string, designStyle: string): string {
   const roomTypeLabels: Record<string, string> = {
-    'Living Room': 'living room',
-    'Bedroom': 'bedroom',
-    'Kitchen': 'kitchen',
-    'Dining Room': 'dining room',
-    'Office': 'home office',
-    'Bathroom': 'bathroom'
+    "Living Room": "living room",
+    Bedroom: "bedroom",
+    Kitchen: "kitchen",
+    "Dining Room": "dining room",
+    Office: "home office",
+    Bathroom: "bathroom",
   };
 
   const styleDescriptions: Record<string, string> = {
-    'Scandinavian': 'Scandinavian style with light wood, neutral colors, and minimalist furniture',
-    'Industrial': 'Industrial style with exposed brick, metal fixtures, and raw materials',
-    'Farmhouse': 'Farmhouse style with rustic wood, vintage accessories, and cozy textiles',
-    'Modern': 'Modern style with clean lines, neutral palette, and contemporary furniture',
-    'Minimalist': 'Minimalist style with simple forms, minimal clutter, and monochromatic colors',
-    'Mid-Century Modern': 'Mid-century modern style with retro furniture, warm wood tones, and geometric patterns',
-    'Bohemian': 'Bohemian style with rich textures, vibrant colors, and eclectic decor',
-    'Contemporary': 'Contemporary style with current trends, mixed materials, and sophisticated finishes',
-    'Rustic': 'Rustic style with natural materials, earthy tones, and handcrafted elements',
-    'Traditional': 'Traditional style with classic furniture, elegant details, and timeless appeal'
+    Scandinavian:
+      "Scandinavian style with light wood, neutral colors, and minimalist furniture",
+    Industrial:
+      "Industrial style with exposed brick, metal fixtures, and raw materials",
+    Farmhouse:
+      "Farmhouse style with rustic wood, vintage accessories, and cozy textiles",
+    Modern:
+      "Modern style with clean lines, neutral palette, and contemporary furniture",
+    Minimalist:
+      "Minimalist style with simple forms, minimal clutter, and monochromatic colors",
+    "Mid-Century Modern":
+      "Mid-century modern style with retro furniture, warm wood tones, and geometric patterns",
+    Bohemian:
+      "Bohemian style with rich textures, vibrant colors, and eclectic decor",
+    Contemporary:
+      "Contemporary style with current trends, mixed materials, and sophisticated finishes",
+    Rustic:
+      "Rustic style with natural materials, earthy tones, and handcrafted elements",
+    Traditional:
+      "Traditional style with classic furniture, elegant details, and timeless appeal",
   };
 
   const roomLabel = roomTypeLabels[roomType] || roomType.toLowerCase();
@@ -241,7 +267,7 @@ export function generatePrompt(roomType: string, designStyle: string): string {
 export function getAPIConfig() {
   return {
     usePaidAPI: true, // Now using paid Decor8AI API
-    apiEndpoint: '/api/redesign',
-    hasAPIKey: true // Will be checked by health endpoint
+    apiEndpoint: "/api/redesign",
+    hasAPIKey: true, // Will be checked by health endpoint
   };
-} 
+}

@@ -1,14 +1,21 @@
-
-import React from 'react';
-import { BuildingOffice2Icon, HandThumbUpIcon, ChatBubbleLeftIcon, ShareIcon } from '@heroicons/react/24/outline';
-import { APP_NAME } from '../../../constants';
+import React from "react";
+import {
+  BuildingOffice2Icon,
+  HandThumbUpIcon,
+  ChatBubbleLeftIcon,
+  ShareIcon,
+} from "@heroicons/react/24/outline";
+import { APP_NAME } from "../../../constants";
 
 interface FacebookMockupProps {
   listingImage?: string | null;
   postText: string;
 }
 
-const FacebookMockup: React.FC<FacebookMockupProps> = ({ listingImage, postText }) => {
+const FacebookMockup: React.FC<FacebookMockupProps> = ({
+  listingImage,
+  postText,
+}) => {
   return (
     <div className="w-full max-w-md mx-auto bg-brand-card border border-brand-border rounded-lg shadow-lg p-4">
       {/* Header */}
@@ -17,30 +24,39 @@ const FacebookMockup: React.FC<FacebookMockupProps> = ({ listingImage, postText 
           <BuildingOffice2Icon className="h-6 w-6 text-white" />
         </div>
         <div>
-          <p className="font-semibold text-sm text-brand-text-primary">{APP_NAME} Realty</p>
-          <p className="text-xs text-brand-text-tertiary">Sponsored · Just now</p>
+          <p className="font-semibold text-sm text-brand-text-primary">
+            {APP_NAME} Realty
+          </p>
+          <p className="text-xs text-brand-text-tertiary">
+            Sponsored · Just now
+          </p>
         </div>
       </div>
 
       {/* Post Text */}
       {postText && (
         <p className="text-sm text-brand-text-secondary mb-3 whitespace-pre-line break-words">
-          {postText.length > 200 ? `${postText.substring(0, 200)}...` : postText}
+          {postText.length > 200
+            ? `${postText.substring(0, 200)}...`
+            : postText}
         </p>
       )}
 
       {/* Image */}
       {listingImage && (
         <div className="rounded-md overflow-hidden mb-3 border border-brand-border aspect-video">
-          <img src={listingImage} alt="Listing" className="w-full h-full object-cover" />
+          <img
+            src={listingImage}
+            alt="Listing"
+            className="w-full h-full object-cover"
+          />
         </div>
       )}
       {!listingImage && (
-         <div className="rounded-md overflow-hidden mb-3 border border-brand-border aspect-video bg-brand-panel flex items-center justify-center">
-            <BuildingOffice2Icon className="h-16 w-16 text-brand-text-tertiary opacity-50"/>
-         </div>
+        <div className="rounded-md overflow-hidden mb-3 border border-brand-border aspect-video bg-brand-panel flex items-center justify-center">
+          <BuildingOffice2Icon className="h-16 w-16 text-brand-text-tertiary opacity-50" />
+        </div>
       )}
-
 
       {/* Engagement Stats (Placeholder) */}
       <div className="flex justify-between items-center text-xs text-brand-text-tertiary mb-2 border-b border-brand-border pb-2">

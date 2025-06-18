@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import type { ContextCard } from '../types/locationContext';
-import { LocationContextWidget } from '../components/listings/LocationContextWidget';
+import React, { useState } from "react";
+import type { ContextCard } from "../types/locationContext";
+import { LocationContextWidget } from "../components/listings/LocationContextWidget";
 
 interface FormData {
   address: string;
@@ -10,29 +10,32 @@ interface FormData {
 
 export const CreateListingFormExample: React.FC = () => {
   const [formData, setFormData] = useState<FormData>({
-    address: '',
-    description: '',
+    address: "",
+    description: "",
   });
-  
-  const [selectedContextCards, setSelectedContextCards] = useState<ContextCard[]>([]);
+
+  const [selectedContextCards, setSelectedContextCards] = useState<
+    ContextCard[]
+  >([]);
 
   const handleContextSelection = (cards: ContextCard[]) => {
     setSelectedContextCards(cards);
-    
+
     // Option 1: Auto-append to description when cards are selected
     if (cards.length > 0) {
-      const contextText = cards.map(card => card.marketingCopy).join('\n\n');
-      setFormData(prev => ({
+      const contextText = cards.map((card) => card.marketingCopy).join("\n\n");
+      setFormData((prev) => ({
         ...prev,
-        description: prev.description + 
-          (prev.description ? '\n\n--- Neighborhood Highlights ---\n\n' : '') + 
-          contextText
+        description:
+          prev.description +
+          (prev.description ? "\n\n--- Neighborhood Highlights ---\n\n" : "") +
+          contextText,
       }));
     }
   };
 
   const handleAddressChange = (newAddress: string) => {
-    setFormData(prev => ({ ...prev, address: newAddress }));
+    setFormData((prev) => ({ ...prev, address: newAddress }));
     // Clear previous context when address changes
     setSelectedContextCards([]);
   };
@@ -69,7 +72,7 @@ export const CreateListingFormExample: React.FC = () => {
             ✅ Selected Neighborhood Insights ({selectedContextCards.length})
           </h3>
           <div className="space-y-1">
-            {selectedContextCards.map(card => (
+            {selectedContextCards.map((card) => (
               <div key={card.id} className="text-sm text-green-700">
                 {card.icon} {card.title} - {card.preview.quickStat}
               </div>
@@ -85,7 +88,9 @@ export const CreateListingFormExample: React.FC = () => {
         </label>
         <textarea
           value={formData.description}
-          onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+          onChange={(e) =>
+            setFormData((prev) => ({ ...prev, description: e.target.value }))
+          }
           rows={8}
           placeholder="Describe the property..."
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -114,10 +119,10 @@ export const CreateListingFormExample: React.FC = () => {
 // Alternative: Manual insertion approach
 export const ManualInsertionExample: React.FC = () => {
   const [formData, setFormData] = useState<FormData>({
-    address: '',
-    description: '',
+    address: "",
+    description: "",
   });
-  
+
   const [availableContext, setAvailableContext] = useState<ContextCard[]>([]);
 
   const handleContextSelection = (cards: ContextCard[]) => {
@@ -126,22 +131,25 @@ export const ManualInsertionExample: React.FC = () => {
   };
 
   const insertContextAtCursor = (card: ContextCard) => {
-    const textArea = document.querySelector('textarea') as HTMLTextAreaElement;
+    const textArea = document.querySelector("textarea") as HTMLTextAreaElement;
     if (textArea) {
       const start = textArea.selectionStart;
       const end = textArea.selectionEnd;
       const text = formData.description;
       const before = text.substring(0, start);
       const after = text.substring(end);
-      
-      const newText = before + '\n\n' + card.marketingCopy + '\n\n' + after;
-      
-      setFormData(prev => ({ ...prev, description: newText }));
-      
+
+      const newText = before + "\n\n" + card.marketingCopy + "\n\n" + after;
+
+      setFormData((prev) => ({ ...prev, description: newText }));
+
       // Focus back to textarea
       setTimeout(() => {
         textArea.focus();
-        textArea.setSelectionRange(start + card.marketingCopy.length + 4, start + card.marketingCopy.length + 4);
+        textArea.setSelectionRange(
+          start + card.marketingCopy.length + 4,
+          start + card.marketingCopy.length + 4,
+        );
       }, 0);
     }
   };
@@ -158,7 +166,9 @@ export const ManualInsertionExample: React.FC = () => {
           <input
             type="text"
             value={formData.address}
-            onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, address: e.target.value }))
+            }
             placeholder="Enter property address..."
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
@@ -174,7 +184,9 @@ export const ManualInsertionExample: React.FC = () => {
           </label>
           <textarea
             value={formData.description}
-            onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, description: e.target.value }))
+            }
             rows={12}
             placeholder="Describe the property... Click neighborhood insights to insert them here."
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -190,12 +202,13 @@ export const ManualInsertionExample: React.FC = () => {
               📍 Quick Insert
             </h3>
             <p className="text-sm text-gray-600 mb-4">
-              Click any insight to insert it into your description at the cursor position.
+              Click any insight to insert it into your description at the cursor
+              position.
             </p>
-            
+
             {/* Compact context cards for sidebar */}
             <div className="space-y-3 max-h-96 overflow-y-auto">
-              {availableContext.map(card => (
+              {availableContext.map((card) => (
                 <div
                   key={card.id}
                   onClick={() => insertContextAtCursor(card)}
@@ -203,9 +216,13 @@ export const ManualInsertionExample: React.FC = () => {
                 >
                   <div className="flex items-center space-x-2 mb-1">
                     <span className="text-sm">{card.icon}</span>
-                    <span className="text-sm font-medium text-gray-900">{card.title}</span>
+                    <span className="text-sm font-medium text-gray-900">
+                      {card.title}
+                    </span>
                     {card.preview.quickStat && (
-                      <span className="text-xs text-blue-600 font-bold">{card.preview.quickStat}</span>
+                      <span className="text-xs text-blue-600 font-bold">
+                        {card.preview.quickStat}
+                      </span>
                     )}
                   </div>
                   <p className="text-xs text-gray-600 line-clamp-2">
@@ -225,13 +242,25 @@ export const ManualInsertionExample: React.FC = () => {
           </div>
         ) : (
           <div className="text-center py-8 text-gray-500">
-            <svg className="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+            <svg
+              className="w-12 h-12 mx-auto mb-4 text-gray-300"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+              />
             </svg>
-            <p className="text-sm">Enter an address to see neighborhood insights</p>
+            <p className="text-sm">
+              Enter an address to see neighborhood insights
+            </p>
           </div>
         )}
       </div>
     </div>
   );
-}; 
+};

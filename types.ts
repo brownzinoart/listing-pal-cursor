@@ -16,7 +16,7 @@ export interface ListingImage {
 export interface FlyerTemplate {
   id: string;
   name: string;
-  category: 'modern' | 'classic' | 'luxury' | 'minimal';
+  category: "modern" | "classic" | "luxury" | "minimal";
   thumbnail: string;
   description: string;
 }
@@ -51,9 +51,9 @@ export interface Listing {
   yearBuilt: number;
   price: number;
   keyFeatures: string;
-  images: ListingImage[]; 
+  images: ListingImage[];
   propertyType?: string;
-  listingType?: string; // 'sale' or 'rental' 
+  listingType?: string; // 'sale' or 'rental'
   generatedDescription?: string;
   generatedFacebookPost?: string;
   generatedInstagramCaption?: string;
@@ -80,12 +80,12 @@ export interface Listing {
   neighborhoodSections?: string[];
 }
 
-export type AuthFormMode = 'login' | 'signup';
+export type AuthFormMode = "login" | "signup";
 
 export enum AlertType {
-  SUCCESS = 'success',
-  ERROR = 'error',
-  INFO = 'info',
+  SUCCESS = "success",
+  ERROR = "error",
+  INFO = "info",
 }
 
 export interface AlertMessage {
@@ -97,15 +97,20 @@ export interface AlertMessage {
 export interface AiWorkflowTool {
   id: string;
   name: string;
-  pathSuffix?: string; 
-  enabled: boolean; 
+  pathSuffix?: string;
+  enabled: boolean;
 }
 
 export interface AiDesignStyle {
   id: string;
   name: string;
   description: string;
-  icon: ForwardRefExoticComponent<Omit<SVGProps<SVGSVGElement>, "ref"> & { title?: string | undefined; titleId?: string | undefined; } & RefAttributes<SVGSVGElement>>; // Heroicon type
+  icon: ForwardRefExoticComponent<
+    Omit<SVGProps<SVGSVGElement>, "ref"> & {
+      title?: string | undefined;
+      titleId?: string | undefined;
+    } & RefAttributes<SVGSVGElement>
+  >; // Heroicon type
 }
 
 export type DesignIdea = {
