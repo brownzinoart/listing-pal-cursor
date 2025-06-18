@@ -5,12 +5,14 @@
 ## 🚀 Super Quick Setup
 
 ### Step 1: Create Free Account
+
 1. Go to [cloudinary.com](https://cloudinary.com)
 2. Click **"Sign Up for Free"**
 3. Enter email and create account
 4. **You're done!** No complex configuration needed
 
 ### Step 2: Get Your Credentials
+
 1. After signup, you'll see your **Dashboard**
 2. Copy these 3 values from the **"Account Details"** section:
 
@@ -21,6 +23,7 @@ API Secret: abcdefg-hijklmnop_qrstuvwxyz
 ```
 
 ### Step 3: Add to .env File
+
 ```bash
 # Add these 3 lines to your .env file
 CLOUDINARY_CLOUD_NAME=your_cloud_name
@@ -29,6 +32,7 @@ CLOUDINARY_API_SECRET=abcdefg-hijklmnop_qrstuvwxyz
 ```
 
 ### Step 4: Test It!
+
 ```bash
 # Restart your server
 npm run server:dev
@@ -40,6 +44,7 @@ curl -X POST -F "image=@test-room.jpg" -F "style=Modern" -F "room_type=Living Ro
 ## 🎉 That's It!
 
 Your drag & drop is now working with:
+
 - ✅ **Free tier**: 25GB storage, 25GB monthly bandwidth
 - ✅ **Automatic optimization**: Images optimized for web
 - ✅ **Fast CDN**: Global delivery network
@@ -48,15 +53,16 @@ Your drag & drop is now working with:
 
 ## 💰 Cost Comparison
 
-| Service | Setup Time | Free Tier | Complexity |
-|---------|------------|-----------|------------|
-| **Cloudinary** | 2 minutes | 25GB | ⭐ Easy |
-| Firebase | 5 minutes | 5GB | ⭐⭐⭐ Complex |
-| Google Drive | N/A | N/A | ❌ Won't work |
+| Service        | Setup Time | Free Tier | Complexity     |
+| -------------- | ---------- | --------- | -------------- |
+| **Cloudinary** | 2 minutes  | 25GB      | ⭐ Easy        |
+| Firebase       | 5 minutes  | 5GB       | ⭐⭐⭐ Complex |
+| Google Drive   | N/A        | N/A       | ❌ Won't work  |
 
 ## 🔍 How Files Are Organized
 
 Your images will be stored like:
+
 ```
 https://res.cloudinary.com/your_cloud_name/image/upload/
 └── room-images/
@@ -68,6 +74,7 @@ https://res.cloudinary.com/your_cloud_name/image/upload/
 ## 🛠 Advanced Features (Optional)
 
 Cloudinary automatically handles:
+
 - **Image optimization**: WebP, AVIF formats
 - **Responsive sizing**: Multiple sizes generated
 - **Quality adjustment**: Automatic compression
@@ -76,6 +83,7 @@ Cloudinary automatically handles:
 ## 🆚 Why Cloudinary vs Firebase?
 
 **Cloudinary Wins:**
+
 - ✅ Built specifically for images
 - ✅ Automatic optimization
 - ✅ Simpler setup (just 3 environment variables)
@@ -83,6 +91,7 @@ Cloudinary automatically handles:
 - ✅ Direct image URLs
 
 **Firebase Advantages:**
+
 - ✅ Part of Google ecosystem
 - ✅ More general-purpose storage
 - ✅ Better for large files
@@ -91,4 +100,4 @@ Cloudinary automatically handles:
 
 ---
 
-**Ready to test?** Just add those 3 lines to your `.env` file and restart the server! 🚀 
+**Ready to test?** Just add those 3 lines to your `.env` file and restart the server! 🚀

@@ -1,7 +1,12 @@
-
-import React from 'react';
-import { BuildingOffice2Icon, ChatBubbleOvalLeftIcon, ArrowPathIcon, HeartIcon, ArrowUpTrayIcon } from '@heroicons/react/24/outline';
-import { APP_NAME } from '../../../constants';
+import React from "react";
+import {
+  BuildingOffice2Icon,
+  ChatBubbleOvalLeftIcon,
+  ArrowPathIcon,
+  HeartIcon,
+  ArrowUpTrayIcon,
+} from "@heroicons/react/24/outline";
+import { APP_NAME } from "../../../constants";
 
 interface XMockupProps {
   listingImage?: string | null;
@@ -10,9 +15,14 @@ interface XMockupProps {
   maxLength?: number;
 }
 
-const XMockup: React.FC<XMockupProps> = ({ listingImage, postText, charCount, maxLength = 280 }) => {
-  const profileName = APP_NAME.split(' ')[0] + 'Realty';
-  const handle = '@' + APP_NAME.toLowerCase().replace(/\s+/g, '') + 'Homes';
+const XMockup: React.FC<XMockupProps> = ({
+  listingImage,
+  postText,
+  charCount,
+  maxLength = 280,
+}) => {
+  const profileName = APP_NAME.split(" ")[0] + "Realty";
+  const handle = "@" + APP_NAME.toLowerCase().replace(/\s+/g, "") + "Homes";
   const charLimitExceeded = charCount > maxLength;
 
   return (
@@ -23,11 +33,15 @@ const XMockup: React.FC<XMockupProps> = ({ listingImage, postText, charCount, ma
         </div>
         <div className="flex-1">
           <div className="flex items-center">
-            <p className="font-bold text-sm text-brand-text-primary mr-1">{profileName}</p>
+            <p className="font-bold text-sm text-brand-text-primary mr-1">
+              {profileName}
+            </p>
             <p className="text-xs text-brand-text-tertiary">{handle} · 1m</p>
           </div>
           {/* Post Text */}
-          <p className={`text-sm text-brand-text-secondary whitespace-pre-line break-words ${charLimitExceeded ? 'text-red-400' : ''}`}>
+          <p
+            className={`text-sm text-brand-text-secondary whitespace-pre-line break-words ${charLimitExceeded ? "text-red-400" : ""}`}
+          >
             {postText}
           </p>
         </div>
@@ -36,29 +50,47 @@ const XMockup: React.FC<XMockupProps> = ({ listingImage, postText, charCount, ma
       {/* Image Card */}
       {listingImage && (
         <div className="rounded-lg overflow-hidden border border-brand-border my-2">
-          <img src={listingImage} alt="Listing" className="w-full h-40 object-cover" />
+          <img
+            src={listingImage}
+            alt="Listing"
+            className="w-full h-40 object-cover"
+          />
           <div className="p-2 bg-brand-panel/50">
-            <p className="text-xs text-brand-text-secondary truncate">New Listing! {postText.split('\n')[0]}</p>
+            <p className="text-xs text-brand-text-secondary truncate">
+              New Listing! {postText.split("\n")[0]}
+            </p>
             <p className="text-xs text-brand-text-tertiary">{handle}</p>
           </div>
         </div>
       )}
-       {!listingImage && postText.length > 10 && ( // Show a placeholder card if text exists but no image
-         <div className="rounded-lg overflow-hidden border border-brand-border my-2 p-3 bg-brand-panel/50">
-            <p className="text-xs text-brand-text-secondary truncate">New Listing! {postText.split('\n')[0]}</p>
-         </div>
-      )}
-
+      {!listingImage &&
+        postText.length > 10 && ( // Show a placeholder card if text exists but no image
+          <div className="rounded-lg overflow-hidden border border-brand-border my-2 p-3 bg-brand-panel/50">
+            <p className="text-xs text-brand-text-secondary truncate">
+              New Listing! {postText.split("\n")[0]}
+            </p>
+          </div>
+        )}
 
       {/* Actions */}
       <div className="flex justify-around items-center text-xs text-brand-text-tertiary mt-3 pt-2 border-t border-brand-border">
-        <button className="flex items-center hover:text-blue-400"><ChatBubbleOvalLeftIcon className="h-4 w-4 mr-1" /> 15</button>
-        <button className="flex items-center hover:text-green-400"><ArrowPathIcon className="h-4 w-4 mr-1" /> 7</button>
-        <button className="flex items-center hover:text-red-400"><HeartIcon className="h-4 w-4 mr-1" /> 120</button>
-        <button className="flex items-center hover:text-blue-400"><ArrowUpTrayIcon className="h-4 w-4" /></button>
+        <button className="flex items-center hover:text-blue-400">
+          <ChatBubbleOvalLeftIcon className="h-4 w-4 mr-1" /> 15
+        </button>
+        <button className="flex items-center hover:text-green-400">
+          <ArrowPathIcon className="h-4 w-4 mr-1" /> 7
+        </button>
+        <button className="flex items-center hover:text-red-400">
+          <HeartIcon className="h-4 w-4 mr-1" /> 120
+        </button>
+        <button className="flex items-center hover:text-blue-400">
+          <ArrowUpTrayIcon className="h-4 w-4" />
+        </button>
       </div>
-       {maxLength && (
-        <p className={`text-xs mt-2 text-right ${charLimitExceeded ? 'text-red-500 font-semibold' : 'text-brand-text-tertiary'}`}>
+      {maxLength && (
+        <p
+          className={`text-xs mt-2 text-right ${charLimitExceeded ? "text-red-500 font-semibold" : "text-brand-text-tertiary"}`}
+        >
           {charCount}/{maxLength}
         </p>
       )}

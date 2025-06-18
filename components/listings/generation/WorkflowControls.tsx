@@ -1,8 +1,13 @@
-import React from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
-import { TOOLKIT_TOOLS } from '../../../constants';
-import Button from '../../shared/Button';
-import { ArrowLeftIcon, ArrowRightIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import React from "react";
+import { Link, useParams, useNavigate } from "react-router-dom";
+import { TOOLKIT_TOOLS } from "../../../constants";
+import Button from "../../shared/Button";
+import {
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  CheckIcon,
+  XMarkIcon,
+} from "@heroicons/react/24/outline";
 
 interface WorkflowControlsProps {
   workflowTools: string[];
@@ -11,32 +16,36 @@ interface WorkflowControlsProps {
   workflowParam: string;
 }
 
-const WorkflowControls: React.FC<WorkflowControlsProps> = ({ 
-  workflowTools, 
+const WorkflowControls: React.FC<WorkflowControlsProps> = ({
+  workflowTools,
   currentToolId,
   isInWorkflow,
-  workflowParam
+  workflowParam,
 }) => {
   const { id: listingId } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  
+
   if (!isInWorkflow || workflowTools.length <= 1) return null;
-  
+
   const currentIndex = workflowTools.indexOf(currentToolId);
   const isFirst = currentIndex === 0;
   const isLast = currentIndex === workflowTools.length - 1;
-  
-  const previousTool = !isFirst ? TOOLKIT_TOOLS.find(tool => tool.id === workflowTools[currentIndex - 1]) : null;
-  const nextTool = !isLast ? TOOLKIT_TOOLS.find(tool => tool.id === workflowTools[currentIndex + 1]) : null;
+
+  const previousTool = !isFirst
+    ? TOOLKIT_TOOLS.find((tool) => tool.id === workflowTools[currentIndex - 1])
+    : null;
+  const nextTool = !isLast
+    ? TOOLKIT_TOOLS.find((tool) => tool.id === workflowTools[currentIndex + 1])
+    : null;
 
   return (
     <>
       {/* Top Right Exit Button */}
       <div className="flex justify-end mb-4">
         <Link to={`/listings/${listingId}`}>
-          <Button 
-            variant="secondary" 
-            size="sm" 
+          <Button
+            variant="secondary"
+            size="sm"
             leftIcon={<XMarkIcon className="h-4 w-4" />}
             className="bg-red-500/10 backdrop-blur-sm hover:bg-red-500/20 border-red-500/30 text-red-400 hover:text-red-300"
           >
@@ -50,10 +59,12 @@ const WorkflowControls: React.FC<WorkflowControlsProps> = ({
         {/* Left - Previous Button */}
         <div>
           {previousTool ? (
-            <Link to={`/listings/${listingId}${previousTool.pathSuffix}?workflow=${workflowParam}`}>
-              <Button 
-                variant="secondary" 
-                size="md" 
+            <Link
+              to={`/listings/${listingId}${previousTool.pathSuffix}?workflow=${workflowParam}`}
+            >
+              <Button
+                variant="secondary"
+                size="md"
                 leftIcon={<ArrowLeftIcon className="h-4 w-4" />}
                 className="bg-white/10 backdrop-blur-sm hover:bg-white/20 border-white/20 text-brand-text-primary"
               >
@@ -62,9 +73,9 @@ const WorkflowControls: React.FC<WorkflowControlsProps> = ({
             </Link>
           ) : (
             <Link to={`/listings/${listingId}`}>
-              <Button 
-                variant="secondary" 
-                size="md" 
+              <Button
+                variant="secondary"
+                size="md"
                 leftIcon={<ArrowLeftIcon className="h-4 w-4" />}
                 className="bg-white/10 backdrop-blur-sm hover:bg-white/20 border-white/20 text-brand-text-primary"
               >
@@ -73,14 +84,14 @@ const WorkflowControls: React.FC<WorkflowControlsProps> = ({
             </Link>
           )}
         </div>
-        
+
         {/* Right - Next or Complete Button */}
         <div>
           {isLast ? (
             <Link to={`/listings/${listingId}`}>
-              <Button 
-                variant="primary" 
-                size="md" 
+              <Button
+                variant="primary"
+                size="md"
                 leftIcon={<CheckIcon className="h-4 w-4" />}
                 className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 shadow-lg shadow-green-500/25"
               >
@@ -88,10 +99,12 @@ const WorkflowControls: React.FC<WorkflowControlsProps> = ({
               </Button>
             </Link>
           ) : nextTool ? (
-            <Link to={`/listings/${listingId}${nextTool.pathSuffix}?workflow=${workflowParam}`}>
-              <Button 
-                variant="primary" 
-                size="md" 
+            <Link
+              to={`/listings/${listingId}${nextTool.pathSuffix}?workflow=${workflowParam}`}
+            >
+              <Button
+                variant="primary"
+                size="md"
                 rightIcon={<ArrowRightIcon className="h-4 w-4" />}
                 className="bg-gradient-to-r from-brand-primary to-brand-secondary hover:opacity-90 shadow-lg shadow-brand-primary/25"
               >
@@ -100,9 +113,9 @@ const WorkflowControls: React.FC<WorkflowControlsProps> = ({
             </Link>
           ) : (
             <Link to={`/listings/${listingId}`}>
-              <Button 
-                variant="primary" 
-                size="md" 
+              <Button
+                variant="primary"
+                size="md"
                 leftIcon={<CheckIcon className="h-4 w-4" />}
                 className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 shadow-lg shadow-green-500/25"
               >
@@ -116,4 +129,4 @@ const WorkflowControls: React.FC<WorkflowControlsProps> = ({
   );
 };
 
-export default WorkflowControls; 
+export default WorkflowControls;

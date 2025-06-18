@@ -1,8 +1,15 @@
-import React, { ReactNode, ButtonHTMLAttributes } from 'react';
+import React, { ReactNode, ButtonHTMLAttributes } from "react";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'tertiary' | 'danger' | 'ghost' | 'edit' | 'custom';
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+  variant?:
+    | "primary"
+    | "secondary"
+    | "tertiary"
+    | "danger"
+    | "ghost"
+    | "edit"
+    | "custom";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
   isLoading?: boolean;
   children: ReactNode;
   leftIcon?: ReactNode;
@@ -12,11 +19,11 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const Button: React.FC<ButtonProps> = ({
   children,
-  variant = 'primary',
-  size = 'md',
+  variant = "primary",
+  size = "md",
   isLoading = false,
   disabled,
-  className = '',
+  className = "",
   leftIcon,
   rightIcon,
   fullWidth = false,
@@ -27,10 +34,10 @@ const Button: React.FC<ButtonProps> = ({
     transition-all duration-200 ease-out inline-flex items-center justify-center relative overflow-hidden
     transform active:scale-95 disabled:transform-none
   `;
-  
-  let variantStyle = '';
+
+  let variantStyle = "";
   switch (variant) {
-    case 'primary':
+    case "primary":
       variantStyle = `
         bg-gradient-to-r from-brand-primary to-brand-accent text-white font-semibold
         hover:opacity-90 shadow-lg hover:shadow-xl
@@ -39,7 +46,7 @@ const Button: React.FC<ButtonProps> = ({
         border border-transparent transition-all duration-300
       `;
       break;
-    case 'secondary':
+    case "secondary":
       variantStyle = `
         bg-brand-panel text-brand-text-primary border border-brand-border font-medium
         hover:bg-brand-card hover:border-brand-primary/30 hover:shadow-md hover:shadow-brand-primary/10
@@ -47,7 +54,7 @@ const Button: React.FC<ButtonProps> = ({
         transform hover:scale-[1.01]
       `;
       break;
-    case 'tertiary':
+    case "tertiary":
       variantStyle = `
         bg-transparent text-brand-primary border-2 border-brand-primary/70 font-medium
         hover:bg-brand-primary hover:text-white hover:border-brand-primary hover:shadow-md
@@ -55,7 +62,7 @@ const Button: React.FC<ButtonProps> = ({
         transform hover:scale-[1.01]
       `;
       break;
-    case 'ghost':
+    case "ghost":
       variantStyle = `
         bg-transparent text-brand-text-secondary border border-transparent font-normal
         hover:text-brand-text-primary hover:bg-brand-panel/50
@@ -63,7 +70,7 @@ const Button: React.FC<ButtonProps> = ({
         transform hover:scale-[1.01]
       `;
       break;
-    case 'edit':
+    case "edit":
       variantStyle = `
         bg-gradient-to-r from-brand-primary to-brand-accent text-white font-semibold
         hover:opacity-90 shadow-lg hover:shadow-xl
@@ -72,7 +79,7 @@ const Button: React.FC<ButtonProps> = ({
         border border-transparent
       `;
       break;
-    case 'danger':
+    case "danger":
       variantStyle = `
         bg-brand-danger text-white font-semibold border border-transparent
         hover:bg-brand-danger/90 hover:shadow-lg hover:shadow-brand-danger/25
@@ -80,27 +87,27 @@ const Button: React.FC<ButtonProps> = ({
         transform hover:scale-[1.02]
       `;
       break;
-    case 'custom':
-      variantStyle = '';
+    case "custom":
+      variantStyle = "";
       break;
   }
 
-  let sizeStyle = '';
+  let sizeStyle = "";
   switch (size) {
-    case 'xs':
-      sizeStyle = 'py-2 px-4 text-xs';
+    case "xs":
+      sizeStyle = "py-2 px-4 text-xs";
       break;
-    case 'sm':
-      sizeStyle = 'py-2 px-5 text-sm';
+    case "sm":
+      sizeStyle = "py-2 px-5 text-sm";
       break;
-    case 'md':
-      sizeStyle = 'py-3 px-6 text-sm';
+    case "md":
+      sizeStyle = "py-3 px-6 text-sm";
       break;
-    case 'lg':
-      sizeStyle = 'py-3 px-6 text-sm';
+    case "lg":
+      sizeStyle = "py-3 px-6 text-sm";
       break;
-    case 'xl':
-      sizeStyle = 'py-4 px-8 text-base';
+    case "xl":
+      sizeStyle = "py-4 px-8 text-base";
       break;
   }
 
@@ -108,22 +115,38 @@ const Button: React.FC<ButtonProps> = ({
     opacity-50 cursor-not-allowed transform-none hover:scale-100 hover:shadow-none
     hover:bg-opacity-100 hover:border-opacity-100
   `;
-  
-  const widthStyle = fullWidth ? 'w-full' : '';
+
+  const widthStyle = fullWidth ? "w-full" : "";
 
   const getLoadingSpinner = () => {
-    const spinnerSize = size === 'xs' || size === 'sm' ? 'h-4 w-4' : 'h-5 w-5';
+    const spinnerSize = size === "xs" || size === "sm" ? "h-4 w-4" : "h-5 w-5";
     return (
-      <svg className={`animate-spin ${spinnerSize}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      <svg
+        className={`animate-spin ${spinnerSize}`}
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <circle
+          className="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          strokeWidth="4"
+        ></circle>
+        <path
+          className="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+        ></path>
       </svg>
     );
   };
 
   return (
     <button
-      className={`${baseStyle} ${variantStyle} ${sizeStyle} ${widthStyle} ${className} ${(disabled || isLoading) ? disabledStyle : ''}`}
+      className={`${baseStyle} ${variantStyle} ${sizeStyle} ${widthStyle} ${className} ${disabled || isLoading ? disabledStyle : ""}`}
       disabled={disabled || isLoading}
       {...props}
     >
@@ -132,7 +155,9 @@ const Button: React.FC<ButtonProps> = ({
           {getLoadingSpinner()}
         </div>
       )}
-      <div className={`flex items-center gap-2 ${isLoading ? 'opacity-0' : 'opacity-100'}`}>
+      <div
+        className={`flex items-center gap-2 ${isLoading ? "opacity-0" : "opacity-100"}`}
+      >
         {leftIcon && <span className="flex-shrink-0">{leftIcon}</span>}
         {children && <span className="flex-shrink-0">{children}</span>}
         {rightIcon && <span className="flex-shrink-0">{rightIcon}</span>}

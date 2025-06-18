@@ -27,7 +27,8 @@ import bbox from "@turf/bbox"; // turf to get bounding box from polygon
 // Fix for ES module compatibility
 const NodeCacheClass = (NodeCache as any).default || NodeCache;
 const WebSocketClass = (WebSocket as any).default || WebSocket;
-const WebSocketServer = (WebSocket as any).WebSocketServer || WebSocket.WebSocketServer;
+const WebSocketServer =
+  (WebSocket as any).WebSocketServer || WebSocket.WebSocketServer;
 
 const cache = new NodeCacheClass({ stdTTL: 60 * 60 * 24 * 7 }); // 7‑day TTL
 
@@ -44,17 +45,28 @@ const costPerReq: Record<string, number> = {
 const spendLedger: Record<string, number> = {};
 function recordSpend(vendor: string) {
   spendLedger[vendor] = (spendLedger[vendor] || 0) + costPerReq[vendor];
-  if (Math.floor(spendLedger[vendor]) !== Math.floor(spendLedger[vendor] - costPerReq[vendor])) {
-    broadcast(`${vendor.toUpperCase()} spend hit $${Math.floor(spendLedger[vendor])}`);
+  if (
+    Math.floor(spendLedger[vendor]) !==
+    Math.floor(spendLedger[vendor] - costPerReq[vendor])
+  ) {
+    broadcast(
+      `${vendor.toUpperCase()} spend hit $${Math.floor(spendLedger[vendor])}`,
+    );
   }
 }
 const wss = new WebSocketServer({ port: 4001 });
 function broadcast(msg: string) {
-  wss.clients.forEach((c: any) => c.readyState === WebSocketClass.OPEN && c.send(msg));
+  wss.clients.forEach(
+    (c: any) => c.readyState === WebSocketClass.OPEN && c.send(msg),
+  );
 }
 
 // ------- Cached fetch wrapper -----------------
-async function guardedFetch(vendor: string, url: string, opts: RequestInit = {}) {
+async function guardedFetch(
+  vendor: string,
+  url: string,
+  opts: RequestInit = {},
+) {
   const key = `${vendor}:${url}`;
   const hit = cache.get(key);
   if (hit) return hit;
@@ -71,7 +83,11 @@ export async function rentcastBundle(address: string, zip: string) {
   const headers = { "X-Api-Key": process.env.RENTCAST_API_KEY! };
   const base = "https://api.rentcast.io/v1";
   const [property, market] = await Promise.all([
-    guardedFetch("rentcast", `${base}/properties?address=${encodeURIComponent(address)}`, { headers }),
+    guardedFetch(
+      "rentcast",
+      `${base}/properties?address=${encodeURIComponent(address)}`,
+      { headers },
+    ),
     guardedFetch("rentcast", `${base}/markets?postalCode=${zip}`, { headers }),
   ]);
   return { property, market };
@@ -79,7 +95,14 @@ export async function rentcastBundle(address: string, zip: string) {
 
 // --- Google‑based derived fallback ----------
 async function derivedGoogleWalk(lat: number, lon: number) {
-  const cats = ["restaurant", "grocery_or_supermarket", "park", "cafe", "gym", "hospital"];
+  const cats = [
+    "restaurant",
+    "grocery_or_supermarket",
+    "park",
+    "cafe",
+    "gym",
+    "hospital",
+  ];
   const radius = 800; // metres (~½ mile)
   let total = 0;
   for (const cat of cats) {
@@ -90,7 +113,11 @@ async function derivedGoogleWalk(lat: number, lon: number) {
     total += res.results?.length ?? 0;
   }
   const score = Math.min(total / 30, 1) * 100;
-  return { source: "google-derived", score: Math.round(score), amenityCount: total } as const;
+  return {
+    source: "google-derived",
+    score: Math.round(score),
+    amenityCount: total,
+  } as const;
 }
 
 // --- Geoapify Reachability + Places ----------
@@ -129,11 +156,19 @@ async function geoapifyWalk(lat: number, lon: number) {
     // Note: To get accurate count we could call count param, but not necessary for heuristic
   }
   const score = Math.min(total / 20, 1) * 100; // 20+ amenities ⇒ score 100
-  return { source: "geoapify", score: Math.round(score), amenityCount: total } as const;
+  return {
+    source: "geoapify",
+    score: Math.round(score),
+    amenityCount: total,
+  } as const;
 }
 
 // --- Unified walkability wrapper -------------
-export async function walkabilityBundle(lat: number, lon: number, address: string) {
+export async function walkabilityBundle(
+  lat: number,
+  lon: number,
+  address: string,
+) {
   // 1) Walk Score if key present
   if (process.env.WS_API_KEY) {
     const url =
@@ -156,12 +191,19 @@ export async function crimeBundle(zip: string) {
 }
 
 export async function placesBundle(lat: number, lon: number) {
-  const cats = ["restaurant", "grocery_or_supermarket", "park", "cafe", "gym", "hospital"];
+  const cats = [
+    "restaurant",
+    "grocery_or_supermarket",
+    "park",
+    "cafe",
+    "gym",
+    "hospital",
+  ];
   const calls = cats.map((cat) =>
     guardedFetch(
       "google",
-      `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lon}&radius=1500&type=${cat}&key=${process.env.VITE_GOOGLE_MAPS_API_KEY}`
-    )
+      `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lon}&radius=1500&type=${cat}&key=${process.env.VITE_GOOGLE_MAPS_API_KEY}`,
+    ),
   );
   const results = await Promise.all(calls);
   return Object.fromEntries(cats.map((c, i) => [c, results[i]]));
@@ -216,7 +258,8 @@ import { useQuery } from "@tanstack/react-query";
 export function useNeighborhood(listingId: string) {
   return useQuery({
     queryKey: ["neighborhood", listingId],
-    queryFn: () => fetch(`/api/neighborhood/${listingId}`).then((r: any) => r.json()),
+    queryFn: () =>
+      fetch(`/api/neighborhood/${listingId}`).then((r: any) => r.json()),
     staleTime: 1000 * 60 * 60 * 24 * 7,
   });
 }
@@ -236,7 +279,11 @@ export function useSpendToasts() {
 // END v1.3
 
 // Helper function - you'll need to implement this based on your database
-async function getListingFromDB(listingId: string): Promise<{ address: string; zip: string; lat: number; lon: number }> {
+async function getListingFromDB(
+  listingId: string,
+): Promise<{ address: string; zip: string; lat: number; lon: number }> {
   // TODO: Implement database lookup for listing details
-  throw new Error("getListingFromDB not implemented - connect to your database");
-} 
+  throw new Error(
+    "getListingFromDB not implemented - connect to your database",
+  );
+}

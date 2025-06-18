@@ -1,8 +1,7 @@
-
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
-import AuthForm from './AuthForm';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
+import AuthForm from "./AuthForm";
 
 const LoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
@@ -15,16 +14,25 @@ const LoginPage: React.FC = () => {
     setError(null);
     try {
       await login(email, password);
-      navigate('/dashboard');
+      navigate("/dashboard");
     } catch (err) {
-      setError((err as Error).message || 'Failed to login. Please check your credentials.');
+      setError(
+        (err as Error).message ||
+          "Failed to login. Please check your credentials.",
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  return <AuthForm mode="login" onSubmit={handleLogin} loading={loading} serverError={error} />;
+  return (
+    <AuthForm
+      mode="login"
+      onSubmit={handleLogin}
+      loading={loading}
+      serverError={error}
+    />
+  );
 };
 
 export default LoginPage;
-    

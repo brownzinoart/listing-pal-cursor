@@ -1,6 +1,6 @@
 // Test the walkable API key with WalkScore
-import fetch from 'node-fetch';
-import 'dotenv/config';
+import fetch from "node-fetch";
+import "dotenv/config";
 
 console.log("🚶‍♂️ Testing Walkable API (WalkScore)...");
 
@@ -17,7 +17,7 @@ console.log("🌐 Testing API call...");
 try {
   const response = await fetch(url);
   const data = await response.json();
-  
+
   if (response.ok) {
     console.log("✅ API Response Success!");
     console.log("📊 Walk Score:", data.walkscore || "N/A");

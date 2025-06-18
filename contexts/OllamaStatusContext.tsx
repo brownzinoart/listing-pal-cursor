@@ -1,4 +1,11 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  ReactNode,
+} from "react";
 
 interface OllamaStatusContextType {
   isOllamaOnline: boolean;
@@ -6,15 +13,20 @@ interface OllamaStatusContextType {
   isLoadingStatus: boolean;
 }
 
-const OllamaStatusContext = createContext<OllamaStatusContextType | undefined>(undefined);
+const OllamaStatusContext = createContext<OllamaStatusContextType | undefined>(
+  undefined,
+);
 
 interface OllamaStatusProviderProps {
   children: ReactNode;
 }
 
-const OLLAMA_BASE_URL = process.env.REACT_APP_OLLAMA_URL || 'http://localhost:11434';
+const OLLAMA_BASE_URL =
+  process.env.REACT_APP_OLLAMA_URL || "http://localhost:11434";
 
-export const OllamaStatusProvider: React.FC<OllamaStatusProviderProps> = ({ children }) => {
+export const OllamaStatusProvider: React.FC<OllamaStatusProviderProps> = ({
+  children,
+}) => {
   const [isOllamaOnline, setIsOllamaOnline] = useState<boolean>(false);
   const [isLoadingStatus, setIsLoadingStatus] = useState<boolean>(true);
 
@@ -25,16 +37,16 @@ export const OllamaStatusProvider: React.FC<OllamaStatusProviderProps> = ({ chil
       const timeoutId = setTimeout(() => controller.abort(), 3000);
 
       const response = await fetch(OLLAMA_BASE_URL, {
-        method: 'HEAD',
+        method: "HEAD",
         signal: controller.signal,
-        mode: 'cors'
+        mode: "cors",
       });
 
       clearTimeout(timeoutId);
       setIsOllamaOnline(true);
     } catch (error) {
       setIsOllamaOnline(false);
-      console.warn('Ollama service is offline or not accessible.', error);
+      console.warn("Ollama service is offline or not accessible.", error);
     } finally {
       setIsLoadingStatus(false);
     }
@@ -56,7 +68,9 @@ export const OllamaStatusProvider: React.FC<OllamaStatusProviderProps> = ({ chil
 export const useOllamaStatus = (): OllamaStatusContextType => {
   const context = useContext(OllamaStatusContext);
   if (context === undefined) {
-    throw new Error('useOllamaStatus must be used within a OllamaStatusProvider');
+    throw new Error(
+      "useOllamaStatus must be used within a OllamaStatusProvider",
+    );
   }
   return context;
-}; 
+};

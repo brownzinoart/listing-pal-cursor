@@ -1,16 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { useAuth } from '../../../contexts/AuthContext';
-import * as listingService from '../../../services/listingService';
-import { ollamaService } from '../../../services/ollamaService';
-import { Listing } from '../../../types';
-import { TOOLKIT_TOOLS } from '../../../constants';
-import Button from '../../shared/Button';
-import Textarea from '../../shared/Textarea';
-import PropertySummaryHeader from './PropertySummaryHeader';
-import WorkflowNavigation from './WorkflowNavigation';
-import EmailMockup from './EmailMockup';
-import { ArrowLeftIcon, SparklesIcon as SparklesOutlineIcon, ClipboardDocumentIcon, ArrowPathIcon, CheckIcon, EnvelopeIcon } from '@heroicons/react/24/outline';
+import React, { useState, useEffect } from "react";
+import {
+  useParams,
+  useNavigate,
+  Link,
+  useSearchParams,
+} from "react-router-dom";
+import { useAuth } from "../../../contexts/AuthContext";
+import * as listingService from "../../../services/listingService";
+import { ollamaService } from "../../../services/ollamaService";
+import { Listing } from "../../../types";
+import { TOOLKIT_TOOLS } from "../../../constants";
+import Button from "../../shared/Button";
+import Textarea from "../../shared/Textarea";
+import PropertySummaryHeader from "./PropertySummaryHeader";
+import WorkflowNavigation from "./WorkflowNavigation";
+import EmailMockup from "./EmailMockup";
+import {
+  ArrowLeftIcon,
+  SparklesIcon as SparklesOutlineIcon,
+  ClipboardDocumentIcon,
+  ArrowPathIcon,
+  CheckIcon,
+  EnvelopeIcon,
+} from "@heroicons/react/24/outline";
 
 const EmailGeneratorPage: React.FC = () => {
   const { id: listingId } = useParams<{ id: string }>();
@@ -19,35 +31,39 @@ const EmailGeneratorPage: React.FC = () => {
   const [searchParams] = useSearchParams();
 
   const [listing, setListing] = useState<Listing | null>(null);
-  const [generatedEmail, setGeneratedEmail] = useState<string>('');
+  const [generatedEmail, setGeneratedEmail] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [isLoadingPage, setIsLoadingPage] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [charCount, setCharCount] = useState<number>(0);
 
   // Workflow management
-  const workflowParam = searchParams.get('workflow');
-  const workflowTools = workflowParam ? workflowParam.split(',') : [];
+  const workflowParam = searchParams.get("workflow");
+  const workflowTools = workflowParam ? workflowParam.split(",") : [];
   const isInWorkflow = workflowTools.length > 1;
 
   // Get previous step name for back navigation
   const getPreviousStepName = () => {
-    if (!isInWorkflow) return 'Property';
-    const currentIndex = workflowTools.indexOf('email');
+    if (!isInWorkflow) return "Property";
+    const currentIndex = workflowTools.indexOf("email");
     if (currentIndex > 0) {
       const previousToolId = workflowTools[currentIndex - 1];
-      const previousTool = TOOLKIT_TOOLS.find(tool => tool.id === previousToolId);
-      return previousTool?.name || 'Previous Step';
+      const previousTool = TOOLKIT_TOOLS.find(
+        (tool) => tool.id === previousToolId,
+      );
+      return previousTool?.name || "Previous Step";
     }
-    return 'Property';
+    return "Property";
   };
 
   const getPreviousStepPath = () => {
     if (!isInWorkflow) return `/listings/${listingId}`;
-    const currentIndex = workflowTools.indexOf('email');
+    const currentIndex = workflowTools.indexOf("email");
     if (currentIndex > 0) {
       const previousToolId = workflowTools[currentIndex - 1];
-      const previousTool = TOOLKIT_TOOLS.find(tool => tool.id === previousToolId);
+      const previousTool = TOOLKIT_TOOLS.find(
+        (tool) => tool.id === previousToolId,
+      );
       if (previousTool?.pathSuffix) {
         return `/listings/${listingId}${previousTool.pathSuffix}?workflow=${workflowParam}`;
       }
@@ -61,16 +77,20 @@ const EmailGeneratorPage: React.FC = () => {
       setIsLoadingPage(false);
       return;
     }
-    listingService.getListingById(listingId)
-      .then(data => {
+    listingService
+      .getListingById(listingId)
+      .then((data) => {
         if (data && data.userId === user?.id) {
           setListing(data);
-          setGeneratedEmail(data.generatedEmail || "Your generated introductory email will appear here...");
+          setGeneratedEmail(
+            data.generatedEmail ||
+              "Your generated introductory email will appear here...",
+          );
         } else {
           setError(data ? "Permission denied." : "Listing not found.");
         }
       })
-      .catch(() => setError('Failed to fetch listing details.'))
+      .catch(() => setError("Failed to fetch listing details."))
       .finally(() => setIsLoadingPage(false));
   }, [listingId, user]);
 
@@ -81,25 +101,29 @@ const EmailGeneratorPage: React.FC = () => {
   const handleGenerateEmail = async () => {
     if (!listing) return;
     setIsGenerating(true);
-    setGeneratedEmail('Generating your exciting email content...');
-    
+    setGeneratedEmail("Generating your exciting email content...");
+
     try {
       const aiEmail = await ollamaService.generateIntroEmail(listing);
       setGeneratedEmail(aiEmail);
     } catch (error) {
-      console.error('Generation error:', error);
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      const mockEmail = `Subject: New Listing - ${listing.address.split(',')[0]} Available!
+      console.error("Generation error:", error);
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      const mockEmail = `Subject: New Listing - ${listing.address.split(",")[0]} Available!
 
 Dear [Client Name],
 
 I hope this email finds you well! I'm absolutely thrilled to share an exceptional opportunity that just hit the market - and I immediately thought of you.
 
-This stunning ${listing.bedrooms}-bedroom, ${listing.bathrooms}-bathroom home at ${listing.address.split(',')[0]} is everything you've been searching for and more. At ${listing.squareFootage} square feet, this ${listing.yearBuilt} property offers the perfect blend of comfort, style, and value at $${listing.price.toLocaleString()}.
+This stunning ${listing.bedrooms}-bedroom, ${listing.bathrooms}-bathroom home at ${listing.address.split(",")[0]} is everything you've been searching for and more. At ${listing.squareFootage} square feet, this ${listing.yearBuilt} property offers the perfect blend of comfort, style, and value at $${listing.price.toLocaleString()}.
 
 ✨ What makes this property truly special:
-${listing.keyFeatures.split(',').slice(0, 4).map(feature => `• ${feature.trim()}`).join('\n')}
+${listing.keyFeatures
+  .split(",")
+  .slice(0, 4)
+  .map((feature) => `• ${feature.trim()}`)
+  .join("\n")}
 
 The moment you step inside, you'll feel the warmth and potential this home offers. It's move-in ready and perfect for creating lasting memories with your loved ones.
 
@@ -114,7 +138,7 @@ Best regards,
 [Your Phone Number]
 [Your Email]
 [Your Brokerage]`;
-      
+
       setGeneratedEmail(mockEmail);
     } finally {
       setIsGenerating(false);
@@ -123,32 +147,37 @@ Best regards,
 
   const handleConfirmAndSave = async () => {
     if (!listingId || !listing || !user) return;
-    if (generatedEmail.includes("Your generated") || generatedEmail.includes("Generating your content")) {
+    if (
+      generatedEmail.includes("Your generated") ||
+      generatedEmail.includes("Generating your content")
+    ) {
       alert("Please generate an email before saving.");
       return;
     }
-    
+
     try {
-      await listingService.updateListing(listingId, { 
-        ...listing, 
-        generatedEmail: generatedEmail, 
-        userId: user.id 
+      await listingService.updateListing(listingId, {
+        ...listing,
+        generatedEmail: generatedEmail,
+        userId: user.id,
       });
-      
+
       // If in workflow, go to next tool
       if (isInWorkflow) {
-        const currentIndex = workflowTools.indexOf('email');
+        const currentIndex = workflowTools.indexOf("email");
         const nextToolId = workflowTools[currentIndex + 1];
-        
+
         if (nextToolId) {
-          const nextTool = TOOLKIT_TOOLS.find(tool => tool.id === nextToolId);
+          const nextTool = TOOLKIT_TOOLS.find((tool) => tool.id === nextToolId);
           if (nextTool && nextTool.pathSuffix) {
-            navigate(`/listings/${listingId}${nextTool.pathSuffix}?workflow=${workflowParam}`);
+            navigate(
+              `/listings/${listingId}${nextTool.pathSuffix}?workflow=${workflowParam}`,
+            );
             return;
           }
         }
       }
-      
+
       // Default: go back to listing
       navigate(`/listings/${listingId}`);
     } catch (e) {
@@ -157,7 +186,8 @@ Best regards,
   };
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(generatedEmail)
+    navigator.clipboard
+      .writeText(generatedEmail)
       .then(() => alert("Email copied to clipboard!"))
       .catch(() => alert("Copy failed."));
   };
@@ -178,7 +208,7 @@ Best regards,
     return (
       <div className="text-center py-10">
         <p className="text-brand-danger p-4">{error}</p>
-        <Button onClick={() => navigate('/dashboard')}>Dashboard</Button>
+        <Button onClick={() => navigate("/dashboard")}>Dashboard</Button>
       </div>
     );
   }
@@ -189,22 +219,27 @@ Best regards,
     <div className="min-h-screen bg-brand-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="mb-6">
-          <Link to={getPreviousStepPath()} className="inline-flex items-center text-sm text-brand-text-secondary hover:text-brand-primary transition-colors group">
+          <Link
+            to={getPreviousStepPath()}
+            className="inline-flex items-center text-sm text-brand-text-secondary hover:text-brand-primary transition-colors group"
+          >
             <ArrowLeftIcon className="h-4 w-4 mr-2 group-hover:text-brand-primary" />
             Back
           </Link>
         </div>
-        <h1 className="text-3xl font-bold text-brand-text-primary mb-6">Generate Email Campaign</h1>
-        
+        <h1 className="text-3xl font-bold text-brand-text-primary mb-6">
+          Generate Email Campaign
+        </h1>
+
         {isInWorkflow && (
           <div className="mb-8">
-            <WorkflowNavigation 
-              workflowTools={workflowTools} 
-              currentToolId="email" 
+            <WorkflowNavigation
+              workflowTools={workflowTools}
+              currentToolId="email"
             />
           </div>
         )}
-        
+
         <div className="mb-8">
           <PropertySummaryHeader listing={listing} />
         </div>
@@ -213,19 +248,21 @@ Best regards,
           {/* Preview Panel */}
           <div className="order-2 xl:order-1">
             <div className="bg-brand-panel border border-brand-border rounded-lg p-6 sticky top-6">
-              <h3 className="text-xl font-semibold text-brand-text-primary mb-4">Email Preview</h3>
+              <h3 className="text-xl font-semibold text-brand-text-primary mb-4">
+                Email Preview
+              </h3>
               <div className="mb-6">
-                                 <EmailMockup emailContent={generatedEmail} />
+                <EmailMockup emailContent={generatedEmail} />
               </div>
-              <Button 
-                onClick={handleGenerateEmail} 
-                isLoading={isGenerating} 
-                disabled={isGenerating} 
-                className="w-full bg-gradient-to-r from-brand-secondary to-emerald-600 hover:from-emerald-600 hover:to-brand-secondary text-white font-semibold shadow-lg transition-all duration-300" 
-                leftIcon={<SparklesOutlineIcon className="h-5 w-5" />} 
+              <Button
+                onClick={handleGenerateEmail}
+                isLoading={isGenerating}
+                disabled={isGenerating}
+                className="w-full bg-gradient-to-r from-brand-secondary to-emerald-600 hover:from-emerald-600 hover:to-brand-secondary text-white font-semibold shadow-lg transition-all duration-300"
+                leftIcon={<SparklesOutlineIcon className="h-5 w-5" />}
                 size="lg"
               >
-                {isGenerating ? 'Generating...' : 'Generate New Email'}
+                {isGenerating ? "Generating..." : "Generate New Email"}
               </Button>
             </div>
           </div>
@@ -235,8 +272,12 @@ Best regards,
             <div className="bg-brand-panel border border-brand-border rounded-lg p-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
                 <div className="mb-4 sm:mb-0">
-                  <h3 className="text-xl font-semibold text-brand-text-primary mb-1">Generated Email</h3>
-                  <p className="text-sm text-brand-text-secondary">Edit and customize your generated content.</p>
+                  <h3 className="text-xl font-semibold text-brand-text-primary mb-1">
+                    Generated Email
+                  </h3>
+                  <p className="text-sm text-brand-text-secondary">
+                    Edit and customize your generated content.
+                  </p>
                 </div>
                 <div className="flex items-center space-x-2">
                   <button
@@ -255,19 +296,21 @@ Best regards,
                   </button>
                 </div>
               </div>
-              
+
               <div className="space-y-4">
-                <Textarea 
-                  value={generatedEmail} 
-                  onChange={(e) => setGeneratedEmail(e.target.value)} 
-                  placeholder="Email content..." 
-                  className="w-full" 
-                  rows={16} 
-                  disabled={isGenerating} 
-                  variant="gradient" 
+                <Textarea
+                  value={generatedEmail}
+                  onChange={(e) => setGeneratedEmail(e.target.value)}
+                  placeholder="Email content..."
+                  className="w-full"
+                  rows={16}
+                  disabled={isGenerating}
+                  variant="gradient"
                 />
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-xs text-brand-text-tertiary mb-4 sm:mb-0">Character count: {charCount}</p>
+                  <p className="text-xs text-brand-text-tertiary mb-4 sm:mb-0">
+                    Character count: {charCount}
+                  </p>
                   <Button
                     onClick={handleConfirmAndSave}
                     className="bg-gradient-to-r from-brand-primary to-brand-secondary hover:from-brand-secondary hover:to-brand-primary text-white font-semibold shadow-lg transition-all duration-300 px-8"
@@ -286,4 +329,4 @@ Best regards,
   );
 };
 
-export default EmailGeneratorPage; 
+export default EmailGeneratorPage;

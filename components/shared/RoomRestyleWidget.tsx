@@ -1,8 +1,14 @@
-import React, { useState, useRef, useCallback } from 'react';
-import { PhotoIcon, CameraIcon, SparklesIcon, ArrowPathIcon, CheckIcon } from '@heroicons/react/24/outline';
-import { restyleRoom, generatePrompt } from '../../services/roomRestyleService';
-import Button from './Button';
-import ReactCompareImage from 'react-compare-image';
+import React, { useState, useRef, useCallback } from "react";
+import {
+  PhotoIcon,
+  CameraIcon,
+  SparklesIcon,
+  ArrowPathIcon,
+  CheckIcon,
+} from "@heroicons/react/24/outline";
+import { restyleRoom, generatePrompt } from "../../services/roomRestyleService";
+import Button from "./Button";
+import ReactCompareImage from "react-compare-image";
 
 interface RoomRestyleWidgetProps {
   onSave?: (originalImage: string, styledImage: string, metadata: any) => void;
@@ -10,37 +16,82 @@ interface RoomRestyleWidgetProps {
 }
 
 const ROOM_TYPES = [
-  { id: 'bedroom', label: 'Bedroom', icon: '🛏️' },
-  { id: 'livingroom', label: 'Living Room', icon: '🛋️' },
-  { id: 'kitchen', label: 'Kitchen', icon: '🍳' },
-  { id: 'diningroom', label: 'Dining Room', icon: '🍽️' },
-  { id: 'homeoffice', label: 'Office', icon: '💼' },
-  { id: 'bathroom', label: 'Bathroom', icon: '🚿' },
-  { id: 'entryway', label: 'Entryway', icon: '🚪' },
+  { id: "bedroom", label: "Bedroom", icon: "🛏️" },
+  { id: "livingroom", label: "Living Room", icon: "🛋️" },
+  { id: "kitchen", label: "Kitchen", icon: "🍳" },
+  { id: "diningroom", label: "Dining Room", icon: "🍽️" },
+  { id: "homeoffice", label: "Office", icon: "💼" },
+  { id: "bathroom", label: "Bathroom", icon: "🚿" },
+  { id: "entryway", label: "Entryway", icon: "🚪" },
 ];
 
 const DESIGN_STYLES = [
-  { id: 'scandinavian', label: 'Scandinavian', color: 'bg-blue-100 text-blue-800 border-blue-200' },
-  { id: 'industrial', label: 'Industrial', color: 'bg-gray-100 text-gray-800 border-gray-200' },
-  { id: 'farmhouse', label: 'Farmhouse', color: 'bg-green-100 text-green-800 border-green-200' },
-  { id: 'modern', label: 'Modern', color: 'bg-purple-100 text-purple-800 border-purple-200' },
-  { id: 'minimalist', label: 'Minimalist', color: 'bg-slate-100 text-slate-800 border-slate-200' },
-  { id: 'midcenturymodern', label: 'Mid-century', color: 'bg-orange-100 text-orange-800 border-orange-200' },
-  { id: 'bohemian', label: 'Bohemian', color: 'bg-pink-100 text-pink-800 border-pink-200' },
-  { id: 'contemporary', label: 'Contemporary', color: 'bg-indigo-100 text-indigo-800 border-indigo-200' },
-  { id: 'rustic', label: 'Rustic', color: 'bg-amber-100 text-amber-800 border-amber-200' },
-  { id: 'japandi', label: 'Japandi', color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
+  {
+    id: "scandinavian",
+    label: "Scandinavian",
+    color: "bg-blue-100 text-blue-800 border-blue-200",
+  },
+  {
+    id: "industrial",
+    label: "Industrial",
+    color: "bg-gray-100 text-gray-800 border-gray-200",
+  },
+  {
+    id: "farmhouse",
+    label: "Farmhouse",
+    color: "bg-green-100 text-green-800 border-green-200",
+  },
+  {
+    id: "modern",
+    label: "Modern",
+    color: "bg-purple-100 text-purple-800 border-purple-200",
+  },
+  {
+    id: "minimalist",
+    label: "Minimalist",
+    color: "bg-slate-100 text-slate-800 border-slate-200",
+  },
+  {
+    id: "midcenturymodern",
+    label: "Mid-century",
+    color: "bg-orange-100 text-orange-800 border-orange-200",
+  },
+  {
+    id: "bohemian",
+    label: "Bohemian",
+    color: "bg-pink-100 text-pink-800 border-pink-200",
+  },
+  {
+    id: "contemporary",
+    label: "Contemporary",
+    color: "bg-indigo-100 text-indigo-800 border-indigo-200",
+  },
+  {
+    id: "rustic",
+    label: "Rustic",
+    color: "bg-amber-100 text-amber-800 border-amber-200",
+  },
+  {
+    id: "japandi",
+    label: "Japandi",
+    color: "bg-emerald-100 text-emerald-800 border-emerald-200",
+  },
 ];
 
-const RoomRestyleWidget: React.FC<RoomRestyleWidgetProps> = ({ onSave, className = '' }) => {
+const RoomRestyleWidget: React.FC<RoomRestyleWidgetProps> = ({
+  onSave,
+  className = "",
+}) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [selectedRoom, setSelectedRoom] = useState<string>('');
-  const [selectedStyle, setSelectedStyle] = useState<string>('');
+  const [selectedRoom, setSelectedRoom] = useState<string>("");
+  const [selectedStyle, setSelectedStyle] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
-  const [originalImageUrl, setOriginalImageUrl] = useState<string>('');
-  const [styledImageUrl, setStyledImageUrl] = useState<string>('');
-  const [error, setError] = useState<string>('');
-  const [step, setStep] = useState<'upload' | 'select' | 'generate' | 'result'>('upload');
+  const [originalImageUrl, setOriginalImageUrl] = useState<string>("");
+  const [styledImageUrl, setStyledImageUrl] = useState<string>("");
+  const [error, setError] = useState<string>("");
+  const [step, setStep] = useState<"upload" | "select" | "generate" | "result">(
+    "upload",
+  );
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mobileCameraInputRef = useRef<HTMLInputElement>(null);
@@ -50,70 +101,79 @@ const RoomRestyleWidget: React.FC<RoomRestyleWidgetProps> = ({ onSave, className
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
 
   // Handle file upload
-  const handleFileUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file && file.type.startsWith('image/')) {
-      setSelectedFile(file);
-      setOriginalImageUrl(URL.createObjectURL(file));
-      setStep('select');
-      setError('');
-    } else {
-      setError('Please select a valid image file (JPEG, PNG, WebP)');
-    }
-  }, []);
+  const handleFileUpload = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (file && file.type.startsWith("image/")) {
+        setSelectedFile(file);
+        setOriginalImageUrl(URL.createObjectURL(file));
+        setStep("select");
+        setError("");
+      } else {
+        setError("Please select a valid image file (JPEG, PNG, WebP)");
+      }
+    },
+    [],
+  );
 
   // Start camera
   const startCamera = useCallback(async () => {
     try {
-      setError('');
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
-          facingMode: 'environment',
+      setError("");
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: "environment",
           width: { ideal: 1280 },
-          height: { ideal: 720 }
-        } 
+          height: { ideal: 720 },
+        },
       });
       setCameraStream(stream);
       setIsUsingCamera(true);
-      
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
     } catch (error) {
-      setError('Camera access denied or not available');
-      console.error('Camera error:', error);
+      setError("Camera access denied or not available");
+      console.error("Camera error:", error);
     }
   }, []);
 
   // Capture photo from camera
   const capturePhoto = useCallback(() => {
     if (!videoRef.current || !canvasRef.current) return;
-    
+
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    const context = canvas.getContext('2d');
-    
+    const context = canvas.getContext("2d");
+
     if (!context) return;
-    
+
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     context.drawImage(video, 0, 0);
-    
-    canvas.toBlob((blob) => {
-      if (blob) {
-        const file = new File([blob], 'camera-photo.jpg', { type: 'image/jpeg' });
-        setSelectedFile(file);
-        setOriginalImageUrl(URL.createObjectURL(file));
-        setStep('select');
-        stopCamera();
-      }
-    }, 'image/jpeg', 0.8);
+
+    canvas.toBlob(
+      (blob) => {
+        if (blob) {
+          const file = new File([blob], "camera-photo.jpg", {
+            type: "image/jpeg",
+          });
+          setSelectedFile(file);
+          setOriginalImageUrl(URL.createObjectURL(file));
+          setStep("select");
+          stopCamera();
+        }
+      },
+      "image/jpeg",
+      0.8,
+    );
   }, []);
 
   // Stop camera
   const stopCamera = useCallback(() => {
     if (cameraStream) {
-      cameraStream.getTracks().forEach(track => track.stop());
+      cameraStream.getTracks().forEach((track) => track.stop());
       setCameraStream(null);
     }
     setIsUsingCamera(false);
@@ -122,38 +182,40 @@ const RoomRestyleWidget: React.FC<RoomRestyleWidgetProps> = ({ onSave, className
   // Generate styled room
   const handleGenerate = useCallback(async () => {
     if (!selectedFile || !selectedRoom || !selectedStyle) return;
-    
+
     setIsGenerating(true);
-    setError('');
-    
+    setError("");
+
     try {
       // Generate descriptive prompt using the service function
       const prompt = generatePrompt(selectedRoom, selectedStyle);
-      
-      console.log('Generating with prompt:', prompt);
-      console.log('Room type:', selectedRoom, 'Style:', selectedStyle);
-      
+
+      console.log("Generating with prompt:", prompt);
+      console.log("Room type:", selectedRoom, "Style:", selectedStyle);
+
       const result = await restyleRoom(selectedFile, prompt);
-      
+
       if (result.success && result.imageUrl) {
         setStyledImageUrl(result.imageUrl);
-        setStep('result');
-        
+        setStep("result");
+
         // Call onSave callback if provided
         if (onSave) {
           onSave(originalImageUrl, result.imageUrl, {
             roomType: selectedRoom,
             style: selectedStyle,
             prompt,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
           });
         }
       } else {
-        setError(result.error || 'Failed to generate styled room');
+        setError(result.error || "Failed to generate styled room");
       }
     } catch (error) {
-      console.error('Generation error:', error);
-      setError(error instanceof Error ? error.message : 'An unexpected error occurred');
+      console.error("Generation error:", error);
+      setError(
+        error instanceof Error ? error.message : "An unexpected error occurred",
+      );
     } finally {
       setIsGenerating(false);
     }
@@ -162,32 +224,35 @@ const RoomRestyleWidget: React.FC<RoomRestyleWidgetProps> = ({ onSave, className
   // Reset to start over
   const handleReset = useCallback(() => {
     setSelectedFile(null);
-    setSelectedRoom('');
-    setSelectedStyle('');
-    setOriginalImageUrl('');
-    setStyledImageUrl('');
-    setError('');
-    setStep('upload');
+    setSelectedRoom("");
+    setSelectedStyle("");
+    setOriginalImageUrl("");
+    setStyledImageUrl("");
+    setError("");
+    setStep("upload");
     stopCamera();
-    
+
     // Clear file inputs
     if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+      fileInputRef.current.value = "";
     }
     if (mobileCameraInputRef.current) {
-      mobileCameraInputRef.current.value = '';
+      mobileCameraInputRef.current.value = "";
     }
   }, [stopCamera]);
 
   // Fallback before/after component
-  const BeforeAfterFallback: React.FC<{ before: string; after: string }> = ({ before, after }) => {
+  const BeforeAfterFallback: React.FC<{ before: string; after: string }> = ({
+    before,
+    after,
+  }) => {
     const [showAfter, setShowAfter] = useState(false);
-    
+
     return (
       <div className="relative w-full aspect-video bg-gray-100 rounded-lg overflow-hidden">
-        <img 
-          src={showAfter ? after : before} 
-          alt={showAfter ? "Styled room" : "Original room"} 
+        <img
+          src={showAfter ? after : before}
+          alt={showAfter ? "Styled room" : "Original room"}
           className="w-full h-full object-cover"
         />
         <div className="absolute bottom-4 left-4 right-4">
@@ -195,7 +260,9 @@ const RoomRestyleWidget: React.FC<RoomRestyleWidgetProps> = ({ onSave, className
             <button
               onClick={() => setShowAfter(false)}
               className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-                !showAfter ? 'bg-white text-black' : 'text-white hover:bg-white/20'
+                !showAfter
+                  ? "bg-white text-black"
+                  : "text-white hover:bg-white/20"
               }`}
             >
               Before
@@ -203,7 +270,9 @@ const RoomRestyleWidget: React.FC<RoomRestyleWidgetProps> = ({ onSave, className
             <button
               onClick={() => setShowAfter(true)}
               className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-                showAfter ? 'bg-white text-black' : 'text-white hover:bg-white/20'
+                showAfter
+                  ? "bg-white text-black"
+                  : "text-white hover:bg-white/20"
               }`}
             >
               After
@@ -224,7 +293,7 @@ const RoomRestyleWidget: React.FC<RoomRestyleWidgetProps> = ({ onSave, className
       )}
 
       {/* Step 1: Upload or Camera */}
-      {step === 'upload' && (
+      {step === "upload" && (
         <div className="space-y-6">
           <div className="text-center">
             <h3 className="text-xl font-semibold text-brand-text-primary mb-2">
@@ -313,19 +382,19 @@ const RoomRestyleWidget: React.FC<RoomRestyleWidgetProps> = ({ onSave, className
               </div>
             </div>
           )}
-          
+
           <canvas ref={canvasRef} className="hidden" />
         </div>
       )}
 
       {/* Step 2: Select Room Type and Style */}
-      {step === 'select' && (
+      {step === "select" && (
         <div className="space-y-6">
           {/* Preview Image */}
           <div className="relative w-full max-w-md mx-auto">
-            <img 
-              src={originalImageUrl} 
-              alt="Selected room" 
+            <img
+              src={originalImageUrl}
+              alt="Selected room"
               className="w-full aspect-video object-cover rounded-lg shadow-md"
             />
             <button
@@ -348,8 +417,8 @@ const RoomRestyleWidget: React.FC<RoomRestyleWidgetProps> = ({ onSave, className
                   onClick={() => setSelectedRoom(room.id)}
                   className={`p-3 rounded-lg border-2 transition-all text-center ${
                     selectedRoom === room.id
-                      ? 'border-brand-primary bg-brand-primary/10 text-brand-primary'
-                      : 'border-brand-border text-brand-text-secondary hover:border-brand-primary/50'
+                      ? "border-brand-primary bg-brand-primary/10 text-brand-primary"
+                      : "border-brand-border text-brand-text-secondary hover:border-brand-primary/50"
                   }`}
                 >
                   <div className="text-2xl mb-1">{room.icon}</div>
@@ -371,7 +440,7 @@ const RoomRestyleWidget: React.FC<RoomRestyleWidgetProps> = ({ onSave, className
                   onClick={() => setSelectedStyle(style.id)}
                   className={`p-3 rounded-lg border-2 transition-all text-center text-sm font-medium ${
                     selectedStyle === style.id
-                      ? 'border-brand-primary bg-brand-primary/10 text-brand-primary'
+                      ? "border-brand-primary bg-brand-primary/10 text-brand-primary"
                       : `border-gray-200 ${style.color} hover:border-brand-primary/50`
                   }`}
                 >
@@ -393,7 +462,9 @@ const RoomRestyleWidget: React.FC<RoomRestyleWidgetProps> = ({ onSave, className
                 leftIcon={<SparklesIcon className="h-5 w-5" />}
                 className="px-8"
               >
-                {isGenerating ? 'Generating Styled Room...' : 'Generate Styled Room'}
+                {isGenerating
+                  ? "Generating Styled Room..."
+                  : "Generate Styled Room"}
               </Button>
             </div>
           )}
@@ -401,15 +472,15 @@ const RoomRestyleWidget: React.FC<RoomRestyleWidgetProps> = ({ onSave, className
       )}
 
       {/* Step 3: Results */}
-      {step === 'result' && styledImageUrl && (
+      {step === "result" && styledImageUrl && (
         <div className="space-y-6">
           <div className="text-center">
             <h3 className="text-xl font-semibold text-brand-text-primary mb-2">
               Your Styled Room
             </h3>
             <p className="text-brand-text-secondary">
-              {DESIGN_STYLES.find(s => s.id === selectedStyle)?.label} style • {' '}
-              {ROOM_TYPES.find(r => r.id === selectedRoom)?.label}
+              {DESIGN_STYLES.find((s) => s.id === selectedStyle)?.label} style •{" "}
+              {ROOM_TYPES.find((r) => r.id === selectedRoom)?.label}
             </p>
           </div>
 
@@ -423,7 +494,10 @@ const RoomRestyleWidget: React.FC<RoomRestyleWidgetProps> = ({ onSave, className
                 />
               </div>
             ) : (
-              <BeforeAfterFallback before={originalImageUrl} after={styledImageUrl} />
+              <BeforeAfterFallback
+                before={originalImageUrl}
+                after={styledImageUrl}
+              />
             )}
           </div>
 
@@ -439,7 +513,7 @@ const RoomRestyleWidget: React.FC<RoomRestyleWidgetProps> = ({ onSave, className
             <Button
               onClick={() => {
                 // Download styled image
-                const link = document.createElement('a');
+                const link = document.createElement("a");
                 link.href = styledImageUrl;
                 link.download = `styled-room-${Date.now()}.jpg`;
                 document.body.appendChild(link);
@@ -458,4 +532,4 @@ const RoomRestyleWidget: React.FC<RoomRestyleWidgetProps> = ({ onSave, className
   );
 };
 
-export default RoomRestyleWidget; 
+export default RoomRestyleWidget;

@@ -1,16 +1,27 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { useAuth } from '../../../contexts/AuthContext';
-import * as listingService from '../../../services/listingService';
-import { ollamaService } from '../../../services/ollamaService';
-import { Listing } from '../../../types';
-import { TOOLKIT_TOOLS } from '../../../constants';
-import Button from '../../shared/Button';
-import Textarea from '../../shared/Textarea';
-import PropertySummaryHeader from './PropertySummaryHeader';
-import WorkflowNavigation from './WorkflowNavigation';
-import FacebookMockup from './FacebookMockup';
-import { ArrowLeftIcon, SparklesIcon as SparklesOutlineIcon, ClipboardDocumentIcon, ArrowPathIcon, CheckIcon } from '@heroicons/react/24/outline';
+import React, { useState, useEffect } from "react";
+import {
+  useParams,
+  useNavigate,
+  Link,
+  useSearchParams,
+} from "react-router-dom";
+import { useAuth } from "../../../contexts/AuthContext";
+import * as listingService from "../../../services/listingService";
+import { ollamaService } from "../../../services/ollamaService";
+import { Listing } from "../../../types";
+import { TOOLKIT_TOOLS } from "../../../constants";
+import Button from "../../shared/Button";
+import Textarea from "../../shared/Textarea";
+import PropertySummaryHeader from "./PropertySummaryHeader";
+import WorkflowNavigation from "./WorkflowNavigation";
+import FacebookMockup from "./FacebookMockup";
+import {
+  ArrowLeftIcon,
+  SparklesIcon as SparklesOutlineIcon,
+  ClipboardDocumentIcon,
+  ArrowPathIcon,
+  CheckIcon,
+} from "@heroicons/react/24/outline";
 
 const FacebookPostGeneratorPage: React.FC = () => {
   const { id: listingId } = useParams<{ id: string }>();
@@ -19,35 +30,39 @@ const FacebookPostGeneratorPage: React.FC = () => {
   const [searchParams] = useSearchParams();
 
   const [listing, setListing] = useState<Listing | null>(null);
-  const [generatedPost, setGeneratedPost] = useState<string>('');
+  const [generatedPost, setGeneratedPost] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [isLoadingPage, setIsLoadingPage] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [charCount, setCharCount] = useState<number>(0);
 
   // Workflow management
-  const workflowParam = searchParams.get('workflow');
-  const workflowTools = workflowParam ? workflowParam.split(',') : [];
+  const workflowParam = searchParams.get("workflow");
+  const workflowTools = workflowParam ? workflowParam.split(",") : [];
   const isInWorkflow = workflowTools.length > 1;
 
   // Get previous step name for back navigation
   const getPreviousStepName = () => {
-    if (!isInWorkflow) return 'Property';
-    const currentIndex = workflowTools.indexOf('fb');
+    if (!isInWorkflow) return "Property";
+    const currentIndex = workflowTools.indexOf("fb");
     if (currentIndex > 0) {
       const previousToolId = workflowTools[currentIndex - 1];
-      const previousTool = TOOLKIT_TOOLS.find(tool => tool.id === previousToolId);
-      return previousTool?.name || 'Previous Step';
+      const previousTool = TOOLKIT_TOOLS.find(
+        (tool) => tool.id === previousToolId,
+      );
+      return previousTool?.name || "Previous Step";
     }
-    return 'Property';
+    return "Property";
   };
 
   const getPreviousStepPath = () => {
     if (!isInWorkflow) return `/listings/${listingId}`;
-    const currentIndex = workflowTools.indexOf('fb');
+    const currentIndex = workflowTools.indexOf("fb");
     if (currentIndex > 0) {
       const previousToolId = workflowTools[currentIndex - 1];
-      const previousTool = TOOLKIT_TOOLS.find(tool => tool.id === previousToolId);
+      const previousTool = TOOLKIT_TOOLS.find(
+        (tool) => tool.id === previousToolId,
+      );
       if (previousTool?.pathSuffix) {
         return `/listings/${listingId}${previousTool.pathSuffix}?workflow=${workflowParam}`;
       }
@@ -61,39 +76,47 @@ const FacebookPostGeneratorPage: React.FC = () => {
       setIsLoadingPage(false);
       return;
     }
-    listingService.getListingById(listingId)
-      .then(data => {
+    listingService
+      .getListingById(listingId)
+      .then((data) => {
         if (data && data.userId === user?.id) {
           setListing(data);
-          setGeneratedPost(data.generatedFacebookPost || "Your generated Facebook post will appear here...");
-        } else { setError(data ? "Permission denied." : "Listing not found."); }
+          setGeneratedPost(
+            data.generatedFacebookPost ||
+              "Your generated Facebook post will appear here...",
+          );
+        } else {
+          setError(data ? "Permission denied." : "Listing not found.");
+        }
       })
-      .catch(() => setError('Failed to fetch listing details.'))
+      .catch(() => setError("Failed to fetch listing details."))
       .finally(() => setIsLoadingPage(false));
   }, [listingId, user]);
 
-  useEffect(() => { setCharCount(generatedPost.length); }, [generatedPost]);
+  useEffect(() => {
+    setCharCount(generatedPost.length);
+  }, [generatedPost]);
 
   const handleGeneratePost = async () => {
     if (!listing) return;
     setIsGenerating(true);
-    setGeneratedPost('Generating your content...');
-    
+    setGeneratedPost("Generating your content...");
+
     try {
       const aiPost = await ollamaService.generateFacebookPost(listing);
       setGeneratedPost(aiPost);
     } catch (error) {
-      console.error('Generation error:', error);
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      console.error("Generation error:", error);
+      await new Promise((resolve) => setTimeout(resolve, 1500));
 
-      let mockPost = `Check out this amazing property at ${listing.address.split(',')[0]}!\n`;
+      let mockPost = `Check out this amazing property at ${listing.address.split(",")[0]}!\n`;
       if (listing.generatedDescription) {
         mockPost += `\n${listing.generatedDescription.substring(0, 200)}...\n`;
       } else {
         mockPost += `It features ${listing.bedrooms} beds, ${listing.bathrooms} baths, and ${listing.squareFootage} sq ft of living space. Priced at $${listing.price.toLocaleString()}.\n`;
       }
-      mockPost += `\nKey features: ${listing.keyFeatures.split(',').slice(0,3).join(', ')}.\n\nContact us for a viewing! #realestate #${listing.address.split(',')[1]?.trim().replace(/\s+/g, '') || 'newlisting'}`;
-      
+      mockPost += `\nKey features: ${listing.keyFeatures.split(",").slice(0, 3).join(", ")}.\n\nContact us for a viewing! #realestate #${listing.address.split(",")[1]?.trim().replace(/\s+/g, "") || "newlisting"}`;
+
       setGeneratedPost(mockPost);
     } finally {
       setIsGenerating(false);
@@ -102,66 +125,95 @@ const FacebookPostGeneratorPage: React.FC = () => {
 
   const handleConfirmAndSave = async () => {
     if (!listingId || !listing || !user) return;
-    if (generatedPost.includes("Your generated") || generatedPost.includes("Generating your content")) {
-        alert("Please generate a post before saving."); return;
+    if (
+      generatedPost.includes("Your generated") ||
+      generatedPost.includes("Generating your content")
+    ) {
+      alert("Please generate a post before saving.");
+      return;
     }
-    
+
     try {
-      await listingService.updateListing(listingId, { ...listing, generatedFacebookPost: generatedPost, userId: user.id });
-      
+      await listingService.updateListing(listingId, {
+        ...listing,
+        generatedFacebookPost: generatedPost,
+        userId: user.id,
+      });
+
       // If in workflow, go to next tool
       if (isInWorkflow) {
-        const currentIndex = workflowTools.indexOf('fb');
+        const currentIndex = workflowTools.indexOf("fb");
         const nextToolId = workflowTools[currentIndex + 1];
-        
+
         if (nextToolId) {
-          const nextTool = TOOLKIT_TOOLS.find(tool => tool.id === nextToolId);
+          const nextTool = TOOLKIT_TOOLS.find((tool) => tool.id === nextToolId);
           if (nextTool && nextTool.pathSuffix) {
-            navigate(`/listings/${listingId}${nextTool.pathSuffix}?workflow=${workflowParam}`);
+            navigate(
+              `/listings/${listingId}${nextTool.pathSuffix}?workflow=${workflowParam}`,
+            );
             return;
           }
         }
       }
-      
+
       // Default: go back to listing
       navigate(`/listings/${listingId}`);
-    } catch (e) { alert("Failed to save post."); }
+    } catch (e) {
+      alert("Failed to save post.");
+    }
   };
 
-  const handleCopy = () => { 
-    navigator.clipboard.writeText(generatedPost)
+  const handleCopy = () => {
+    navigator.clipboard
+      .writeText(generatedPost)
       .then(() => alert("Post copied!"))
-      .catch(() => alert("Copy failed.")); 
+      .catch(() => alert("Copy failed."));
   };
 
   const handleRefresh = () => {
     handleGeneratePost();
   };
 
-  if (isLoadingPage) return <div className="flex justify-center items-center h-64"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-primary"></div></div>;
-  if (error) return <div className="text-center py-10"><p className="text-brand-danger p-4">{error}</p><Button onClick={() => navigate('/dashboard')}>Dashboard</Button></div>;
+  if (isLoadingPage)
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-primary"></div>
+      </div>
+    );
+  if (error)
+    return (
+      <div className="text-center py-10">
+        <p className="text-brand-danger p-4">{error}</p>
+        <Button onClick={() => navigate("/dashboard")}>Dashboard</Button>
+      </div>
+    );
   if (!listing) return <p className="text-center">Listing not found.</p>;
 
   return (
     <div className="min-h-screen bg-brand-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="mb-6">
-          <Link to={getPreviousStepPath()} className="inline-flex items-center text-sm text-brand-text-secondary hover:text-brand-primary transition-colors group">
+          <Link
+            to={getPreviousStepPath()}
+            className="inline-flex items-center text-sm text-brand-text-secondary hover:text-brand-primary transition-colors group"
+          >
             <ArrowLeftIcon className="h-4 w-4 mr-2 group-hover:text-brand-primary" />
             Back
           </Link>
         </div>
-        <h1 className="text-3xl font-bold text-brand-text-primary mb-6">Generate Facebook Post</h1>
-        
+        <h1 className="text-3xl font-bold text-brand-text-primary mb-6">
+          Generate Facebook Post
+        </h1>
+
         {isInWorkflow && (
           <div className="mb-8">
-            <WorkflowNavigation 
-              workflowTools={workflowTools} 
-              currentToolId="fb" 
+            <WorkflowNavigation
+              workflowTools={workflowTools}
+              currentToolId="fb"
             />
           </div>
         )}
-        
+
         <div className="mb-8">
           <PropertySummaryHeader listing={listing} />
         </div>
@@ -170,19 +222,24 @@ const FacebookPostGeneratorPage: React.FC = () => {
           {/* Preview Panel */}
           <div className="order-2 xl:order-1">
             <div className="bg-brand-panel border border-brand-border rounded-lg p-6 sticky top-6">
-              <h3 className="text-xl font-semibold text-brand-text-primary mb-4">Facebook Post Preview</h3>
+              <h3 className="text-xl font-semibold text-brand-text-primary mb-4">
+                Facebook Post Preview
+              </h3>
               <div className="mb-6">
-                <FacebookMockup listingImage={listing.images?.[0]?.url} postText={generatedPost} />
+                <FacebookMockup
+                  listingImage={listing.images?.[0]?.url}
+                  postText={generatedPost}
+                />
               </div>
-              <Button 
-                onClick={handleGeneratePost} 
-                isLoading={isGenerating} 
-                disabled={isGenerating} 
-                className="w-full bg-gradient-to-r from-brand-secondary to-emerald-600 hover:from-emerald-600 hover:to-brand-secondary text-white font-semibold shadow-lg transition-all duration-300" 
-                leftIcon={<SparklesOutlineIcon className="h-5 w-5" />} 
+              <Button
+                onClick={handleGeneratePost}
+                isLoading={isGenerating}
+                disabled={isGenerating}
+                className="w-full bg-gradient-to-r from-brand-secondary to-emerald-600 hover:from-emerald-600 hover:to-brand-secondary text-white font-semibold shadow-lg transition-all duration-300"
+                leftIcon={<SparklesOutlineIcon className="h-5 w-5" />}
                 size="lg"
               >
-                {isGenerating ? 'Generating...' : 'Generate New Post'}
+                {isGenerating ? "Generating..." : "Generate New Post"}
               </Button>
             </div>
           </div>
@@ -192,8 +249,12 @@ const FacebookPostGeneratorPage: React.FC = () => {
             <div className="bg-brand-panel border border-brand-border rounded-lg p-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
                 <div className="mb-4 sm:mb-0">
-                  <h3 className="text-xl font-semibold text-brand-text-primary mb-1">Generated Facebook Post</h3>
-                  <p className="text-sm text-brand-text-secondary">Edit and customize your generated content.</p>
+                  <h3 className="text-xl font-semibold text-brand-text-primary mb-1">
+                    Generated Facebook Post
+                  </h3>
+                  <p className="text-sm text-brand-text-secondary">
+                    Edit and customize your generated content.
+                  </p>
                 </div>
                 <div className="flex items-center space-x-2">
                   <button
@@ -212,19 +273,21 @@ const FacebookPostGeneratorPage: React.FC = () => {
                   </button>
                 </div>
               </div>
-              
+
               <div className="space-y-4">
-                <Textarea 
-                  value={generatedPost} 
-                  onChange={(e) => setGeneratedPost(e.target.value)} 
-                  placeholder="Facebook post content..." 
-                  className="w-full" 
-                  rows={12} 
-                  disabled={isGenerating} 
-                  variant="gradient" 
+                <Textarea
+                  value={generatedPost}
+                  onChange={(e) => setGeneratedPost(e.target.value)}
+                  placeholder="Facebook post content..."
+                  className="w-full"
+                  rows={12}
+                  disabled={isGenerating}
+                  variant="gradient"
                 />
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-xs text-brand-text-tertiary mb-4 sm:mb-0">Character count: {charCount}</p>
+                  <p className="text-xs text-brand-text-tertiary mb-4 sm:mb-0">
+                    Character count: {charCount}
+                  </p>
                   <Button
                     onClick={handleConfirmAndSave}
                     className="bg-gradient-to-r from-brand-primary to-brand-secondary hover:from-brand-secondary hover:to-brand-primary text-white font-semibold shadow-lg transition-all duration-300 px-8"
