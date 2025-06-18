@@ -16,6 +16,7 @@ const saveAllStoredListings = (listings: Listing[]): void => {
 };
 
 const DEMO_ADDRESS = '123 Main St, Apex, NC 27523';
+const DEMO_ADDRESS_ALT = '123 Demo St, Apex, NC 27523';
 
 const createDemoListing = (userId: string): Listing => ({
   id: generateId(),
@@ -47,7 +48,7 @@ const createDemoListing = (userId: string): Listing => ({
 // Ensure demo listing exists for current user
 const ensureDemoListing = (userId: string) => {
   const all = getAllStoredListings();
-  const hasDemo = all.some(l => l.address === DEMO_ADDRESS && l.userId === userId);
+  const hasDemo = all.some(l => (l.address === DEMO_ADDRESS || l.address === DEMO_ADDRESS_ALT) && l.userId === userId);
   if (!hasDemo) {
     all.push(createDemoListing(userId));
     saveAllStoredListings(all);
@@ -132,7 +133,8 @@ export const deleteListing = async (id: string): Promise<boolean> => {
 };
 
 export const fetchPropertyDetails = async (address: string): Promise<any> => {
-  if (address.toLowerCase().includes('123 main st') && address.toLowerCase().includes('apex')) {
+  const normalized = address.toLowerCase();
+  if ((normalized.includes('123 main st') || normalized.includes('123 demo st')) && normalized.includes('apex')) {
     // Return mock data immediately for demo
     return {
       estimatedValue: 465000,

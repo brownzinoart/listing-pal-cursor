@@ -180,13 +180,47 @@ app.get('/api/places/autocomplete', async (req, res) => {
     try {
         const { input } = req.query;
         const apiKey = process.env.VITE_GOOGLE_MAPS_API_KEY;
-        
+
+        // 🌟 Demo fallback predictions
+        const demoPredictions = (() => {
+            if (!input || input.length < 2) return [];
+            const normalized = String(input).toLowerCase();
+            if (normalized.includes('123 demo')) {
+                return [
+                    {
+                        description: '123 Demo St, Apex, NC 27523, USA',
+                        place_id: 'demo_place_id',
+                        structured_formatting: {
+                            main_text: '123 Demo St',
+                            secondary_text: 'Apex, NC 27523, USA'
+                        }
+                    }
+                ];
+            }
+            if (normalized.includes('123 main')) {
+                return [
+                    {
+                        description: '123 Main St, Apex, NC 27523, USA',
+                        place_id: 'main_place_id',
+                        structured_formatting: {
+                            main_text: '123 Main St',
+                            secondary_text: 'Apex, NC 27523, USA'
+                        }
+                    }
+                ];
+            }
+            return [];
+        })();
+        if (demoPredictions.length) {
+            return res.json({ status: 'OK', predictions: demoPredictions, _mockData: true });
+        }
+
         if (!apiKey) {
-            return res.status(500).json({ 
-                error: 'Google Maps API key not configured' 
+            return res.status(500).json({
+                error: 'Google Maps API key not configured and no demo match found'
             });
         }
-        
+
         if (!input || input.length < 2) {
             return res.json({ predictions: [] });
         }
@@ -217,10 +251,26 @@ app.get('/api/places/details', async (req, res) => {
     try {
         const { place_id } = req.query;
         const apiKey = process.env.VITE_GOOGLE_MAPS_API_KEY;
+
+        // 🌟 Demo fallback for place details
+        if (place_id === 'demo_place_id' || place_id === 'main_place_id') {
+            return res.json({
+                status: 'OK',
+                result: {
+                    geometry: {
+                        location: {
+                            lat: 35.7324,
+                            lng: -78.8503
+                        }
+                    }
+                },
+                _mockData: true
+            });
+        }
         
         if (!apiKey) {
-            return res.status(500).json({ 
-                error: 'Google Maps API key not configured' 
+            return res.status(500).json({
+                error: 'Google Maps API key not configured'
             });
         }
         
