@@ -346,14 +346,17 @@ const RoomRestyleWidget: React.FC<RoomRestyleWidgetProps> = ({ onSave, className
                 <button
                   key={room.id}
                   onClick={() => setSelectedRoom(room.id)}
-                  className={`p-3 rounded-lg border-2 transition-all text-center ${
+                  className={`p-3 min-h-[4rem] rounded-lg border-2 transition-all text-center flex flex-col items-center justify-center ${
                     selectedRoom === room.id
                       ? 'border-brand-primary bg-brand-primary/10 text-brand-primary'
                       : 'border-brand-border text-brand-text-secondary hover:border-brand-primary/50'
                   }`}
+                  title={room.label}
                 >
                   <div className="text-2xl mb-1">{room.icon}</div>
-                  <div className="text-sm font-medium">{room.label}</div>
+                  <div className="text-sm font-medium leading-tight truncate w-full px-1">
+                    {room.label}
+                  </div>
                 </button>
               ))}
             </div>
@@ -364,18 +367,21 @@ const RoomRestyleWidget: React.FC<RoomRestyleWidgetProps> = ({ onSave, className
             <h4 className="text-lg font-medium text-brand-text-primary mb-3">
               Select Design Style
             </h4>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 gap-3 max-w-none">
               {DESIGN_STYLES.map((style) => (
                 <button
                   key={style.id}
                   onClick={() => setSelectedStyle(style.id)}
-                  className={`p-3 rounded-lg border-2 transition-all text-center text-sm font-medium ${
+                  className={`px-3 py-4 min-h-[4rem] rounded-lg border-2 transition-all text-center text-sm font-medium leading-tight flex items-center justify-center ${
                     selectedStyle === style.id
                       ? 'border-brand-primary bg-brand-primary/10 text-brand-primary'
                       : `border-gray-200 ${style.color} hover:border-brand-primary/50`
                   }`}
+                  title={style.label}
                 >
-                  {style.label}
+                  <span className="block text-center break-words hyphens-auto">
+                    {style.label}
+                  </span>
                 </button>
               ))}
             </div>

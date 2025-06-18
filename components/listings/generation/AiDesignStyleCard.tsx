@@ -31,9 +31,9 @@ const AiDesignStyleCard: React.FC<AiDesignStyleCardProps> = ({ style, isSelected
         <div className={`p-2 rounded-md ${isSelected ? 'bg-brand-primary/20' : 'bg-brand-border/30 group-hover:bg-brand-primary/10'}`}>
             <IconComponent className={`h-6 w-6 ${isSelected ? 'text-brand-primary' : 'text-brand-text-secondary group-hover:text-brand-primary'}`} />
         </div>
-        <div className="flex-1">
-          <h4 className={`font-semibold text-brand-text-primary ${isSelected ? 'text-brand-primary' : ''}`}>{style.name}</h4>
-          <p className="text-xs text-brand-text-secondary mt-1">{style.description}</p>
+        <div className="flex-1 min-w-0">
+          <h4 className={`font-semibold text-brand-text-primary ${isSelected ? 'text-brand-primary' : ''} break-words leading-tight`}>{style.name}</h4>
+          <p className="text-xs text-brand-text-secondary mt-1 leading-tight break-words">{style.description}</p>
         </div>
       </div>
       {isSelected && (
