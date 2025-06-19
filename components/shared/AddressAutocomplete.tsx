@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { MapPin, Loader2 } from 'lucide-react';
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import { MapPin, Loader2 } from "lucide-react";
 
 interface AddressAutocompleteProps {
   value: string;
@@ -28,7 +28,7 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [searchAttempted, setSearchAttempted] = useState(false);
   const [lastSearchHadResults, setLastSearchHadResults] = useState(false);
-  
+
   const inputRef = useRef<HTMLInputElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -39,10 +39,10 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
 
   // Real Google Places API search function (via backend proxy)
   const performSearch = useCallback(async (query: string) => {
-    console.log('🔍 Searching Google Places for:', query);
-    
+    console.log("🔍 Searching Google Places for:", query);
+
     if (query.length < 2) {
-      console.log('❌ Query too short');
+      console.log("❌ Query too short");
       setSuggestions([]);
       setShowSuggestions(false);
       setIsLoading(false);
@@ -54,16 +54,16 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
     // Check for demo address pattern
     const demoPattern = /123\s*demo/i;
     if (demoPattern.test(query)) {
-      console.log('🎭 Demo address detected, providing demo suggestions');
+      console.log("🎭 Demo address detected, providing demo suggestions");
       const demoSuggestions: PlacePrediction[] = [
         {
-          description: '123 Demo Dr., Demo, DM 12345',
-          place_id: 'demo_place_123',
+          description: "123 Demo Dr., Demo, DM 12345",
+          place_id: "demo_place_123",
           structured_formatting: {
-            main_text: '123 Demo Dr.',
-            secondary_text: 'Demo, DM 12345'
-          }
-        }
+            main_text: "123 Demo Dr.",
+            secondary_text: "Demo, DM 12345",
+          },
+        },
       ];
       setSuggestions(demoSuggestions);
       setShowSuggestions(true);
@@ -76,7 +76,7 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
 
     setIsLoading(true);
     setSearchAttempted(true);
-    
+
     try {
       // Abort previous request
       if (abortControllerRef.current) {
@@ -85,9 +85,9 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
       abortControllerRef.current = new AbortController();
 
       const url = `/api/places/autocomplete?input=${encodeURIComponent(query)}`;
-      
+
       const response = await fetch(url, {
-        signal: abortControllerRef.current.signal
+        signal: abortControllerRef.current.signal,
       });
 
       if (!response.ok) {
@@ -95,30 +95,33 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
       }
 
       const data = await response.json();
-      
-      if (data.status === 'OK' && data.predictions) {
+
+      if (data.status === "OK" && data.predictions) {
         const predictions = data.predictions.slice(0, 8); // Limit to 8 suggestions
-        console.log('✅ Found Google Places suggestions:', predictions.length);
-        console.log('📋 Suggestions:', predictions.map((p: any) => p.structured_formatting.main_text));
-        
+        console.log("✅ Found Google Places suggestions:", predictions.length);
+        console.log(
+          "📋 Suggestions:",
+          predictions.map((p: any) => p.structured_formatting.main_text),
+        );
+
         setSuggestions(predictions);
         setShowSuggestions(predictions.length > 0);
         setLastSearchHadResults(predictions.length > 0);
         setSelectedIndex(-1);
       } else if (data.error) {
-        console.error('❌ Backend API error:', data.error);
+        console.error("❌ Backend API error:", data.error);
         setSuggestions([]);
         setShowSuggestions(false);
         setLastSearchHadResults(false);
       } else {
-        console.log('⚠️ No predictions found or API error:', data.status);
+        console.log("⚠️ No predictions found or API error:", data.status);
         setSuggestions([]);
         setShowSuggestions(false);
         setLastSearchHadResults(false);
       }
     } catch (error: any) {
-      if (error.name !== 'AbortError') {
-        console.error('❌ Google Places API error:', error);
+      if (error.name !== "AbortError") {
+        console.error("❌ Google Places API error:", error);
         setSuggestions([]);
         setShowSuggestions(false);
         setLastSearchHadResults(false);
@@ -129,66 +132,79 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
   }, []);
 
   // Debounced search function
-  const debouncedSearch = useCallback((query: string) => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
+  const debouncedSearch = useCallback(
+    (query: string) => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
 
-    timeoutRef.current = setTimeout(() => {
-      performSearch(query);
-    }, 300);
-  }, [performSearch]);
+      timeoutRef.current = setTimeout(() => {
+        performSearch(query);
+      }, 300);
+    },
+    [performSearch],
+  );
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
-    console.log('📝 Input changed:', newValue);
+    console.log("📝 Input changed:", newValue);
     setInputValue(newValue);
     debouncedSearch(newValue);
   };
 
-  const getPlaceDetails = async (placeId: string): Promise<{ lat: number; lng: number } | null> => {
+  const getPlaceDetails = async (
+    placeId: string,
+  ): Promise<{ lat: number; lng: number } | null> => {
     try {
-      console.log('🎯 Getting coordinates for place ID:', placeId);
-      
+      console.log("🎯 Getting coordinates for place ID:", placeId);
+
       // Handle demo place ID
-      if (placeId === 'demo_place_123') {
-        console.log('🎭 Demo place ID detected, returning demo coordinates');
+      if (placeId === "demo_place_123") {
+        console.log("🎭 Demo place ID detected, returning demo coordinates");
         return { lat: 40.7589, lng: -73.9851 }; // Demo coordinates (NYC area)
       }
-      
+
       const url = `/api/places/details?place_id=${placeId}`;
-      
+
       const response = await fetch(url);
       const data = await response.json();
-      
-      if (data.status === 'OK' && data.result?.geometry?.location) {
+
+      if (data.status === "OK" && data.result?.geometry?.location) {
         const { lat, lng } = data.result.geometry.location;
-        console.log('✅ Got coordinates:', { lat, lng });
+        console.log("✅ Got coordinates:", { lat, lng });
         return { lat, lng };
       } else {
-        console.warn('⚠️ Could not get place details:', data.status);
+        console.warn("⚠️ Could not get place details:", data.status);
         return null;
       }
     } catch (error) {
-      console.error('❌ Error getting place details:', error);
+      console.error("❌ Error getting place details:", error);
       return null;
     }
   };
 
   const handleSuggestionClick = async (suggestion: PlacePrediction) => {
-    console.log('🎯 Selected suggestion:', suggestion.description);
+    console.log("🎯 Selected suggestion:", suggestion.description);
     setInputValue(suggestion.description);
     setSuggestions([]);
     setShowSuggestions(false);
-    
+
     // Get coordinates from Google Places
     const coordinates = await getPlaceDetails(suggestion.place_id);
-    
+
     if (coordinates) {
-      console.log('📞 Calling onAddressSelect with:', suggestion.description, coordinates.lat, coordinates.lng);
+      console.log(
+        "📞 Calling onAddressSelect with:",
+        suggestion.description,
+        coordinates.lat,
+        coordinates.lng,
+      );
       onAddressSelect(suggestion.description, coordinates.lat, coordinates.lng);
     } else {
-      console.log('📞 Calling onAddressSelect without coordinates:', suggestion.description);
+      console.log(
+        "📞 Calling onAddressSelect without coordinates:",
+        suggestion.description,
+      );
       // Fallback without coordinates
       onAddressSelect(suggestion.description);
     }
@@ -196,7 +212,7 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (!showSuggestions || suggestions.length === 0) {
-      if (e.key === 'Enter' && inputValue.trim().length > 5) {
+      if (e.key === "Enter" && inputValue.trim().length > 5) {
         e.preventDefault();
         handleManualEntry();
       }
@@ -204,19 +220,19 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
     }
 
     switch (e.key) {
-      case 'ArrowDown':
+      case "ArrowDown":
         e.preventDefault();
-        setSelectedIndex(prev => 
-          prev < suggestions.length - 1 ? prev + 1 : 0
+        setSelectedIndex((prev) =>
+          prev < suggestions.length - 1 ? prev + 1 : 0,
         );
         break;
-      case 'ArrowUp':
+      case "ArrowUp":
         e.preventDefault();
-        setSelectedIndex(prev => 
-          prev > 0 ? prev - 1 : suggestions.length - 1
+        setSelectedIndex((prev) =>
+          prev > 0 ? prev - 1 : suggestions.length - 1,
         );
         break;
-      case 'Enter':
+      case "Enter":
         e.preventDefault();
         if (selectedIndex >= 0 && selectedIndex < suggestions.length) {
           handleSuggestionClick(suggestions[selectedIndex]);
@@ -224,7 +240,7 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
           handleManualEntry();
         }
         break;
-      case 'Escape':
+      case "Escape":
         setShowSuggestions(false);
         setSelectedIndex(-1);
         inputRef.current?.blur();
@@ -236,10 +252,10 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
     if (inputValue.trim().length > 5) {
       setShowSuggestions(false);
       setSuggestions([]);
-      
+
       // For manual entry, provide default coordinates (center of US)
       const coords = { lat: 39.8283, lng: -98.5795 };
-      
+
       onAddressSelect(inputValue, coords.lat, coords.lng);
     }
   };
@@ -253,7 +269,7 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
   };
 
   const handleFocus = () => {
-    console.log('🎯 Input focused, current value:', inputValue);
+    console.log("🎯 Input focused, current value:", inputValue);
     if (suggestions.length > 0) {
       setShowSuggestions(true);
     } else if (inputValue.length >= 2) {
@@ -276,12 +292,12 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
           className="w-full bg-brand-input-bg border-brand-border rounded-lg text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary pl-10 pr-10 py-2"
           autoComplete="off"
         />
-        
+
         {/* Address icon */}
         <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
           <MapPin className="w-5 h-5 text-brand-text-tertiary" />
         </div>
-        
+
         {/* Loading indicator */}
         {isLoading && (
           <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
@@ -291,21 +307,25 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
       </div>
 
       {/* Manual entry button - only show when search was performed but no suggestions found */}
-      {!isLoading && 
-       inputValue.trim().length > 5 && 
-       searchAttempted && 
-       !lastSearchHadResults && 
-       !showSuggestions && (
-        <div className="mt-2">
-          <button
-            type="button"
-            onClick={handleManualEntry}
-            className="text-xs bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-1 rounded-full transition-colors"
-          >
-            ✓ Use "{inputValue.length > 30 ? inputValue.substring(0, 30) + '...' : inputValue}" as address
-          </button>
-        </div>
-      )}
+      {!isLoading &&
+        inputValue.trim().length > 5 &&
+        searchAttempted &&
+        !lastSearchHadResults &&
+        !showSuggestions && (
+          <div className="mt-2">
+            <button
+              type="button"
+              onClick={handleManualEntry}
+              className="text-xs bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-1 rounded-full transition-colors"
+            >
+              ✓ Use "
+              {inputValue.length > 30
+                ? inputValue.substring(0, 30) + "..."
+                : inputValue}
+              " as address
+            </button>
+          </div>
+        )}
 
       {/* Suggestions dropdown */}
       {showSuggestions && suggestions.length > 0 && (
@@ -316,7 +336,7 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
               type="button"
               onClick={() => handleSuggestionClick(suggestion)}
               className={`w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0 first:rounded-t-xl last:rounded-b-xl ${
-                index === selectedIndex ? 'bg-gray-50' : ''
+                index === selectedIndex ? "bg-gray-50" : ""
               }`}
             >
               <div className="flex items-start space-x-3">
@@ -336,26 +356,29 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
       )}
 
       {/* No results message with manual entry option */}
-      {showSuggestions && suggestions.length === 0 && !isLoading && inputValue.length >= 2 && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-2xl">
-          <div className="px-4 py-3">
-            <div className="text-sm text-gray-600 text-center mb-2">
-              No matching addresses found
+      {showSuggestions &&
+        suggestions.length === 0 &&
+        !isLoading &&
+        inputValue.length >= 2 && (
+          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-2xl">
+            <div className="px-4 py-3">
+              <div className="text-sm text-gray-600 text-center mb-2">
+                No matching addresses found
+              </div>
+              {inputValue.length > 5 && (
+                <button
+                  type="button"
+                  onClick={handleManualEntry}
+                  className="w-full text-sm text-blue-600 hover:text-blue-800 transition-colors"
+                >
+                  ✓ Use "{inputValue}" as your address
+                </button>
+              )}
             </div>
-            {inputValue.length > 5 && (
-              <button
-                type="button"
-                onClick={handleManualEntry}
-                className="w-full text-sm text-blue-600 hover:text-blue-800 transition-colors"
-              >
-                ✓ Use "{inputValue}" as your address
-              </button>
-            )}
           </div>
-        </div>
-      )}
+        )}
     </div>
   );
 };
 
-export default AddressAutocomplete; 
+export default AddressAutocomplete;
