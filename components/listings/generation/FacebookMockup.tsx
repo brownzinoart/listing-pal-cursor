@@ -1,13 +1,21 @@
-import React from 'react';
-import { BuildingOffice2Icon, HandThumbUpIcon, ChatBubbleLeftIcon, ShareIcon } from '@heroicons/react/24/outline';
-import { APP_NAME } from '../../../constants';
+import React from "react";
+import {
+  BuildingOffice2Icon,
+  HandThumbUpIcon,
+  ChatBubbleLeftIcon,
+  ShareIcon,
+} from "@heroicons/react/24/outline";
+import { APP_NAME } from "../../../constants";
 
 interface FacebookMockupProps {
   listingImage?: string | null;
   postText: string;
 }
 
-const FacebookMockup: React.FC<FacebookMockupProps> = ({ listingImage, postText }) => {
+const FacebookMockup: React.FC<FacebookMockupProps> = ({
+  listingImage,
+  postText,
+}) => {
   return (
     <div className="w-full max-w-md mx-auto bg-white border border-gray-200 rounded-lg shadow-lg p-4">
       {/* Header */}
@@ -16,7 +24,9 @@ const FacebookMockup: React.FC<FacebookMockupProps> = ({ listingImage, postText 
           <BuildingOffice2Icon className="h-6 w-6 text-white" />
         </div>
         <div>
-          <p className="font-semibold text-sm text-gray-900">{APP_NAME} Realty</p>
+          <p className="font-semibold text-sm text-gray-900">
+            {APP_NAME} Realty
+          </p>
           <p className="text-xs text-gray-500">Sponsored · Just now</p>
         </div>
       </div>
@@ -24,20 +34,26 @@ const FacebookMockup: React.FC<FacebookMockupProps> = ({ listingImage, postText 
       {/* Post Text */}
       {postText && (
         <p className="text-sm text-gray-800 mb-3 whitespace-pre-line break-words">
-          {postText.length > 200 ? `${postText.substring(0, 200)}...` : postText}
+          {postText.length > 200
+            ? `${postText.substring(0, 200)}...`
+            : postText}
         </p>
       )}
 
       {/* Image */}
       {listingImage && (
         <div className="rounded-md overflow-hidden mb-3 border border-gray-200 aspect-video">
-          <img src={listingImage} alt="Listing" className="w-full h-full object-cover" />
+          <img
+            src={listingImage}
+            alt="Listing"
+            className="w-full h-full object-cover"
+          />
         </div>
       )}
       {!listingImage && (
-         <div className="rounded-md overflow-hidden mb-3 border border-gray-200 aspect-video bg-gray-50 flex items-center justify-center">
-            <BuildingOffice2Icon className="h-16 w-16 text-gray-400 opacity-50"/>
-         </div>
+        <div className="rounded-md overflow-hidden mb-3 border border-gray-200 aspect-video bg-gray-50 flex items-center justify-center">
+          <BuildingOffice2Icon className="h-16 w-16 text-gray-400 opacity-50" />
+        </div>
       )}
 
       {/* Engagement Stats (Placeholder) */}
