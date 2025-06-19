@@ -383,7 +383,7 @@ ${data.schools.marketingAngles.map(angle => `• ${angle}`).join('\n')}`;
                   console.log('View mode manage button clicked!');
                   setShowSectionManager(!showSectionManager);
                 }}
-                className="flex items-center space-x-2 px-3 py-2 text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                className="flex items-center space-x-2 px-3 py-2 text-sm bg-gradient-to-r from-brand-primary to-brand-accent text-white font-semibold rounded-lg hover:opacity-90 shadow-lg hover:shadow-xl focus:ring-2 focus:ring-brand-primary focus:ring-opacity-50 transform hover:scale-[1.02] transition-all duration-300 border border-transparent"
               >
                 <Settings className="w-4 h-4" />
                 <span>Manage</span>
@@ -544,7 +544,7 @@ interface TabContentProps {
 
 const TabContent: React.FC<TabContentProps> = ({ activeTab, data, address }) => {
   const renderScoreCard = (title: string, score: number, description: string, icon: React.ReactNode) => (
-    <div className="bg-gray-50 rounded-lg p-4">
+    <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center space-x-2">
           {icon}
@@ -616,7 +616,7 @@ const TabContent: React.FC<TabContentProps> = ({ activeTab, data, address }) => 
               <h4 className="text-lg font-semibold text-gray-900 mb-4">Neighborhood Highlights</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {data.overview.highlights.map((highlight, index) => (
-                  <div key={index} className="flex items-start space-x-2 p-3 bg-blue-50 rounded-lg">
+                  <div key={index} className="flex items-start space-x-2 p-3 bg-white border border-gray-200 rounded-lg shadow-sm">
                     <Star className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
                     <span className="text-sm text-gray-700">{highlight}</span>
                   </div>
@@ -631,7 +631,7 @@ const TabContent: React.FC<TabContentProps> = ({ activeTab, data, address }) => 
               <h4 className="text-lg font-semibold text-gray-900 mb-4">Agent Tips</h4>
               <div className="space-y-3">
                 {data.overview.agentTips.map((tip, index) => (
-                  <div key={index} className="flex items-start space-x-3 p-4 bg-green-50 rounded-lg">
+                  <div key={index} className="flex items-start space-x-3 p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
                     <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
                       <span className="text-xs font-bold text-green-700">{index + 1}</span>
                     </div>

@@ -16,7 +16,7 @@ const FormattedKeyFeatures: React.FC<{ content: string }> = ({ content }) => {
     // Safety check for content
     if (!content || typeof content !== 'string') {
       return (
-        <div className="text-brand-text-tertiary italic text-sm break-words">
+        <div className="text-gray-500 italic text-sm break-words">
           No key features available
         </div>
       );
@@ -37,7 +37,7 @@ const FormattedKeyFeatures: React.FC<{ content: string }> = ({ content }) => {
               if (trimmed.startsWith('**') && trimmed.endsWith('**') && trimmed.length > 4) {
                 const headerText = trimmed.slice(2, -2);
                 return (
-                  <h4 key={`header-${index}`} className="font-bold text-brand-text-primary text-sm mt-4 first:mt-0 uppercase tracking-wide break-words">
+                  <h4 key={`header-${index}`} className="font-bold text-gray-900 text-sm mt-4 first:mt-0 uppercase tracking-wide break-words">
                     {headerText}
                   </h4>
                 );
@@ -49,7 +49,7 @@ const FormattedKeyFeatures: React.FC<{ content: string }> = ({ content }) => {
                 return (
                   <div key={`bullet-${index}`} className="flex items-start space-x-2 ml-4 overflow-hidden">
                     <span className="text-brand-secondary mt-1.5 text-xs flex-shrink-0">•</span>
-                    <span className="text-sm text-brand-text-secondary leading-relaxed break-words">{bulletText}</span>
+                    <span className="text-sm text-gray-700 leading-relaxed break-words">{bulletText}</span>
                   </div>
                 );
               }
@@ -57,7 +57,7 @@ const FormattedKeyFeatures: React.FC<{ content: string }> = ({ content }) => {
               // Regular text
               if (trimmed.length > 0) {
                 return (
-                  <p key={`text-${index}`} className="text-sm text-brand-text-secondary leading-relaxed break-words">
+                  <p key={`text-${index}`} className="text-sm text-gray-700 leading-relaxed break-words">
                     {trimmed}
                   </p>
                 );
@@ -80,7 +80,7 @@ const FormattedKeyFeatures: React.FC<{ content: string }> = ({ content }) => {
       
     if (features.length === 0) {
       return (
-        <div className="text-brand-text-tertiary italic text-sm break-words">
+        <div className="text-gray-500 italic text-sm break-words">
           No key features listed
         </div>
       );
@@ -89,7 +89,7 @@ const FormattedKeyFeatures: React.FC<{ content: string }> = ({ content }) => {
     return (
       <div className="flex flex-wrap items-start gap-1.5 max-h-60 overflow-y-auto overflow-x-hidden">
         {features.map((feature, index) => (
-          <span key={`feature-${index}`} className="inline-block bg-brand-border/50 text-brand-text-secondary text-xs px-2 py-1 rounded-full break-words">
+          <span key={`feature-${index}`} className="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full break-words">
             {feature}
           </span>
         ))}
@@ -99,7 +99,7 @@ const FormattedKeyFeatures: React.FC<{ content: string }> = ({ content }) => {
     console.error('FormattedKeyFeatures error:', error);
     // Fallback to simple text display
     return (
-      <div className="text-brand-text-secondary text-sm break-words">
+      <div className="text-gray-700 text-sm break-words">
         {content || 'No key features available'}
       </div>
     );
@@ -430,8 +430,8 @@ const ListingDetailPage: React.FC = () => {
                     </Button>
                   </Link>
                 </div>
-                <div className="bg-brand-background/50 border border-brand-border/50 rounded-lg p-4 sm:p-6 overflow-hidden">
-                  <p className="text-brand-text-secondary leading-relaxed whitespace-pre-line break-words">
+                <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6 overflow-hidden shadow-sm">
+                  <p className="text-gray-800 leading-relaxed whitespace-pre-line break-words">
                     {listing.generatedDescription}
                   </p>
                 </div>
@@ -598,8 +598,8 @@ const ListingDetailPage: React.FC = () => {
                     </Button>
                   </Link>
                 </div>
-                <div className="bg-brand-background/50 border border-brand-border/50 rounded-lg p-4 sm:p-6 overflow-hidden">
-                  <div className="text-brand-text-secondary leading-relaxed whitespace-pre-line break-words">
+                <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6 overflow-hidden shadow-sm">
+                  <div className="text-gray-800 leading-relaxed whitespace-pre-line break-words">
                     {listing.generatedEmail}
                   </div>
                 </div>
@@ -633,36 +633,36 @@ const ListingDetailPage: React.FC = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 overflow-hidden">
                   {listing.generatedRoomDesigns.map((design, index) => {
                     const style: AiDesignStyle | undefined = AI_DESIGN_STYLES.find(s => s.id === design.styleId);
-                    return (
-                      <div key={index} className="bg-brand-background/30 border border-brand-border/50 rounded-lg overflow-hidden">
-                        <div className="relative overflow-hidden">
-                          <img 
-                            src={design.redesignedImageUrl} 
-                            alt={`Redesigned Room ${index + 1}`} 
-                            className="w-full aspect-[4/3] object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                            onClick={() => {
-                              // Download redesigned image
-                              const link = document.createElement('a');
-                              link.href = design.redesignedImageUrl;
-                              link.download = `room-redesign-${index + 1}.png`;
-                              link.click();
-                            }}
-                          />
-                          <div className="absolute top-2 left-2 bg-brand-primary text-white text-xs px-2 py-1 rounded-full font-medium capitalize">
-                            {style ? style.name : design.styleId}
+                                          return (
+                        <div key={index} className="bg-brand-background/30 border border-brand-border/50 rounded-lg overflow-hidden">
+                          <div className="relative overflow-hidden">
+                            <img 
+                              src={design.redesignedImageUrl} 
+                              alt={`Redesigned Room ${index + 1}`} 
+                              className="w-full aspect-[4/3] object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                              onClick={() => {
+                                // Download redesigned image
+                                const link = document.createElement('a');
+                                link.href = design.redesignedImageUrl;
+                                link.download = `room-redesign-${index + 1}.png`;
+                                link.click();
+                              }}
+                            />
+                            <div className="absolute top-2 left-2 bg-brand-primary text-white text-xs px-2 py-1 rounded-full font-medium capitalize">
+                              {style ? style.name : design.styleId}
+                            </div>
+                            <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-full">
+                              Click to Download
+                            </div>
                           </div>
-                          <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-full">
-                            Click to Download
+                          <div className="p-3 sm:p-4 overflow-hidden">
+                            <h4 className="font-semibold text-brand-text-primary text-sm sm:text-base mb-1 break-words">{style ? style.name : design.styleId}</h4>
+                            <p className="text-xs text-brand-text-tertiary break-words mb-2">{new Date(design.createdAt ?? '').toLocaleDateString()}</p>
+                            {design.prompt && (
+                              <p className="text-sm text-brand-text-secondary italic break-words">"{design.prompt}"</p>
+                            )}
                           </div>
                         </div>
-                        <div className="p-3 sm:p-4 overflow-hidden">
-                          <h4 className="font-semibold text-brand-text-primary text-sm sm:text-base mb-1 break-words">{style ? style.name : design.styleId}</h4>
-                          <p className="text-xs text-brand-text-tertiary break-words mb-2">{new Date(design.createdAt ?? '').toLocaleDateString()}</p>
-                          {design.prompt && (
-                            <p className="text-sm text-brand-text-secondary italic break-words">"{design.prompt}"</p>
-                          )}
-                        </div>
-                      </div>
                     );
                   })}
                 </div>
