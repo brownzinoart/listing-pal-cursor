@@ -45,6 +45,8 @@ export interface Listing {
   id: string;
   userId: string;
   address: string;
+  latitude?: number;
+  longitude?: number;
   bedrooms: number;
   bathrooms: number;
   squareFootage: number;

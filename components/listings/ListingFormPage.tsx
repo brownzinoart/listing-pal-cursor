@@ -420,10 +420,34 @@ export default function ListingFormPage() {
       state: addressParts[2] || "",
       zipCode: addressParts[3] || ""
     };
+    
+    // Check if this is a demo address and auto-fill property details
+    const isDemoAddress = /123\s+demo\s+dr\.?.*demo.*dm\s+12345/i.test(address.toLowerCase());
+    
+    if (isDemoAddress) {
+      console.log('🎭 Demo address detected - auto-filling property details');
+      const demoPropertyData = {
+        ...addressFormData,
+        bedrooms: 4,
+        bathrooms: 3.5,
+        sqFt: 2850,
+        yearBuilt: 2018,
+        propertyType: 'Single Family Home',
+        listingType: '' // Let this be determined by price input
+      };
+      
+      setFormData(demoPropertyData);
+      setInsightsAddress(address);
+      setPriceSource(''); // No auto-filled price
+      setHasAttemptedAutoFill(true);
+      setIsFetchingDetails(false);
+      return;
+    }
+    
     setFormData(addressFormData);
     setInsightsAddress(address);
 
-    // Now, automatically fetch details
+    // Now, automatically fetch details for real addresses
     setIsFetchingDetails(true);
     setFormError(null);
     try {
@@ -466,10 +490,10 @@ export default function ListingFormPage() {
         
         setFormData(finalFormData);
         setHasAttemptedAutoFill(true);
-              } else {
-          console.log('⚠️ No details returned from API');
-          setHasAttemptedAutoFill(true);
-        }
+      } else {
+        console.log('⚠️ No details returned from API');
+        setHasAttemptedAutoFill(true);
+      }
     } catch (error: any) {
       // Enhanced error logging for debugging
       console.error('❌ Auto-fill error details:');
@@ -652,39 +676,67 @@ export default function ListingFormPage() {
     setIsSubmitting(true);
     setFormError(null);
 
-    // Basic validation
-    if (!formData.address || !formData.price || !formData.bedrooms || !formData.bathrooms) {
-      setFormError("Please fill in all required fields: address, price, beds, and baths.");
+    // Check if user is available
+    if (!user || !user.id) {
+      setFormError("Please log in to save listings.");
       setIsSubmitting(false);
       return;
     }
 
+    // Basic validation - fix potential validation issues
+    if (!formData.address || !formData.price || formData.price <= 0 || !formData.bedrooms || formData.bedrooms <= 0 || !formData.bathrooms || formData.bathrooms <= 0) {
+      
+      // Create a more specific error message
+      const missingFields = [];
+      if (!formData.address) missingFields.push('address');
+      if (!formData.price || formData.price <= 0) missingFields.push('asking price (must be greater than $0)');
+      if (!formData.bedrooms || formData.bedrooms <= 0) missingFields.push('bedrooms (must be greater than 0)');
+      if (!formData.bathrooms || formData.bathrooms <= 0) missingFields.push('bathrooms (must be greater than 0)');
+      
+      setFormError(`Please fill in the following required fields: ${missingFields.join(', ')}.`);
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Ensure propertyType and listingType have defaults
+    const finalPropertyType = formData.propertyType || 'Single Family Home';
+    const finalListingType = formData.listingType || 'sale';
+
     const listingDataForApi = {
-      userId: user!.id,
+      userId: user.id,
       address: formData.address,
-      price: formData.price,
-      bedrooms: formData.bedrooms,
-      bathrooms: formData.bathrooms,
-      squareFootage: formData.sqFt,
-      yearBuilt: formData.yearBuilt,
-      propertyType: formData.propertyType,
-      listingType: formData.listingType,
-      keyFeatures: formData.keyFeatures,
-      images: uploadedImages.map(url => ({ url, label: '' })), // New image format
-      neighborhoodSections: insightsAddedSections,
+      latitude: formData.latitude || 0,
+      longitude: formData.longitude || 0,
+      price: Number(formData.price),
+      bedrooms: Number(formData.bedrooms),
+      bathrooms: Number(formData.bathrooms),
+      squareFootage: Number(formData.sqFt) || 0,
+      yearBuilt: Number(formData.yearBuilt) || 0,
+      propertyType: finalPropertyType,
+      listingType: finalListingType,
+      keyFeatures: formData.keyFeatures || '',
+      images: uploadedImages.map(url => ({ url, label: '' })),
+      neighborhoodSections: insightsAddedSections || [],
     };
 
+    console.log('📤 Sending to API:', listingDataForApi);
+
     try {
+      let result;
       if (isEditing && listingId) {
-        await listingService.updateListing(listingId, listingDataForApi);
+        console.log('✏️ Updating existing listing...');
+        result = await listingService.updateListing(listingId, listingDataForApi);
+        console.log('✅ Update successful:', result);
         navigate(`/listings/${listingId}`);
       } else {
-        const newListing = await listingService.createListing(listingDataForApi);
-        navigate(`/listings/${newListing.id}`);
+        console.log('➕ Creating new listing...');
+        result = await listingService.createListing(listingDataForApi);
+        console.log('✅ Creation successful:', result);
+        navigate(`/listings/${result.id}`);
       }
     } catch (err) {
-      setFormError("Failed to save the listing. Please try again.");
-      console.error(err);
+      console.error('❌ Form submission error:', err);
+      setFormError(`Failed to save the listing: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -898,9 +950,11 @@ export default function ListingFormPage() {
               </div>
 
               {/* Neighborhood Insights */}
-              {isValidAddressForContext(insightsAddress) && (
+              {isValidAddressForContext(insightsAddress) && formData.latitude && formData.longitude && (
                 <NeighborhoodInsights 
                   address={insightsAddress}
+                  lat={formData.latitude}
+                  lng={formData.longitude}
                   listingPrice={formData.price}
                   listingType={formData.listingType}
                   addedSections={insightsAddedSections}

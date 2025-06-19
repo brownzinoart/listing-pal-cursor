@@ -1,6 +1,6 @@
-import OpenAI from 'openai';
+const OpenAI = require('openai');
 
-export class OpenAIService {
+class OpenAIService {
   constructor() {
     this.openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
@@ -553,4 +553,6 @@ Generate the 3 agent tips now:`;
       return false;
     }
   }
-} 
+}
+
+module.exports = { OpenAIService }; 

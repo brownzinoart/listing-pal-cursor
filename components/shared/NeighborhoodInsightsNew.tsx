@@ -75,6 +75,12 @@ const tabs: TabInfo[] = [
     label: 'Schools',
     icon: <GraduationCap className="w-4 h-4" />,
     description: 'Educational institutions and family appeal'
+  },
+  {
+    id: 'transportation',
+    label: 'Transit',
+    icon: <Train className="w-4 h-4" />,
+    description: 'Public transport and commute options'
   }
 ];
 
@@ -90,19 +96,11 @@ const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({
   addedSections,
   viewMode = false,
 }) => {
-  const [activeTab, setActiveTab] = useState<string>(
-    viewMode && addedSections.length > 0 ? addedSections[0] : 'overview'
-  );
+  const [activeTab, setActiveTab] = useState<string>('overview');
   const [data, setData] = useState<ComprehensiveNeighborhoodData | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
-  const [tabLoading, setTabLoading] = useState<{ [key: string]: boolean }>({});
   const [error, setError] = useState<string | null>(null);
   const [showSectionManager, setShowSectionManager] = useState(false);
-  
-  // Debug state changes
-  useEffect(() => {
-    console.log('showSectionManager state changed to:', showSectionManager);
-  }, [showSectionManager]);
 
   // Fetch data when address or coordinates change
   useEffect(() => {
@@ -110,13 +108,6 @@ const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({
       fetchNeighborhoodData();
     }
   }, [address, lat, lng]);
-
-  // Update activeTab when in viewMode and addedSections change
-  useEffect(() => {
-    if (viewMode && addedSections.length > 0 && !addedSections.includes(activeTab)) {
-      setActiveTab(addedSections[0]);
-    }
-  }, [viewMode, addedSections, activeTab]);
 
   // Handle escape key to close modal
   useEffect(() => {
@@ -140,13 +131,6 @@ const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({
 
     try {
       console.log('Fetching neighborhood data for:', { address, lat, lng });
-      
-      // Add simulated delay for demo addresses to show loading animation
-      const isDemoAddress = /123\s+demo\s+dr\.?.*demo.*dm\s+12345/i.test(address.toLowerCase());
-      if (isDemoAddress) {
-        await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API delay
-      }
-      
       const result = await neighborhoodDataService.fetchComprehensiveData(lat, lng, address);
       setData(result);
     } catch (err) {
@@ -155,22 +139,6 @@ const NeighborhoodInsights: React.FC<NeighborhoodInsightsProps> = ({
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleTabChange = async (tabId: string) => {
-    if (tabId === activeTab) return;
-    
-    // Show tab-specific loading animation
-    setTabLoading(prev => ({ ...prev, [tabId]: true }));
-    
-    // Simulate data loading delay for better UX
-    const isDemoAddress = address && /123\s+demo\s+dr\.?.*demo.*dm\s+12345/i.test(address.toLowerCase());
-    const delay = isDemoAddress ? 800 : 300; // Longer delay for demo to show off the animation
-    
-    await new Promise(resolve => setTimeout(resolve, delay));
-    
-    setActiveTab(tabId);
-    setTabLoading(prev => ({ ...prev, [tabId]: false }));
   };
 
   const generateSectionContent = (tabId: string): string => {
@@ -261,6 +229,19 @@ ${data.schools.familyAppeal.map(appeal => `• ${appeal}`).join('\n')}
 **Marketing Angles:**
 ${data.schools.marketingAngles.map(angle => `• ${angle}`).join('\n')}`;
 
+      case 'transportation':
+        return `**Transportation & Commute for ${address}**
+
+**Transit Scores:**
+• Transit Score: ${data.transportation.transitData.transitScore}/100
+• Description: ${data.transportation.transitData.transitDescription}
+
+**Commute Options (${data.transportation.commuteOptions.length}):**
+${data.transportation.commuteOptions.slice(0, 5).map(option => `• ${option.name} - ${option.categories?.[0] || 'Transportation'}`).join('\n')}
+
+**Transportation Benefits:**
+${data.transportation.transportationBenefits.map(benefit => `• ${benefit}`).join('\n')}`;
+
       default:
         return 'No content available for this section.';
     }
@@ -286,7 +267,6 @@ ${data.schools.marketingAngles.map(angle => `• ${angle}`).join('\n')}`;
   };
 
   const handleSectionManagerToggle = (sections: string[]) => {
-    console.log('handleSectionManagerToggle called with sections:', sections);
     onSectionToggle(sections);
   };
 
@@ -343,169 +323,150 @@ ${data.schools.marketingAngles.map(angle => `• ${angle}`).join('\n')}`;
           <div>
             <h3 className="text-lg font-semibold text-gray-900">Neighborhood Insights</h3>
             <p className="text-sm text-gray-600 mt-1">
-              {viewMode ? 
-                (addedSections.length > 0 ? 
-                  `${addedSections.length} section${addedSections.length === 1 ? '' : 's'} selected for ${address}` : 
-                  'No sections selected'
-                ) :
-                (address && `Comprehensive data for ${address}`)
-              }
+              {address && `Comprehensive data for ${address}`}
             </p>
           </div>
-          <div className="flex items-center space-x-3">
-            {!viewMode ? (
-              <>
-                {addedSections.length > 0 && (
-                  <div className="text-sm text-gray-600 bg-blue-50 px-2 py-1 rounded">
-                    {addedSections.length} section{addedSections.length === 1 ? '' : 's'} added
-                  </div>
-                )}
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    console.log('Manage Sections button clicked! Current state:', showSectionManager);
-                    setShowSectionManager(!showSectionManager);
-                  }}
-                  className="flex items-center space-x-2 px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                >
-                  <Settings className="w-4 h-4" />
-                  <span>Manage Sections</span>
-                </button>
-              </>
-            ) : (
+          {!viewMode && (
+            <div className="flex items-center space-x-3">
+              {addedSections.length > 0 && (
+                <div className="text-sm text-gray-600 bg-blue-50 px-2 py-1 rounded">
+                  {addedSections.length} section{addedSections.length === 1 ? '' : 's'} added
+                </div>
+              )}
               <button
                 type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  console.log('View mode manage button clicked!');
-                  setShowSectionManager(!showSectionManager);
-                }}
-                className="flex items-center space-x-2 px-3 py-2 text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                onClick={() => setShowSectionManager(!showSectionManager)}
+                className="flex items-center space-x-2 px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
               >
                 <Settings className="w-4 h-4" />
-                <span>Manage</span>
+                <span>Manage Sections</span>
               </button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
-
+        {/* Data Quality Indicator */}
+        {data && (
+          <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-600">Data Quality:</span>
+              <div className="flex items-center space-x-2">
+                <div className="w-20 bg-gray-200 rounded-full h-2">
+                  <div 
+                    className={`h-2 rounded-full ${
+                      data.overview.dataQuality > 70 ? 'bg-green-500' : 
+                      data.overview.dataQuality > 40 ? 'bg-yellow-500' : 'bg-red-500'
+                    }`}
+                    style={{ width: `${data.overview.dataQuality}%` }}
+                  ></div>
+                </div>
+                <span className={`font-medium ${
+                  data.overview.dataQuality > 70 ? 'text-green-600' : 
+                  data.overview.dataQuality > 40 ? 'text-yellow-600' : 'text-red-600'
+                }`}>
+                  {data.overview.dataQuality}%
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Inline Section Manager */}
+      {/* Section Manager Modal */}
       {showSectionManager && (
-        <div className="border-b border-gray-200 bg-blue-50 p-6 -mx-6 sm:-mx-8">
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-semibold text-gray-900">Select Sections to Include</h4>
-            <button
-              type="button"
-              onClick={() => setShowSectionManager(false)}
-              className="p-1 hover:bg-blue-100 rounded text-gray-600 hover:text-gray-800"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {tabs.map((tab) => (
-              <label key={tab.id} className="flex items-start space-x-3 cursor-pointer hover:bg-blue-100 p-3 rounded-lg border border-blue-200 bg-white">
-                <input
-                  type="checkbox"
-                  checked={addedSections.includes(tab.id)}
-                  onChange={(e) => {
-                    const newSections = e.target.checked
-                      ? [...addedSections, tab.id]
-                      : addedSections.filter(s => s !== tab.id);
-                    handleSectionManagerToggle(newSections);
-                  }}
-                  className="w-4 h-4 text-blue-600 mt-1"
-                />
-                <div className="flex-1">
-                  <div className="flex items-center space-x-2 mb-1">
-                    <div className="text-blue-600">
-                      {tab.icon}
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowSectionManager(false);
+            }
+          }}
+        >
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="text-lg font-semibold">Manage Sections</h4>
+              <button
+                type="button"
+                onClick={() => setShowSectionManager(false)}
+                className="p-1 hover:bg-gray-100 rounded"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="space-y-3">
+              {tabs.map((tab) => (
+                <label key={tab.id} className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded">
+                  <input
+                    type="checkbox"
+                    checked={addedSections.includes(tab.id)}
+                    onChange={(e) => {
+                      const newSections = e.target.checked
+                        ? [...addedSections, tab.id]
+                        : addedSections.filter((s: string) => s !== tab.id);
+                      handleSectionManagerToggle(newSections);
+                    }}
+                    className="w-4 h-4 text-blue-600"
+                  />
+                  <div className="flex items-center space-x-2">
+                    {tab.icon}
+                    <div>
+                      <span className="text-sm font-medium">{tab.label}</span>
+                      <p className="text-xs text-gray-500">{tab.description}</p>
                     </div>
-                    <span className="text-sm font-medium text-gray-900">{tab.label}</span>
                   </div>
-                  <p className="text-xs text-gray-600">{tab.description}</p>
-                </div>
-              </label>
-            ))}
-          </div>
-          
-          <div className="mt-4 flex items-center justify-between">
-            <p className="text-sm text-gray-600">
-              {addedSections.length} section{addedSections.length === 1 ? '' : 's'} selected
-            </p>
-            <button
-              type="button"
-              onClick={() => setShowSectionManager(false)}
-              className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
-            >
-              Done
-            </button>
+                </label>
+              ))}
+            </div>
+            
+            <div className="mt-6 flex justify-between">
+              <button
+                type="button"
+                onClick={() => setShowSectionManager(false)}
+                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowSectionManager(false)}
+                className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
+              >
+                Done
+              </button>
+            </div>
           </div>
         </div>
       )}
 
       {/* Tab Navigation */}
-      {(viewMode ? addedSections.length > 0 : true) && (
-        <div className="border-b border-gray-200">
-          <nav className="flex space-x-8 px-6">
-            {tabs
-              .filter(tab => viewMode ? addedSections.includes(tab.id) : true)
-              .map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => handleTabChange(tab.id)}
-                  className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                    activeTab === tab.id
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  <div className="flex items-center space-x-2">
-                    {tab.icon}
-                    <span>{tab.label}</span>
-                  </div>
-                </button>
-              ))}
-          </nav>
-        </div>
-      )}
+      <div className="border-b border-gray-200">
+        <nav className="flex space-x-8 px-6">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === tab.id
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                {tab.icon}
+                <span>{tab.label}</span>
+              </div>
+            </button>
+          ))}
+        </nav>
+      </div>
 
       {/* Tab Content */}
       <div className="p-6">
-        {viewMode && addedSections.length === 0 ? (
-          <div className="text-center py-12">
-            <Settings className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600 mb-2">No neighborhood insights added</p>
-            <p className="text-sm text-gray-500">Edit this listing to add neighborhood sections</p>
-          </div>
-        ) : loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="flex items-center space-x-3">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <span className="text-gray-600">Loading neighborhood insights...</span>
-            </div>
-          </div>
-        ) : tabLoading[activeTab] ? (
-          <TabLoadingAnimation tabId={activeTab} />
-        ) : data ? (
-          <TabContent activeTab={activeTab} data={data} address={address || ''} />
-        ) : (
-          <div className="text-center py-12">
-            <MapPin className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">Enter an address to see neighborhood insights</p>
-          </div>
-        )}
+        {data && <TabContent activeTab={activeTab} data={data} address={address || ''} />}
         
         {/* Add to Listing Button */}
-        {!viewMode && data && !loading && !tabLoading[activeTab] && (
+        {!viewMode && data && (
           <div className="mt-6 pt-4 border-t border-gray-200">
             <button
               type="button"
@@ -654,84 +615,47 @@ const TabContent: React.FC<TabContentProps> = ({ activeTab, data, address }) => 
     case 'places':
       return (
         <div className="space-y-6">
-          {/* Show data availability notice */}
-          <div className="p-4 bg-green-50 rounded-lg">
-            <div className="flex items-center space-x-2">
-              <MapPin className="w-5 h-5 text-green-600" />
-              <div>
-                <p className="text-sm font-medium text-green-800">Places Data Status</p>
-                <p className="text-xs text-green-600 mt-1">
-                  Using Geoapify Places API for comprehensive neighborhood amenities
-                </p>
+          {/* Restaurants */}
+          {data.places.restaurants.length > 0 && (
+            <div>
+              <h4 className="text-lg font-semibold text-gray-900 mb-4">
+                Dining Options ({data.places.restaurants.length})
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {data.places.restaurants.slice(0, 6).map(restaurant => 
+                  renderListItem(restaurant, 'Restaurant')
+                )}
               </div>
             </div>
-          </div>
-
-          {/* Restaurants */}
-          <div>
-            <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
-              <ShoppingCart className="w-5 h-5" />
-              <span>Dining ({data.places.restaurants.length})</span>
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {data.places.restaurants.map((restaurant) => renderListItem(restaurant, 'Restaurant'))}
-            </div>
-          </div>
+          )}
 
           {/* Shopping */}
-          <div>
-            <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
-              <ShoppingCart className="w-5 h-5" />
-              <span>Shopping ({data.places.shopping.length})</span>
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {data.places.shopping.map((shop) => renderListItem(shop, 'Shopping'))}
+          {data.places.shopping.length > 0 && (
+            <div>
+              <h4 className="text-lg font-semibold text-gray-900 mb-4">
+                Shopping ({data.places.shopping.length})
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {data.places.shopping.slice(0, 6).map(shop => 
+                  renderListItem(shop, 'Retail')
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Entertainment */}
-          <div>
-            <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
-              <Sun className="w-5 h-5" />
-              <span>Entertainment ({data.places.entertainment.length})</span>
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {data.places.entertainment.map((venue) => renderListItem(venue, 'Entertainment'))}
+          {data.places.entertainment.length > 0 && (
+            <div>
+              <h4 className="text-lg font-semibold text-gray-900 mb-4">
+                Entertainment ({data.places.entertainment.length})
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {data.places.entertainment.slice(0, 6).map(entertainment => 
+                  renderListItem(entertainment, 'Entertainment')
+                )}
+              </div>
             </div>
-          </div>
-
-          {/* Services */}
-          <div>
-            <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
-              <Building className="w-5 h-5" />
-              <span>Services ({data.places.services.length})</span>
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {data.places.services.map((service) => renderListItem(service, 'Service'))}
-            </div>
-          </div>
-
-          {/* Healthcare */}
-          <div>
-            <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
-              <Heart className="w-5 h-5" />
-              <span>Healthcare ({(data.places as any).healthcare?.length || 0})</span>
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {((data.places as any).healthcare || []).map((facility: any) => renderListItem(facility, 'Healthcare'))}
-            </div>
-          </div>
-
-          {/* Recreation */}
-          <div>
-            <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
-              <Activity className="w-5 h-5" />
-              <span>Recreation ({(data.places as any).recreation?.length || 0})</span>
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {((data.places as any).recreation || []).map((facility: any) => renderListItem(facility, 'Recreation'))}
-            </div>
-          </div>
+          )}
 
           {/* Agent Talking Points */}
           {data.places.agentTalkingPoints.length > 0 && (
@@ -739,8 +663,8 @@ const TabContent: React.FC<TabContentProps> = ({ activeTab, data, address }) => 
               <h4 className="text-lg font-semibold text-gray-900 mb-4">Agent Talking Points</h4>
               <div className="space-y-2">
                 {data.places.agentTalkingPoints.map((point, index) => (
-                  <div key={index} className="flex items-start space-x-2 p-3 bg-blue-50 rounded-lg">
-                    <TrendingUp className="w-4 h-4 text-blue-600 mt-0.5" />
+                  <div key={index} className="flex items-center space-x-2 p-3 bg-blue-50 rounded-lg">
+                    <ShoppingCart className="w-4 h-4 text-blue-600" />
                     <span className="text-sm text-gray-700">{point}</span>
                   </div>
                 ))}
@@ -759,19 +683,6 @@ const TabContent: React.FC<TabContentProps> = ({ activeTab, data, address }) => 
     case 'safety':
       return (
         <div className="space-y-6">
-          {/* Show data availability notice */}
-          <div className="p-4 bg-red-50 rounded-lg">
-            <div className="flex items-center space-x-2">
-              <Shield className="w-5 h-5 text-red-600" />
-              <div>
-                <p className="text-sm font-medium text-red-800">Safety Data Status</p>
-                <p className="text-xs text-red-600 mt-1">
-                  Using FBI Crime Data API for comprehensive safety analysis
-                </p>
-              </div>
-            </div>
-          </div>
-
           {/* Crime Statistics */}
           <div>
             <h4 className="text-lg font-semibold text-gray-900 mb-4">Crime Statistics</h4>
@@ -779,30 +690,24 @@ const TabContent: React.FC<TabContentProps> = ({ activeTab, data, address }) => 
               {renderScoreCard(
                 'Safety Score', 
                 data.safety.crimeData.safetyScore, 
-                `${data.safety.crimeData.comparedToNational} compared to national average`,
+                `${data.safety.crimeData.safetyScore > 70 ? 'Very Safe' : data.safety.crimeData.safetyScore > 50 ? 'Generally Safe' : 'Use Caution'} neighborhood`,
                 <Shield className="w-4 h-4 text-gray-600" />
               )}
-            </div>
-            
-            {/* Detailed Crime Stats */}
-            <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-              <h5 className="font-medium text-gray-900 mb-3">Detailed Statistics</h5>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div>
-                  <p className="text-gray-700 font-medium">Crime Rate</p>
-                  <p className="text-blue-700 font-semibold">{data.safety.crimeData.crimeRate} per 100k</p>
-                </div>
-                <div>
-                  <p className="text-gray-700 font-medium">Violent Crime</p>
-                  <p className="text-blue-700 font-semibold">{(data.safety.crimeData as any).violentCrimeRate || data.safety.crimeData.violentCrime || 1.1} per 100k</p>
-                </div>
-                <div>
-                  <p className="text-gray-700 font-medium">Property Crime</p>
-                  <p className="text-blue-700 font-semibold">{(data.safety.crimeData as any).propertyCrimeRate || data.safety.crimeData.propertyCrime || 7.1} per 100k</p>
-                </div>
-                <div>
-                  <p className="text-gray-700 font-medium">Trend</p>
-                  <p className="text-green-700 font-semibold">{data.safety.crimeData.trend}</p>
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h5 className="font-medium text-gray-900 mb-2">Crime Rate Details</h5>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Crime Rate:</span>
+                    <span className="font-medium">{data.safety.crimeData.crimeRate}/100k residents</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Trend:</span>
+                    <span className="font-medium capitalize">{data.safety.crimeData.trend}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">vs National:</span>
+                    <span className="font-medium capitalize">{data.safety.crimeData.comparedToNational}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -811,9 +716,13 @@ const TabContent: React.FC<TabContentProps> = ({ activeTab, data, address }) => 
           {/* Safety Services */}
           {data.safety.safetyServices.length > 0 && (
             <div>
-              <h4 className="text-lg font-semibold text-gray-900 mb-4">Emergency Services</h4>
+              <h4 className="text-lg font-semibold text-gray-900 mb-4">
+                Nearby Safety Services ({data.safety.safetyServices.length})
+              </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {data.safety.safetyServices.map((service) => renderListItem(service, 'Safety Service'))}
+                {data.safety.safetyServices.map(service => 
+                  renderListItem(service, 'Safety Service')
+                )}
               </div>
             </div>
           )}
@@ -821,11 +730,11 @@ const TabContent: React.FC<TabContentProps> = ({ activeTab, data, address }) => 
           {/* Agent Safety Pitch */}
           {data.safety.agentSafetyPitch.length > 0 && (
             <div>
-              <h4 className="text-lg font-semibold text-gray-900 mb-4">Safety Talking Points</h4>
+              <h4 className="text-lg font-semibold text-gray-900 mb-4">Agent Safety Pitch</h4>
               <div className="space-y-2">
                 {data.safety.agentSafetyPitch.map((pitch, index) => (
-                  <div key={index} className="flex items-start space-x-2 p-3 bg-green-50 rounded-lg">
-                    <Shield className="w-4 h-4 text-green-600 mt-0.5" />
+                  <div key={index} className="flex items-center space-x-2 p-3 bg-green-50 rounded-lg">
+                    <Shield className="w-4 h-4 text-green-600" />
                     <span className="text-sm text-gray-700">{pitch}</span>
                   </div>
                 ))}
@@ -844,22 +753,6 @@ const TabContent: React.FC<TabContentProps> = ({ activeTab, data, address }) => 
     case 'demographics':
       return (
         <div className="space-y-6">
-          {/* Show data availability notice */}
-          <div className="p-4 bg-green-50 rounded-lg">
-            <div className="flex items-center space-x-2">
-              <Users className="w-5 h-5 text-green-600" />
-              <div>
-                <p className="text-sm font-medium text-green-800">Census & Market Data Status</p>
-                <p className="text-xs text-green-600 mt-1">
-                  {data.demographics.censusData.dataAvailable 
-                    ? 'Using real US Census API and ATTOM market data'
-                    : 'Using estimated demographic and market data'
-                  }
-                </p>
-              </div>
-            </div>
-          </div>
-
           {/* Population Demographics */}
           <div>
             <h4 className="text-lg font-semibold text-gray-900 mb-4">Population Demographics</h4>
@@ -891,35 +784,50 @@ const TabContent: React.FC<TabContentProps> = ({ activeTab, data, address }) => 
           {/* Economic Profile */}
           <div>
             <h4 className="text-lg font-semibold text-gray-900 mb-4">Economic Profile</h4>
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                <div>
-                  <p className="text-gray-700 font-medium">Median Income</p>
-                  <p className="text-green-700 font-bold text-lg">${data.demographics.censusData.economics.medianHouseholdIncome.toLocaleString()}</p>
-                </div>
-                <div>
-                  <p className="text-gray-700 font-medium">Unemployment</p>
-                  <p className="text-blue-700 font-bold text-lg">{data.demographics.censusData.economics.unemploymentRate}%</p>
-                </div>
-                <div>
-                  <p className="text-gray-700 font-medium">Home Ownership</p>
-                  <p className="text-purple-700 font-bold text-lg">{data.demographics.censusData.housing.ownerOccupied}%</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Market Data */}
-          <div>
-            <h4 className="text-lg font-semibold text-gray-900 mb-4">Market Data</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-gray-50 rounded-lg p-4">
-                <h5 className="font-medium text-gray-900 mb-3">Median Sale Price</h5>
-                <p className="text-2xl font-bold text-blue-600">${data.demographics.marketData.medianSalePrice.toLocaleString()}</p>
+                <h5 className="font-medium text-gray-900 mb-3">Income & Employment</h5>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Median Income:</span>
+                    <span className="font-medium">
+                      ${data.demographics.censusData.economics.medianHouseholdIncome.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Unemployment:</span>
+                    <span className="font-medium">{data.demographics.censusData.economics.unemploymentRate}%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Home Ownership:</span>
+                    <span className="font-medium">{data.demographics.censusData.housing.ownerOccupied}%</span>
+                  </div>
+                </div>
               </div>
               <div className="bg-gray-50 rounded-lg p-4">
-                <h5 className="font-medium text-gray-900 mb-3">Average Days on Market</h5>
-                <p className="text-2xl font-bold text-blue-600">{data.demographics.marketData.averageDaysOnMarket} days</p>
+                <h5 className="font-medium text-gray-900 mb-3">Market Data</h5>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Median Sale Price:</span>
+                    <span className="font-medium">
+                      ${data.demographics.marketData.medianSalePrice.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Days on Market:</span>
+                    <span className="font-medium">{data.demographics.marketData.averageDaysOnMarket} days</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Price Change:</span>
+                    <span className={`font-medium ${
+                      data.demographics.marketData.priceChangePercent > 0 ? 'text-green-600' : 
+                      data.demographics.marketData.priceChangePercent < 0 ? 'text-red-600' : 'text-gray-600'
+                    }`}>
+                      {data.demographics.marketData.priceChangePercent > 0 ? '+' : ''}
+                      {data.demographics.marketData.priceChangePercent}%
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -950,21 +858,8 @@ const TabContent: React.FC<TabContentProps> = ({ activeTab, data, address }) => 
     case 'schools':
       return (
         <div className="space-y-6">
-          {/* Show data availability notice */}
-          <div className="p-4 bg-purple-50 rounded-lg">
-            <div className="flex items-center space-x-2">
-              <GraduationCap className="w-5 h-5 text-purple-600" />
-              <div>
-                <p className="text-sm font-medium text-purple-800">Education Data Status</p>
-                <p className="text-xs text-purple-600 mt-1">
-                  Using Geoapify Places API to identify educational institutions in the area
-                </p>
-              </div>
-            </div>
-          </div>
-
           {/* Schools List */}
-          {data.schools.schools.length > 0 ? (
+          {data.schools.schools.length > 0 && (
             <div>
               <h4 className="text-lg font-semibold text-gray-900 mb-4">
                 Educational Institutions ({data.schools.schools.length})
@@ -974,12 +869,6 @@ const TabContent: React.FC<TabContentProps> = ({ activeTab, data, address }) => 
                   renderListItem(school, 'Educational Institution')
                 )}
               </div>
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <GraduationCap className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">No school data available yet</p>
-              <p className="text-xs text-gray-400 mt-1">Educational institution data loading</p>
             </div>
           )}
 
@@ -1004,6 +893,21 @@ const TabContent: React.FC<TabContentProps> = ({ activeTab, data, address }) => 
             </div>
           </div>
 
+          {/* Family Appeal */}
+          {data.schools.familyAppeal.length > 0 && (
+            <div>
+              <h4 className="text-lg font-semibold text-gray-900 mb-4">Family Appeal</h4>
+              <div className="space-y-2">
+                {data.schools.familyAppeal.map((appeal, index) => (
+                  <div key={index} className="flex items-center space-x-2 p-3 bg-green-50 rounded-lg">
+                    <Heart className="w-4 h-4 text-green-600" />
+                    <span className="text-sm text-gray-700">{appeal}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Marketing Angles */}
           {data.schools.marketingAngles.length > 0 && (
             <div>
@@ -1027,6 +931,59 @@ const TabContent: React.FC<TabContentProps> = ({ activeTab, data, address }) => 
         </div>
       );
 
+    case 'transportation':
+      return (
+        <div className="space-y-6">
+          {/* Transit Score */}
+          <div>
+            <h4 className="text-lg font-semibold text-gray-900 mb-4">Transit Accessibility</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {renderScoreCard(
+                'Transit Score', 
+                data.transportation.transitData.transitScore, 
+                data.transportation.transitData.transitDescription,
+                <Train className="w-4 h-4 text-gray-600" />
+              )}
+            </div>
+          </div>
+
+          {/* Commute Options */}
+          {data.transportation.commuteOptions.length > 0 && (
+            <div>
+              <h4 className="text-lg font-semibold text-gray-900 mb-4">
+                Transportation Options ({data.transportation.commuteOptions.length})
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {data.transportation.commuteOptions.map(option => 
+                  renderListItem(option, 'Transportation')
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Transportation Benefits */}
+          {data.transportation.transportationBenefits.length > 0 && (
+            <div>
+              <h4 className="text-lg font-semibold text-gray-900 mb-4">Transportation Benefits</h4>
+              <div className="space-y-2">
+                {data.transportation.transportationBenefits.map((benefit, index) => (
+                  <div key={index} className="flex items-center space-x-2 p-3 bg-green-50 rounded-lg">
+                    <Car className="w-4 h-4 text-green-600" />
+                    <span className="text-sm text-gray-700">{benefit}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="pt-4 border-t border-gray-200">
+            <p className="text-xs text-gray-500">
+              Data Sources: {data.dataSources.transportation}
+            </p>
+          </div>
+        </div>
+      );
+
     default:
       return (
         <div className="text-center py-8">
@@ -1034,85 +991,6 @@ const TabContent: React.FC<TabContentProps> = ({ activeTab, data, address }) => 
         </div>
       );
   }
-};
-
-// Tab Loading Animation Component
-interface TabLoadingAnimationProps {
-  tabId: string;
-}
-
-const TabLoadingAnimation: React.FC<TabLoadingAnimationProps> = ({ tabId }) => {
-  const getTabLoadingContent = (tabId: string) => {
-    switch (tabId) {
-      case 'overview':
-        return {
-          title: 'Loading walkability scores...',
-          items: ['Walk Score', 'Transit Score', 'Bike Score', 'Neighborhood highlights']
-        };
-      case 'places':
-        return {
-          title: 'Finding nearby places...',
-          items: ['Restaurants & dining', 'Shopping centers', 'Entertainment venues', 'Essential services', 'Healthcare facilities', 'Recreation centers']
-        };
-      case 'safety':
-        return {
-          title: 'Analyzing safety data...',
-          items: ['Crime statistics', 'Safety ratings', 'Emergency services', 'Community safety']
-        };
-      case 'demographics':
-        return {
-          title: 'Processing demographic data...',
-          items: ['Population statistics', 'Income levels', 'Education data', 'Market trends']
-        };
-      case 'schools':
-        return {
-          title: 'Researching school information...',
-          items: ['Elementary schools', 'Middle schools', 'High schools', 'Educational ratings']
-        };
-      default:
-        return {
-          title: 'Loading data...',
-          items: ['Gathering information', 'Processing data', 'Analyzing results']
-        };
-    }
-  };
-
-  const content = getTabLoadingContent(tabId);
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center space-x-3 mb-6">
-        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-        <span className="text-lg font-medium text-gray-900">{content.title}</span>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {content.items.map((item, index) => (
-          <div
-            key={item}
-            className="bg-gray-50 rounded-lg p-4 animate-pulse"
-            style={{ animationDelay: `${index * 150}ms` }}
-          >
-            <div className="flex items-center space-x-3">
-              <div className="w-3 h-3 bg-blue-200 rounded-full animate-bounce"></div>
-              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-            </div>
-            <div className="mt-3 space-y-2">
-              <div className="h-3 bg-gray-200 rounded w-full"></div>
-              <div className="h-3 bg-gray-200 rounded w-2/3"></div>
-            </div>
-          </div>
-        ))}
-      </div>
-      
-      <div className="text-center py-4">
-        <div className="inline-flex items-center space-x-2 text-sm text-gray-500">
-          <Activity className="w-4 h-4 animate-pulse" />
-          <span>Analyzing neighborhood data from multiple sources...</span>
-        </div>
-      </div>
-    </div>
-  );
 };
 
 export default NeighborhoodInsights; 

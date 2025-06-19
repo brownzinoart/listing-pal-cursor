@@ -298,15 +298,17 @@ const ListingDetailPage: React.FC = () => {
                   </div>
                 ))}
                 
-                {/* Add Image Button */}
-                <Link to={`/listings/${listing.id}/edit`} className="flex-shrink-0">
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-brand-card border-2 border-dashed border-brand-border rounded-lg flex items-center justify-center cursor-pointer hover:border-brand-primary hover:bg-brand-primary/10 transition-all group">
-                    <div className="text-center">
-                      <PhotoIcon className="w-6 h-6 sm:w-8 sm:h-8 text-brand-text-tertiary group-hover:text-brand-primary mx-auto mb-1" />
-                      <span className="text-xs text-brand-text-tertiary group-hover:text-brand-primary">Add</span>
+                {/* Add Image Button - Only show when images exist */}
+                {listing.images && listing.images.length > 0 && (
+                  <Link to={`/listings/${listing.id}/edit`} className="flex-shrink-0">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-brand-card border-2 border-dashed border-brand-border rounded-lg flex items-center justify-center cursor-pointer hover:border-brand-primary hover:bg-brand-primary/10 transition-all group">
+                      <div className="text-center">
+                        <PhotoIcon className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600 group-hover:text-brand-primary mx-auto mb-1" />
+                        <span className="text-xs text-blue-600 group-hover:text-brand-primary">Add</span>
+                      </div>
                     </div>
-                  </div>
-                </Link>
+                  </Link>
+                )}
               </div>
               
               {/* No images state */}
@@ -315,8 +317,8 @@ const ListingDetailPage: React.FC = () => {
                   <Link to={`/listings/${listing.id}/edit`} className="flex-shrink-0">
                     <div className="w-16 h-16 sm:w-20 sm:h-20 bg-brand-primary/20 border-2 border-dashed border-brand-primary rounded-lg flex items-center justify-center cursor-pointer hover:bg-brand-primary/30 transition-all group">
                       <div className="text-center">
-                        <PhotoIcon className="w-6 h-6 sm:w-8 sm:h-8 text-brand-primary mx-auto mb-1" />
-                        <span className="text-xs text-brand-primary font-medium">Add Image</span>
+                        <PhotoIcon className="w-6 h-6 sm:w-8 sm:h-8 text-white mx-auto mb-1" />
+                        <span className="text-xs text-white font-medium">Add Image</span>
                       </div>
                     </div>
                   </Link>
@@ -377,19 +379,32 @@ const ListingDetailPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Neighborhood Insights Section */}
-        <NeighborhoodInsights
-          address={listing.address}
-          listingPrice={listing.price}
-          listingType={listing.listingType}
-          addedSections={listing.neighborhoodSections || []}
-          viewMode
-          onSectionToggle={(sections) => {
-            // In a real app, you might want to update the listing here
-            // For now, we can just update the local state for visual feedback
-            setListing(prev => prev ? { ...prev, neighborhoodSections: sections } : null);
-          }}
-        />
+        {/* Neighborhood Insights Section - Only show if coordinates available */}
+        {listing.latitude && listing.longitude ? (
+          <section className="bg-brand-panel border border-brand-border rounded-xl p-6 sm:p-8 shadow-xl overflow-hidden">
+            <NeighborhoodInsights
+              address={listing.address}
+              lat={listing.latitude}
+              lng={listing.longitude}
+              listingPrice={listing.price}
+              listingType={listing.listingType}
+              addedSections={listing.neighborhoodSections || []}
+              viewMode
+              onSectionToggle={(sections) => {
+                // In a real app, you might want to update the listing here
+                // For now, we can just update the local state for visual feedback
+                setListing(prev => prev ? { ...prev, neighborhoodSections: sections } : null);
+              }}
+            />
+          </section>
+        ) : (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-yellow-800 mb-2">Neighborhood Insights Unavailable</h3>
+            <p className="text-yellow-700">
+              To view neighborhood insights, please edit this listing and re-select the address to ensure proper coordinates are set.
+            </p>
+          </div>
+        )}
 
         {/* Generated Content Sections */}
         {(listing.generatedDescription || listing.generatedFacebookPost || listing.generatedInstagramCaption || listing.generatedXPost || listing.generatedEmail || (listing.generatedFlyers && listing.generatedFlyers.length > 0) || (listing.generatedRoomDesigns && listing.generatedRoomDesigns.length > 0) || (listing.generatedAdCopy && listing.generatedAdCopy.length > 0)) && (

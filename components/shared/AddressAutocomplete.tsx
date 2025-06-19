@@ -51,6 +51,29 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
       return;
     }
 
+    // Check for demo address pattern
+    const demoPattern = /123\s*demo/i;
+    if (demoPattern.test(query)) {
+      console.log('🎭 Demo address detected, providing demo suggestions');
+      const demoSuggestions: PlacePrediction[] = [
+        {
+          description: '123 Demo Dr., Demo, DM 12345',
+          place_id: 'demo_place_123',
+          structured_formatting: {
+            main_text: '123 Demo Dr.',
+            secondary_text: 'Demo, DM 12345'
+          }
+        }
+      ];
+      setSuggestions(demoSuggestions);
+      setShowSuggestions(true);
+      setLastSearchHadResults(true);
+      setSelectedIndex(-1);
+      setIsLoading(false);
+      setSearchAttempted(true);
+      return;
+    }
+
     setIsLoading(true);
     setSearchAttempted(true);
     
@@ -126,6 +149,13 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
   const getPlaceDetails = async (placeId: string): Promise<{ lat: number; lng: number } | null> => {
     try {
       console.log('🎯 Getting coordinates for place ID:', placeId);
+      
+      // Handle demo place ID
+      if (placeId === 'demo_place_123') {
+        console.log('🎭 Demo place ID detected, returning demo coordinates');
+        return { lat: 40.7589, lng: -73.9851 }; // Demo coordinates (NYC area)
+      }
+      
       const url = `/api/places/details?place_id=${placeId}`;
       
       const response = await fetch(url);
