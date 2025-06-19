@@ -10,7 +10,7 @@ import Textarea from '../../shared/Textarea';
 import PropertySummaryHeader from './PropertySummaryHeader';
 import WorkflowNavigation from './WorkflowNavigation';
 import InstagramMockup from './InstagramMockup';
-import { ArrowLeftIcon, SparklesIcon as SparklesOutlineIcon, ClipboardDocumentIcon, ArrowPathIcon, CheckIcon } from '@heroicons/react/24/outline';
+import { ArrowLeftIcon, SparklesIcon as SparklesOutlineIcon, ClipboardDocumentIcon, ArrowPathIcon, CheckIcon, ShareIcon } from '@heroicons/react/24/outline';
 
 const InstagramPostGeneratorPage: React.FC = () => {
   const { id: listingId } = useParams<{ id: string }>();
@@ -116,6 +116,10 @@ const InstagramPostGeneratorPage: React.FC = () => {
     } catch (e) { alert("Failed to save caption."); }
   };
 
+  const handlePublishNow = () => {
+    alert("Publishing feature coming soon! For now, copy the content and post manually.");
+  };
+
   const handleCopy = () => { 
     navigator.clipboard.writeText(generatedCaption)
       .then(() => alert("Caption copied!"))
@@ -212,15 +216,30 @@ const InstagramPostGeneratorPage: React.FC = () => {
                   variant="gradient" 
                 />
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-xs text-brand-text-tertiary mb-4 sm:mb-0">Character count: {charCount}</p>
-                  <Button
-                    onClick={handleConfirmAndSave}
-                    className="bg-gradient-to-r from-brand-primary to-brand-secondary hover:from-brand-secondary hover:to-brand-primary text-white font-semibold shadow-lg transition-all duration-300 px-8"
-                    leftIcon={<CheckIcon className="h-5 w-5" />}
-                    size="lg"
-                  >
-                    Confirm & Save
-                  </Button>
+                  <div className="mb-4 sm:mb-0">
+                    <p className="text-sm font-medium text-brand-text-secondary">
+                      Character count: <span className="text-brand-text-primary font-semibold">{charCount}</span>
+                    </p>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <Button
+                      onClick={handlePublishNow}
+                      disabled={generatedCaption.includes("Your generated") || generatedCaption.includes("Generating your content") || isGenerating}
+                      className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold shadow-lg transition-all duration-300 px-8 disabled:opacity-50 disabled:cursor-not-allowed"
+                      leftIcon={<ShareIcon className="h-5 w-5" />}
+                      size="lg"
+                    >
+                      Publish Now
+                    </Button>
+                    <Button
+                      onClick={handleConfirmAndSave}
+                      className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-semibold shadow-lg transition-all duration-300 px-8"
+                      leftIcon={<CheckIcon className="h-5 w-5" />}
+                      size="lg"
+                    >
+                      Confirm & Save
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
