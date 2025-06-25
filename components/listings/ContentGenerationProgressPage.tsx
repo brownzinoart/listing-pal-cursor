@@ -72,6 +72,7 @@ const ContentGenerationProgressPage: React.FC = () => {
   const [showImageSelector, setShowImageSelector] = useState(true); // Show immediately
   const [selectedImageForInterior, setSelectedImageForInterior] = useState<string | null>(null);
   const [hasSelectedImage, setHasSelectedImage] = useState(false);
+  const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null);
 
   useEffect(() => {
     if (!listingId) {
@@ -91,6 +92,24 @@ const ContentGenerationProgressPage: React.FC = () => {
       })
       .catch(() => setError('Failed to fetch listing details'));
   }, [listingId, user]);
+
+  // Auto-redirect countdown effect
+  useEffect(() => {
+    if (isComplete && !redirectCountdown) {
+      setRedirectCountdown(3);
+    }
+  }, [isComplete]);
+
+  useEffect(() => {
+    if (redirectCountdown !== null && redirectCountdown > 0) {
+      const timer = setTimeout(() => {
+        setRedirectCountdown(redirectCountdown - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else if (redirectCountdown === 0) {
+      handleViewListing();
+    }
+  }, [redirectCountdown]);
 
     const startContentGeneration = async (listingData: Listing, selectedImage: string | null) => {
     setIsGenerating(true);
@@ -323,6 +342,11 @@ const ContentGenerationProgressPage: React.FC = () => {
                   <p className="text-brand-text-secondary">
                     All marketing content has been generated successfully
                   </p>
+                  {redirectCountdown !== null && redirectCountdown > 0 && (
+                    <p className="text-sm text-brand-text-tertiary mt-2">
+                      Redirecting to your listing in {redirectCountdown}...
+                    </p>
+                  )}
                 </div>
               </div>
               <Button
@@ -331,7 +355,7 @@ const ContentGenerationProgressPage: React.FC = () => {
                 rightIcon={<ArrowRightIcon className="h-5 w-5" />}
                 size="lg"
               >
-                View Listing with Generated Content
+                View Listing Now
               </Button>
             </div>
           )}
