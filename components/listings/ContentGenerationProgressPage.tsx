@@ -69,8 +69,9 @@ const ContentGenerationProgressPage: React.FC = () => {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [isComplete, setIsComplete] = useState(false);
-  const [showImageSelector, setShowImageSelector] = useState(false);
+  const [showImageSelector, setShowImageSelector] = useState(true); // Show immediately
   const [selectedImageForInterior, setSelectedImageForInterior] = useState<string | null>(null);
+  const [hasSelectedImage, setHasSelectedImage] = useState(false);
 
   useEffect(() => {
     if (!listingId) {
@@ -78,13 +79,12 @@ const ContentGenerationProgressPage: React.FC = () => {
       return;
     }
 
-    // Fetch listing data
+    // Fetch listing data but don't start generation yet
     listingService.getListingById(listingId)
       .then(data => {
         if (data && data.userId === user?.id) {
           setListing(data);
-          // Start generation automatically
-          startContentGeneration(data);
+          // Don't start generation yet - wait for image selection
         } else {
           setError(data ? "Permission denied" : "Listing not found");
         }
@@ -92,9 +92,10 @@ const ContentGenerationProgressPage: React.FC = () => {
       .catch(() => setError('Failed to fetch listing details'));
   }, [listingId, user]);
 
-  const startContentGeneration = async (listingData: Listing) => {
+    const startContentGeneration = async (listingData: Listing, selectedImage: string | null) => {
     setIsGenerating(true);
     setError(null);
+    setShowImageSelector(false); // Hide selector during generation
 
     try {
       // Import the content generation service
@@ -114,38 +115,23 @@ const ContentGenerationProgressPage: React.FC = () => {
 
           // Special handling for interior reimagining
           if (step.id === 'interior-reimagined') {
-            // Show image selector and wait for user input
-            setShowImageSelector(true);
-            
-            // Wait for image selection
-            const selectedImage = await new Promise<string | null>((resolve) => {
-              const checkForSelection = () => {
-                if (selectedImageForInterior !== null || !showImageSelector) {
-                  resolve(selectedImageForInterior);
-                } else {
-                  setTimeout(checkForSelection, 100);
-                }
-              };
-              checkForSelection();
-            });
-
-                         if (!selectedImage || selectedImage === 'skip') {
-               // User skipped, mark as completed but with skip message
-               setSteps(prev => prev.map((s, idx) => 
-                 idx === i ? { ...s, status: 'completed', result: 'Interior reimagining skipped - no image selected.' } : s
-               ));
+            if (!selectedImage || selectedImage === 'skip') {
+              // User skipped, mark as completed but with skip message
+              setSteps(prev => prev.map((s, idx) => 
+                idx === i ? { ...s, status: 'completed', result: 'Interior reimagining skipped - no image selected.' } : s
+              ));
             } else {
-                             // Generate interior concepts with selected image
-               content = await contentGenerationService.generateInteriorConcepts(listingData, selectedImage);
+              // Generate interior concepts with selected image
+              content = await contentGenerationService.generateInteriorConcepts(listingData, selectedImage);
               
               setSteps(prev => prev.map((s, idx) => 
                 idx === i ? { ...s, status: 'completed', result: content } : s
               ));
 
-                             // Save to listing (using keyFeatures to store interior concepts for now)
-               await listingService.updateListing(listingId!, { 
-                 keyFeatures: `${listingData.keyFeatures}\n\nInterior Concepts:\n${content}`,
-               });
+              // Save to listing (using keyFeatures to store interior concepts for now)
+              await listingService.updateListing(listingId!, { 
+                keyFeatures: `${listingData.keyFeatures}\n\nInterior Concepts:\n${content}`,
+              });
             }
           } else {
             // Normal content generation for other steps
@@ -362,14 +348,14 @@ const ContentGenerationProgressPage: React.FC = () => {
         </div>
 
         {/* Image Selector Modal for Interior Reimagining */}
-        {showImageSelector && (
+        {showImageSelector && listing && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <div className="bg-brand-panel rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
               <h3 className="text-xl font-bold text-brand-text-primary mb-4">
-                Select Image for Interior Reimagining
+                Ready to Generate All Content?
               </h3>
               <p className="text-brand-text-secondary mb-6">
-                Choose an existing image or upload a new one to reimagine the interior design:
+                First, choose an image for interior reimagining (or skip this step):
               </p>
 
               {/* Existing Images Grid */}
@@ -383,7 +369,8 @@ const ContentGenerationProgressPage: React.FC = () => {
                         className="cursor-pointer relative group"
                         onClick={() => {
                           setSelectedImageForInterior(image.url);
-                          setShowImageSelector(false);
+                          setHasSelectedImage(true);
+                          startContentGeneration(listing, image.url);
                         }}
                       >
                         <img 
@@ -393,7 +380,7 @@ const ContentGenerationProgressPage: React.FC = () => {
                         />
                         <div className="absolute inset-0 bg-brand-primary/10 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
                           <span className="bg-brand-primary text-white px-3 py-1 rounded-full text-sm font-medium">
-                            Select
+                            Select & Generate
                           </span>
                         </div>
                       </div>
@@ -417,7 +404,8 @@ const ContentGenerationProgressPage: React.FC = () => {
                         // Create object URL for preview
                         const imageUrl = URL.createObjectURL(file);
                         setSelectedImageForInterior(imageUrl);
-                        setShowImageSelector(false);
+                        setHasSelectedImage(true);
+                        startContentGeneration(listing, imageUrl);
                       }
                     }}
                   />
@@ -426,7 +414,7 @@ const ContentGenerationProgressPage: React.FC = () => {
                     className="cursor-pointer flex flex-col items-center"
                   >
                     <SparklesIcon className="h-8 w-8 text-brand-text-tertiary mb-2" />
-                    <span className="text-brand-text-secondary">Click to upload new image</span>
+                    <span className="text-brand-text-secondary">Click to upload & generate</span>
                     <span className="text-xs text-brand-text-tertiary mt-1">PNG, JPG up to 10MB</span>
                   </label>
                 </div>
@@ -438,23 +426,19 @@ const ContentGenerationProgressPage: React.FC = () => {
                   variant="ghost"
                   onClick={() => {
                     setSelectedImageForInterior('skip');
-                    setShowImageSelector(false);
+                    setHasSelectedImage(true);
+                    startContentGeneration(listing, 'skip');
                   }}
                 >
-                  Skip Interior Reimagining
+                  Skip & Generate Other Content
                 </Button>
-                <Button
-                  variant="primary"
-                  onClick={() => {
-                    if (!selectedImageForInterior) {
-                      setSelectedImageForInterior('skip');
-                    }
-                    setShowImageSelector(false);
-                  }}
-                  disabled={!selectedImageForInterior && (!listing.images || listing.images.length === 0)}
-                >
-                  Continue
-                </Button>
+              </div>
+
+              <div className="mt-4 p-3 bg-brand-accent/10 rounded-lg">
+                <p className="text-sm text-brand-text-secondary">
+                  💡 <strong>What happens next:</strong> We'll generate all 6 content types in one seamless flow - 
+                  MLS description, social media posts, and paid ads automatically. Interior concepts only if you select an image.
+                </p>
               </div>
             </div>
           </div>
