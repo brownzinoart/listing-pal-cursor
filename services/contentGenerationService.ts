@@ -118,20 +118,51 @@ export class ContentGenerationService {
     return await this.callOpenAI(messages, 150, 0.8);
   }
 
-  async generateInteriorConcepts(listing: Listing): Promise<string> {
+  async generateInteriorConcepts(listing: Listing, selectedImage?: string): Promise<string> {
     const basePrompt = this.getBasePrompt(listing);
+    
     const messages = [
       {
         role: 'system',
-        content: 'You are an interior design expert creating room transformation concepts that will appeal to potential home buyers.'
+        content: 'You are an interior design expert creating room transformation concepts for real estate marketing.'
       },
       {
         role: 'user',
-        content: `Create interior design transformation concepts for: ${basePrompt}. Describe 3 different design styles (e.g., Modern Minimalist, Cozy Traditional, Contemporary Luxury) that would enhance the space and appeal to buyers. Focus on how each style would transform the key living areas.`
+        content: `Create compelling interior design transformation concepts for: ${basePrompt}.
+
+${selectedImage ? 
+  `Based on the selected room image, create specific transformation concepts that would:` :
+  `Create comprehensive design concepts that would:`
+}
+
+✨ **ENHANCE BUYER APPEAL**: Focus on trending design styles that sell
+🎨 **MODERNIZE THE SPACE**: Contemporary updates that feel fresh
+💰 **MAXIMIZE VALUE**: Cost-effective changes with high impact
+🏡 **LIFESTYLE APPEAL**: Help buyers envision their dream lifestyle
+
+Create 3 distinct design approaches:
+
+1. **MODERN MINIMALIST**: Clean lines, neutral palette, open feel
+2. **COZY CONTEMPORARY**: Warm textures, layered lighting, comfort-focused  
+3. **LUXURY STAGING**: High-end finishes, statement pieces, aspirational
+
+For each style, describe:
+- Key color palette and mood
+- Furniture placement and flow
+- Lighting recommendations
+- 2-3 specific affordable updates
+- How it appeals to target buyers
+
+${selectedImage ? 
+  'Focus on realistic transformations that work with the existing room architecture and maximize the space\'s potential.' :
+  'Create concepts that work for typical ' + listing.propertyType + ' layouts and enhance market appeal.'
+}
+
+Make it actionable for staging and help buyers visualize the transformation potential.`
       }
     ];
 
-    return await this.callOpenAI(messages, 400, 0.7);
+    return await this.callOpenAI(messages, 600, 0.7);
   }
 
   async generatePaidAdCopy(listing: Listing): Promise<string> {

@@ -69,6 +69,8 @@ const ContentGenerationProgressPage: React.FC = () => {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [isComplete, setIsComplete] = useState(false);
+  const [showImageSelector, setShowImageSelector] = useState(false);
+  const [selectedImageForInterior, setSelectedImageForInterior] = useState<string | null>(null);
 
   useEffect(() => {
     if (!listingId) {
@@ -108,38 +110,74 @@ const ContentGenerationProgressPage: React.FC = () => {
         ));
 
         try {
-          // Generate content using the service
-          const content = await contentGenerationService.generateContentStep(listingData, step.id);
+          let content = '';
 
-          // Update step to completed
-          setSteps(prev => prev.map((s, idx) => 
-            idx === i ? { ...s, status: 'completed', result: content } : s
-          ));
+          // Special handling for interior reimagining
+          if (step.id === 'interior-reimagined') {
+            // Show image selector and wait for user input
+            setShowImageSelector(true);
+            
+            // Wait for image selection
+            const selectedImage = await new Promise<string | null>((resolve) => {
+              const checkForSelection = () => {
+                if (selectedImageForInterior !== null || !showImageSelector) {
+                  resolve(selectedImageForInterior);
+                } else {
+                  setTimeout(checkForSelection, 100);
+                }
+              };
+              checkForSelection();
+            });
 
-          // Save content to listing
-          const updateData: any = {};
-          switch (step.id) {
-            case 'mls-description':
-              updateData.generatedDescription = content;
-              break;
-            case 'facebook-post':
-              updateData.generatedFacebookPost = content;
-              break;
-            case 'instagram-post':
-              updateData.generatedInstagramPost = content;
-              break;
-            case 'x-post':
-              updateData.generatedXPost = content;
-              break;
-            case 'interior-reimagined':
-              updateData.interiorConcepts = content;
-              break;
-            case 'paid-ads':
-              updateData.generatedAdCopy = content;
-              break;
+                         if (!selectedImage || selectedImage === 'skip') {
+               // User skipped, mark as completed but with skip message
+               setSteps(prev => prev.map((s, idx) => 
+                 idx === i ? { ...s, status: 'completed', result: 'Interior reimagining skipped - no image selected.' } : s
+               ));
+            } else {
+                             // Generate interior concepts with selected image
+               content = await contentGenerationService.generateInteriorConcepts(listingData, selectedImage);
+              
+              setSteps(prev => prev.map((s, idx) => 
+                idx === i ? { ...s, status: 'completed', result: content } : s
+              ));
+
+                             // Save to listing (using keyFeatures to store interior concepts for now)
+               await listingService.updateListing(listingId!, { 
+                 keyFeatures: `${listingData.keyFeatures}\n\nInterior Concepts:\n${content}`,
+               });
+            }
+          } else {
+            // Normal content generation for other steps
+            content = await contentGenerationService.generateContentStep(listingData, step.id);
+
+            // Update step to completed
+            setSteps(prev => prev.map((s, idx) => 
+              idx === i ? { ...s, status: 'completed', result: content } : s
+            ));
+
+            // Save content to listing
+            const updateData: any = {};
+            switch (step.id) {
+              case 'mls-description':
+                updateData.generatedDescription = content;
+                break;
+              case 'facebook-post':
+                updateData.generatedFacebookPost = content;
+                break;
+              case 'instagram-post':
+                updateData.generatedInstagramPost = content;
+                break;
+              case 'x-post':
+                updateData.generatedXPost = content;
+                break;
+              case 'paid-ads':
+                updateData.generatedAdCopy = content;
+                break;
+            }
+
+            await listingService.updateListing(listingId!, updateData);
           }
-
-          await listingService.updateListing(listingId!, updateData);
 
           // Small delay for UX
           await new Promise(resolve => setTimeout(resolve, 500));
@@ -322,6 +360,105 @@ const ContentGenerationProgressPage: React.FC = () => {
             </div>
           )}
         </div>
+
+        {/* Image Selector Modal for Interior Reimagining */}
+        {showImageSelector && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-brand-panel rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+              <h3 className="text-xl font-bold text-brand-text-primary mb-4">
+                Select Image for Interior Reimagining
+              </h3>
+              <p className="text-brand-text-secondary mb-6">
+                Choose an existing image or upload a new one to reimagine the interior design:
+              </p>
+
+              {/* Existing Images Grid */}
+              {listing.images && listing.images.length > 0 && (
+                <div className="mb-6">
+                  <h4 className="font-semibold text-brand-text-primary mb-3">Select from uploaded images:</h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    {listing.images.map((image, index) => (
+                      <div 
+                        key={index}
+                        className="cursor-pointer relative group"
+                        onClick={() => {
+                          setSelectedImageForInterior(image.url);
+                          setShowImageSelector(false);
+                        }}
+                      >
+                        <img 
+                          src={image.url} 
+                          alt={`Option ${index + 1}`}
+                          className="w-full h-32 object-cover rounded-lg border-2 border-transparent hover:border-brand-primary transition-all duration-200"
+                        />
+                        <div className="absolute inset-0 bg-brand-primary/10 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+                          <span className="bg-brand-primary text-white px-3 py-1 rounded-full text-sm font-medium">
+                            Select
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Upload New Image */}
+              <div className="mb-6">
+                <h4 className="font-semibold text-brand-text-primary mb-3">Or upload a new image:</h4>
+                <div className="border-2 border-dashed border-brand-border rounded-lg p-8 text-center hover:border-brand-primary transition-colors duration-200">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    id="interior-image-upload"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        // Create object URL for preview
+                        const imageUrl = URL.createObjectURL(file);
+                        setSelectedImageForInterior(imageUrl);
+                        setShowImageSelector(false);
+                      }
+                    }}
+                  />
+                  <label 
+                    htmlFor="interior-image-upload"
+                    className="cursor-pointer flex flex-col items-center"
+                  >
+                    <SparklesIcon className="h-8 w-8 text-brand-text-tertiary mb-2" />
+                    <span className="text-brand-text-secondary">Click to upload new image</span>
+                    <span className="text-xs text-brand-text-tertiary mt-1">PNG, JPG up to 10MB</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-end space-x-3">
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setSelectedImageForInterior('skip');
+                    setShowImageSelector(false);
+                  }}
+                >
+                  Skip Interior Reimagining
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={() => {
+                    if (!selectedImageForInterior) {
+                      setSelectedImageForInterior('skip');
+                    }
+                    setShowImageSelector(false);
+                  }}
+                  disabled={!selectedImageForInterior && (!listing.images || listing.images.length === 0)}
+                >
+                  Continue
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
