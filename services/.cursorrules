@@ -1,7 +1,71 @@
-# Cursor Rules
-- Only modify code directly relevant to the specific request. Avoid changing unrelated functionality.
-- Never replace code with placeholders like `// ... rest of the processing ...`. Always include complete code.
-- Break problems into smaller steps. Think through each step separately before implementing.
-- Always provide a complete PLAN with REASONING based on evidence from code and logs before making changes.
-- Explain your OBSERVATIONS clearly, then provide REASONING to identify the exact issue. Add console logs when needed to gather more information.
-- Always create logs for error logging and testing before pushing
+## 1  Project Snapshot (context for the AI)
+
+* **Name**  ListingPal – real‑estate‑marketing SaaS
+* **Stack**  Next.js 14 (TypeScript), Prisma/PostgreSQL, Tailwind CSS, Node API routes, Python micro‑services (image generation)
+* **Testing**  Vitest + React Testing Library (front‑end), Jest (API), Pytest (Python)
+* **Lint/Format**  ESLint (airbnb/strict) + Prettier (see repo config)
+* **Secrets prefix**  `LISTINGPAL_`
+
+---
+
+## 2  Global Behaviour
+
+1. **Finish the job, don’t waffle**  Execute end‑to‑end without follow‑up questions *unless* you reach a **Critical Change Checkpoint**.
+2. **Read before you write**  Open and scan relevant files before coding.
+3. **No hallucinated symbols**  Call only functions/modules that exist or that you create in the same diff.
+4. **Empirical comments**  Cite external docs/APIs with a link *inside a code comment* for later verification.
+5. **Atomic, conventional commits**  Use `feat:`, `fix:`, `chore:` prefixes.
+6. **Respect style guide**
+
+   * TypeScript strict mode, explicit return types.
+   * Functional React components under 200 LOC.
+   * Tailwind utilities over custom CSS.
+7. **Test as you go**  Add or update tests with each logic change; stubs are acceptable if time‑boxed.
+8. **Guard secrets & security**  Never hard‑code secrets; validate user input with `zod`.
+9. **Performance first**  Prefer async/await, cache expensive calls, debounce UI events.
+10. **Document public APIs**  TSDoc/JSDoc for TS, NumPy‑style docstrings for Python.
+
+---
+
+## 3  Critical Change Checkpoints
+
+Ask the user for confirmation **only when**:
+
+* Deleting/renaming an existing file that’s imported elsewhere
+* Breaking a public/exported interface
+* Adding a dependency > 100 KB gzipped **or** GPL‑licensed
+* Running a DB migration
+* Editing CI/CD pipeline files
+
+In all other cases, proceed autonomously.
+
+---
+
+## 4  Preferred Interaction Format
+
+When replying in Cursor chat **before** you code:
+
+```txt
+**Task**: <short goal statement>
+**Plan**: <bulleted plan>
+**Changes**: <high‑level list of files to touch>
+```
+
+After finishing edits:
+
+```txt
+✅ Done — <concise summary of what changed>
+```
+
+---
+
+## 5  Output Guidelines
+
+* Show diffs for existing files; show full content for new files.
+* Prepend each file change with a one‑line summary.
+
+---
+
+## 6  Maintenance
+
+*Keep this file up to date as the project evolves.  Cursor reads it on every run.*

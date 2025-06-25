@@ -1,0 +1,330 @@
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import * as listingService from '../../services/listingService';
+import { Listing } from '../../types';
+import { 
+  CheckCircleIcon, 
+  SparklesIcon, 
+  ClockIcon,
+  ExclamationTriangleIcon,
+  ArrowRightIcon 
+} from '@heroicons/react/24/outline';
+import Button from '../shared/Button';
+
+interface ContentGenerationStep {
+  id: string;
+  name: string;
+  description: string;
+  status: 'pending' | 'in-progress' | 'completed' | 'failed';
+  result?: string;
+}
+
+const ContentGenerationProgressPage: React.FC = () => {
+  const { id: listingId } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const [listing, setListing] = useState<Listing | null>(null);
+  const [steps, setSteps] = useState<ContentGenerationStep[]>([
+    {
+      id: 'mls-description',
+      name: 'MLS Property Description',
+      description: 'Professional property description for MLS listing',
+      status: 'pending'
+    },
+    {
+      id: 'facebook-post',
+      name: 'Facebook Post',
+      description: 'Engaging social media post for Facebook',
+      status: 'pending'
+    },
+    {
+      id: 'instagram-post',
+      name: 'Instagram Post',
+      description: 'Visual-focused caption for Instagram',
+      status: 'pending'
+    },
+    {
+      id: 'x-post',
+      name: 'X (Twitter) Post',
+      description: 'Concise post for X/Twitter',
+      status: 'pending'
+    },
+    {
+      id: 'interior-reimagined',
+      name: 'Interior Reimagined',
+      description: 'AI-enhanced interior visualization concepts',
+      status: 'pending'
+    },
+    {
+      id: 'paid-ads',
+      name: 'Paid Ad Campaigns',
+      description: 'Facebook/IG, LinkedIn, and Google ad copy',
+      status: 'pending'
+    }
+  ]);
+
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  const [isComplete, setIsComplete] = useState(false);
+
+  useEffect(() => {
+    if (!listingId) {
+      setError("No listing ID provided");
+      return;
+    }
+
+    // Fetch listing data
+    listingService.getListingById(listingId)
+      .then(data => {
+        if (data && data.userId === user?.id) {
+          setListing(data);
+          // Start generation automatically
+          startContentGeneration(data);
+        } else {
+          setError(data ? "Permission denied" : "Listing not found");
+        }
+      })
+      .catch(() => setError('Failed to fetch listing details'));
+  }, [listingId, user]);
+
+  const startContentGeneration = async (listingData: Listing) => {
+    setIsGenerating(true);
+    setError(null);
+
+    try {
+      // Import the content generation service
+      const { contentGenerationService } = await import('../../services/contentGenerationService');
+
+      for (let i = 0; i < steps.length; i++) {
+        const step = steps[i];
+        setCurrentStepIndex(i);
+
+        // Update step to in-progress
+        setSteps(prev => prev.map((s, idx) => 
+          idx === i ? { ...s, status: 'in-progress' } : s
+        ));
+
+        try {
+          // Generate content using the service
+          const content = await contentGenerationService.generateContentStep(listingData, step.id);
+
+          // Update step to completed
+          setSteps(prev => prev.map((s, idx) => 
+            idx === i ? { ...s, status: 'completed', result: content } : s
+          ));
+
+          // Save content to listing
+          const updateData: any = {};
+          switch (step.id) {
+            case 'mls-description':
+              updateData.generatedDescription = content;
+              break;
+            case 'facebook-post':
+              updateData.generatedFacebookPost = content;
+              break;
+            case 'instagram-post':
+              updateData.generatedInstagramPost = content;
+              break;
+            case 'x-post':
+              updateData.generatedXPost = content;
+              break;
+            case 'interior-reimagined':
+              updateData.interiorConcepts = content;
+              break;
+            case 'paid-ads':
+              updateData.generatedAdCopy = content;
+              break;
+          }
+
+          await listingService.updateListing(listingId!, updateData);
+
+          // Small delay for UX
+          await new Promise(resolve => setTimeout(resolve, 500));
+
+        } catch (stepError) {
+          console.error(`Error generating ${step.name}:`, stepError);
+          setSteps(prev => prev.map((s, idx) => 
+            idx === i ? { ...s, status: 'failed' } : s
+          ));
+        }
+      }
+
+      setIsComplete(true);
+    } catch (error) {
+      console.error('Content generation error:', error);
+      setError('Failed to generate content. Please try again.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleViewListing = () => {
+    navigate(`/listings/${listingId}`);
+  };
+
+  const getStepIcon = (step: ContentGenerationStep) => {
+    switch (step.status) {
+      case 'completed':
+        return <CheckCircleIcon className="h-6 w-6 text-green-500" />;
+      case 'in-progress':
+        return <SparklesIcon className="h-6 w-6 text-brand-primary animate-pulse" />;
+      case 'failed':
+        return <ExclamationTriangleIcon className="h-6 w-6 text-red-500" />;
+      default:
+        return <ClockIcon className="h-6 w-6 text-brand-text-tertiary" />;
+    }
+  };
+
+  const getStepTextColor = (step: ContentGenerationStep) => {
+    switch (step.status) {
+      case 'completed':
+        return 'text-green-600';
+      case 'in-progress':
+        return 'text-brand-primary font-semibold';
+      case 'failed':
+        return 'text-red-600';
+      default:
+        return 'text-brand-text-secondary';
+    }
+  };
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-brand-background flex items-center justify-center">
+        <div className="text-center">
+          <ExclamationTriangleIcon className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <p className="text-brand-danger mb-4">{error}</p>
+          <Button onClick={() => navigate('/dashboard')}>Back to Dashboard</Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!listing) {
+    return (
+      <div className="min-h-screen bg-brand-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-primary"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-brand-background">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center mb-4">
+            <SparklesIcon className="h-8 w-8 text-brand-primary mr-3" />
+            <h1 className="text-3xl font-bold text-brand-text-primary">
+              Generating All Content
+            </h1>
+          </div>
+          <p className="text-brand-text-secondary">
+            Creating comprehensive marketing content for {listing.address}
+          </p>
+        </div>
+
+        <div className="bg-brand-panel rounded-2xl shadow-2xl border border-brand-border p-8">
+          {/* Progress Overview */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-brand-text-secondary">Progress</span>
+              <span className="text-sm text-brand-text-secondary">
+                {steps.filter(s => s.status === 'completed').length} of {steps.length} completed
+              </span>
+            </div>
+            <div className="w-full bg-brand-border rounded-full h-2">
+              <div 
+                className="bg-gradient-to-r from-brand-primary to-brand-secondary h-2 rounded-full transition-all duration-300"
+                style={{ 
+                  width: `${(steps.filter(s => s.status === 'completed').length / steps.length) * 100}%` 
+                }}
+              ></div>
+            </div>
+          </div>
+
+          {/* Steps List */}
+          <div className="space-y-4">
+            {steps.map((step, index) => (
+              <div 
+                key={step.id}
+                className={`flex items-start space-x-4 p-4 rounded-lg border transition-all duration-200 ${
+                  step.status === 'in-progress' 
+                    ? 'bg-brand-primary/5 border-brand-primary/20' 
+                    : step.status === 'completed'
+                    ? 'bg-green-50 border-green-200'
+                    : step.status === 'failed'
+                    ? 'bg-red-50 border-red-200'
+                    : 'bg-brand-card border-brand-border/50'
+                }`}
+              >
+                <div className="flex-shrink-0 mt-1">
+                  {getStepIcon(step)}
+                </div>
+                <div className="flex-grow">
+                  <h3 className={`font-semibold ${getStepTextColor(step)}`}>
+                    {step.name}
+                  </h3>
+                  <p className="text-sm text-brand-text-tertiary mt-1">
+                    {step.description}
+                  </p>
+                  {step.status === 'in-progress' && (
+                    <div className="mt-2">
+                      <div className="flex items-center text-sm text-brand-primary">
+                        <SparklesIcon className="h-4 w-4 mr-1 animate-pulse" />
+                        Generating...
+                      </div>
+                    </div>
+                  )}
+                  {step.status === 'completed' && step.result && (
+                    <div className="mt-2 p-3 bg-white/50 rounded border text-sm text-brand-text-secondary">
+                      {step.result.substring(0, 150)}
+                      {step.result.length > 150 && '...'}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Completion Message */}
+          {isComplete && (
+            <div className="mt-8 text-center">
+              <div className="flex items-center justify-center mb-4">
+                <CheckCircleIcon className="h-12 w-12 text-green-500 mr-3" />
+                <div>
+                  <h2 className="text-2xl font-bold text-green-600">Content Complete!</h2>
+                  <p className="text-brand-text-secondary">
+                    All marketing content has been generated successfully
+                  </p>
+                </div>
+              </div>
+              <Button
+                onClick={handleViewListing}
+                className="bg-gradient-to-r from-brand-primary to-brand-secondary hover:shadow-lg transition-all duration-300"
+                rightIcon={<ArrowRightIcon className="h-5 w-5" />}
+                size="lg"
+              >
+                View Listing with Generated Content
+              </Button>
+            </div>
+          )}
+
+          {/* Loading State */}
+          {isGenerating && !isComplete && (
+            <div className="mt-8 text-center">
+              <div className="animate-pulse text-brand-text-secondary">
+                <SparklesIcon className="h-8 w-8 mx-auto mb-2 animate-bounce text-brand-primary" />
+                <p>Creating amazing content for your listing...</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ContentGenerationProgressPage; 

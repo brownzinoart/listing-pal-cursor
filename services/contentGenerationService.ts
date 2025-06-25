@@ -1,318 +1,219 @@
-export interface PropertyData {
-  address: string;
-  price: string | number;
-  bedrooms: number;
-  bathrooms: number;
-  squareFootage: number;
-  propertyType: string;
-  keyFeatures?: string[];
-  amenities?: string[];
-  neighborhood?: string;
-  schoolDistrict?: string;
-  yearBuilt?: number;
-  lotSize?: string;
-  parking?: string;
-  hvac?: string;
-  flooring?: string;
-  appliances?: string[];
-  exteriorFeatures?: string[];
-  interiorFeatures?: string[];
-  locationHighlights?: string[];
-}
+import { Listing } from '../types';
 
-export interface ContentGenerationResponse {
-  success: boolean;
-  description?: string;
-  content?: string;
-  style: string;
-  platform?: string;
-  generatedAt: string;
-  error?: string;
-  details?: string;
+interface ContentGenerationResult {
+  mlsDescription: string;
+  facebookPost: string;
+  instagramPost: string;
+  xPost: string;
+  interiorConcepts: string;
+  paidAdCopy: string;
 }
-
-export interface BatchContentResponse {
-  success: boolean;
-  description: string;
-  socialContent: {
-    facebook?: string;
-    instagram?: string;
-    linkedin?: string;
-    twitter?: string;
-  };
-  flyerContent: string;
-  emailContent: string;
-  style: string;
-  generatedAt: string;
-  error?: string;
-  details?: string;
-}
-
-export type WritingStyle = 'professional' | 'luxury' | 'casual' | 'modern' | 'family';
-export type SocialPlatform = 'facebook' | 'instagram' | 'linkedin' | 'twitter';
 
 export class ContentGenerationService {
-  private static baseURL = '/api/listings';
-  private static openaiURL = '/api/openai';
+  private apiKey: string;
+  private apiUrl = 'https://api.openai.com/v1/chat/completions';
 
-  static async generateDescription(propertyData: PropertyData, style: WritingStyle = 'professional'): Promise<ContentGenerationResponse> {
+  constructor() {
+    this.apiKey = process.env.REACT_APP_OPENAI_API_KEY || '';
+    if (!this.apiKey) {
+      console.warn('OpenAI API key not found. Content generation may fail.');
+    }
+  }
+
+  private async callOpenAI(messages: any[], maxTokens: number = 400, temperature: number = 0.7): Promise<string> {
     try {
-      const response = await fetch(`${this.baseURL}/generate-description`, {
+      const response = await fetch(this.apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.apiKey}`,
         },
-        body: JSON.stringify({ propertyData, style })
+        body: JSON.stringify({
+          model: 'gpt-3.5-turbo',
+          messages,
+          max_tokens: maxTokens,
+          temperature,
+        }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate description');
+        const errorData = await response.text();
+        console.error(`OpenAI API error: ${response.status}`, errorData);
+        throw new Error(`OpenAI API request failed: ${response.status}`);
       }
 
-      return await response.json();
+      const data = await response.json();
+      return data.choices[0]?.message?.content?.trim() || '';
     } catch (error) {
-      console.error('Description generation error:', error);
+      console.error('OpenAI API call failed:', error);
       throw error;
     }
   }
 
-  static async generateNeighborhoodInsights(address: string): Promise<any> {
-    try {
-      const response = await fetch('/api/openai/neighborhood-insights', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ address })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate neighborhood insights');
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Neighborhood insights generation error:', error);
-      throw error;
-    }
+  private getBasePrompt(listing: Listing): string {
+    return `Property: ${listing.address}, ${listing.bedrooms}bed/${listing.bathrooms}bath, ${listing.squareFootage}sqft, $${listing.price.toLocaleString()}. Features: ${listing.keyFeatures}`;
   }
 
-  static async enrichPropertyData(address: string, existingData: Partial<PropertyData> = {}): Promise<{ success: boolean; enrichedData: any; originalData: any }> {
-    try {
-      const response = await fetch(`${this.openaiURL}/enrich-property`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          address,
-          propertyData: existingData
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to enrich property data');
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Property data enrichment error:', error);
-      throw error;
-    }
-  }
-
-  static async generateSocialContent(
-    propertyData: PropertyData, 
-    platform: SocialPlatform, 
-    style: WritingStyle = 'professional'
-  ): Promise<ContentGenerationResponse> {
-    try {
-      const response = await fetch(`${this.baseURL}/generate-social`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ propertyData, platform, style })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `Failed to generate ${platform} content`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error(`${platform} generation error:`, error);
-      throw error;
-    }
-  }
-
-  static async generateEmailContent(propertyData: PropertyData, style: WritingStyle = 'professional'): Promise<ContentGenerationResponse> {
-    try {
-      const response = await fetch(`${this.baseURL}/generate-email`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ propertyData, style })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate email content');
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Email generation error:', error);
-      throw error;
-    }
-  }
-
-  static async generateFlyerContent(propertyData: PropertyData, style: WritingStyle = 'professional'): Promise<ContentGenerationResponse> {
-    try {
-      const response = await fetch(`${this.baseURL}/generate-flyer`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ propertyData, style })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate flyer content');
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Flyer generation error:', error);
-      throw error;
-    }
-  }
-
-  static async generateAllContent(
-    propertyData: PropertyData, 
-    style: WritingStyle = 'professional',
-    platforms: SocialPlatform[] = ['facebook', 'instagram', 'linkedin', 'twitter']
-  ): Promise<BatchContentResponse> {
-    try {
-      const response = await fetch(`${this.baseURL}/generate-all-content`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          propertyData, 
-          style,
-          platforms
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate all content');
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Batch generation error:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Utility method to convert form data to PropertyData format
-   */
-  static formatPropertyData(listingData: any): PropertyData {
-    return {
-      address: listingData.address || '',
-      price: listingData.price || '',
-      bedrooms: listingData.bedrooms || 0,
-      bathrooms: listingData.bathrooms || 0,
-      squareFootage: listingData.squareFootage || 0,
-      propertyType: listingData.propertyType || 'Single Family Home',
-      keyFeatures: listingData.keyFeatures ? 
-        (Array.isArray(listingData.keyFeatures) ? 
-          listingData.keyFeatures : 
-          listingData.keyFeatures.split('\n').filter((f: string) => f.trim())
-        ) : [],
-      amenities: listingData.amenities || [],
-      neighborhood: listingData.neighborhood || '',
-      schoolDistrict: listingData.schoolDistrict || '',
-      yearBuilt: listingData.yearBuilt || new Date().getFullYear(),
-      lotSize: listingData.lotSize || '',
-      parking: listingData.parking || '',
-      hvac: listingData.hvac || '',
-      flooring: listingData.flooring || '',
-      appliances: listingData.appliances || [],
-      exteriorFeatures: listingData.exteriorFeatures || [],
-      interiorFeatures: listingData.interiorFeatures || [],
-      locationHighlights: listingData.locationHighlights || []
-    };
-  }
-
-  /**
-   * Get available writing styles with descriptions
-   */
-  static getWritingStyles(): { value: WritingStyle; label: string; description: string }[] {
-    return [
+  async generateMLSDescription(listing: Listing): Promise<string> {
+    const basePrompt = this.getBasePrompt(listing);
+    const messages = [
       {
-        value: 'professional',
-        label: 'Professional',
-        description: 'Industry-standard, informative, and authoritative. Focuses on facts and investment value.'
+        role: 'system',
+        content: 'You are a professional real estate copywriter specializing in MLS property descriptions. Write compelling, professional descriptions that highlight key selling points and appeal to potential buyers.'
       },
       {
-        value: 'luxury',
-        label: 'Luxury',
-        description: 'Sophisticated and aspirational. Emphasizes exclusivity, prestige, and premium lifestyle.'
-      },
-      {
-        value: 'casual',
-        label: 'Casual',
-        description: 'Friendly and conversational. Focuses on comfort, livability, and everyday benefits.'
-      },
-      {
-        value: 'modern',
-        label: 'Modern',
-        description: 'Clean and contemporary. Emphasizes innovation, efficiency, and sleek design.'
-      },
-      {
-        value: 'family',
-        label: 'Family-Focused',
-        description: 'Warm and nurturing. Emphasizes safety, community, and spaces for family activities.'
+        role: 'user',
+        content: `Write a professional MLS property description for: ${basePrompt}. Make it compelling and highlight key selling points. Keep it under 300 words and make it sound professional and informative.`
       }
     ];
+
+    return await this.callOpenAI(messages, 400, 0.7);
   }
 
-  /**
-   * Get platform-specific content guidelines
-   */
-  static getPlatformGuidelines(): Record<SocialPlatform, { charLimit: number; tone: string; features: string }> {
-    return {
-      facebook: {
-        charLimit: 500,
-        tone: 'Engaging and community-focused',
-        features: 'Use emojis strategically, encourage engagement, include call-to-action'
+  async generateFacebookPost(listing: Listing): Promise<string> {
+    const basePrompt = this.getBasePrompt(listing);
+    const messages = [
+      {
+        role: 'system',
+        content: 'You are a social media expert creating engaging Facebook posts for real estate. Focus on emotional appeal and lifestyle benefits.'
       },
-      instagram: {
-        charLimit: 300,
-        tone: 'Visual and lifestyle-focused',
-        features: 'Hashtag-friendly, emoji-heavy, lifestyle appeal'
-      },
-      linkedin: {
-        charLimit: 400,
-        tone: 'Professional and investment-focused',
-        features: 'Business value, market insights, professional language'
-      },
-      twitter: {
-        charLimit: 280,
-        tone: 'Concise and engaging',
-        features: 'Punchy, immediate impact, relevant hashtags'
+      {
+        role: 'user',
+        content: `Create an engaging Facebook post for: ${basePrompt}. Make it emotional and lifestyle-focused. Include relevant hashtags and appeal to potential buyers\' dreams and aspirations.`
       }
+    ];
+
+    return await this.callOpenAI(messages, 300, 0.8);
+  }
+
+  async generateInstagramPost(listing: Listing): Promise<string> {
+    const basePrompt = this.getBasePrompt(listing);
+    const messages = [
+      {
+        role: 'system',
+        content: 'You are a social media expert creating Instagram captions for real estate. Use emojis, hashtags, and visual language.'
+      },
+      {
+        role: 'user',
+        content: `Create a visual-focused Instagram caption for: ${basePrompt}. Use emojis and relevant hashtags. Make it aspirational and lifestyle-focused. Focus on the visual appeal and lifestyle benefits.`
+      }
+    ];
+
+    return await this.callOpenAI(messages, 250, 0.9);
+  }
+
+  async generateXPost(listing: Listing): Promise<string> {
+    const basePrompt = this.getBasePrompt(listing);
+    const messages = [
+      {
+        role: 'system',
+        content: 'You are a social media expert creating concise X (Twitter) posts for real estate. Keep posts under 280 characters.'
+      },
+      {
+        role: 'user',
+        content: `Create a concise X/Twitter post for: ${basePrompt}. Keep it under 280 characters. Make it punchy and include relevant hashtags. Focus on the most compelling selling point.`
+      }
+    ];
+
+    return await this.callOpenAI(messages, 150, 0.8);
+  }
+
+  async generateInteriorConcepts(listing: Listing): Promise<string> {
+    const basePrompt = this.getBasePrompt(listing);
+    const messages = [
+      {
+        role: 'system',
+        content: 'You are an interior design expert creating room transformation concepts that will appeal to potential home buyers.'
+      },
+      {
+        role: 'user',
+        content: `Create interior design transformation concepts for: ${basePrompt}. Describe 3 different design styles (e.g., Modern Minimalist, Cozy Traditional, Contemporary Luxury) that would enhance the space and appeal to buyers. Focus on how each style would transform the key living areas.`
+      }
+    ];
+
+    return await this.callOpenAI(messages, 400, 0.7);
+  }
+
+  async generatePaidAdCopy(listing: Listing): Promise<string> {
+    const basePrompt = this.getBasePrompt(listing);
+    const messages = [
+      {
+        role: 'system',
+        content: 'You are a digital marketing expert creating paid ad campaigns for real estate. Create compelling ad copy that drives clicks and leads.'
+      },
+      {
+        role: 'user',
+        content: `Create ad copy for Facebook/IG, LinkedIn, and Google Ads for: ${basePrompt}. For each platform, include:
+        
+FACEBOOK/INSTAGRAM:
+- Headline (max 25 characters)
+- Primary text (max 125 characters)
+- Call-to-action
+
+LINKEDIN:
+- Headline (max 25 characters)  
+- Description (max 75 characters)
+- Call-to-action
+
+GOOGLE ADS:
+- Headline 1 (max 30 characters)
+- Headline 2 (max 30 characters)
+- Description (max 90 characters)
+
+Focus on the most compelling selling points and strong calls-to-action.`
+      }
+    ];
+
+    return await this.callOpenAI(messages, 500, 0.7);
+  }
+
+  async generateAllContent(listing: Listing): Promise<ContentGenerationResult> {
+    // Generate all content in parallel for maximum speed
+    const [
+      mlsDescription,
+      facebookPost,
+      instagramPost,
+      xPost,
+      interiorConcepts,
+      paidAdCopy
+    ] = await Promise.all([
+      this.generateMLSDescription(listing),
+      this.generateFacebookPost(listing),
+      this.generateInstagramPost(listing),
+      this.generateXPost(listing),
+      this.generateInteriorConcepts(listing),
+      this.generatePaidAdCopy(listing)
+    ]);
+
+    return {
+      mlsDescription,
+      facebookPost,
+      instagramPost,
+      xPost,
+      interiorConcepts,
+      paidAdCopy
     };
   }
-} 
+
+  // Individual generation functions for step-by-step progress
+  async generateContentStep(listing: Listing, stepId: string): Promise<string> {
+    switch (stepId) {
+      case 'mls-description':
+        return await this.generateMLSDescription(listing);
+      case 'facebook-post':
+        return await this.generateFacebookPost(listing);
+      case 'instagram-post':
+        return await this.generateInstagramPost(listing);
+      case 'x-post':
+        return await this.generateXPost(listing);
+      case 'interior-reimagined':
+        return await this.generateInteriorConcepts(listing);
+      case 'paid-ads':
+        return await this.generatePaidAdCopy(listing);
+      default:
+        throw new Error(`Unknown content step: ${stepId}`);
+    }
+  }
+}
+
+export const contentGenerationService = new ContentGenerationService(); 

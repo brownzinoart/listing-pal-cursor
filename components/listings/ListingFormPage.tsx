@@ -671,6 +671,63 @@ export default function ListingFormPage() {
     return address.split(',').length >= 3;
   };
 
+  const handleGenerateAllContent = async () => {
+    // First validate the form has required data
+    if (!formData.address || !formData.price || formData.price <= 0 || !formData.bedrooms || formData.bedrooms <= 0 || !formData.bathrooms || formData.bathrooms <= 0) {
+      const missingFields = [];
+      if (!formData.address) missingFields.push('address');
+      if (!formData.price || formData.price <= 0) missingFields.push('asking price');
+      if (!formData.bedrooms || formData.bedrooms <= 0) missingFields.push('bedrooms');
+      if (!formData.bathrooms || formData.bathrooms <= 0) missingFields.push('bathrooms');
+      
+      setFormError(`Please fill in the following required fields before generating content: ${missingFields.join(', ')}.`);
+      return;
+    }
+
+    // First save the listing, then navigate to generation page
+    if (!user || !user.id) {
+      setFormError("Please log in to generate content.");
+      return;
+    }
+
+    try {
+      // Prepare listing data
+      const finalPropertyType = formData.propertyType || 'Single Family Home';
+      const finalListingType = formData.listingType || 'sale';
+
+      const listingDataForApi = {
+        userId: user.id,
+        address: formData.address,
+        latitude: formData.latitude || 0,
+        longitude: formData.longitude || 0,
+        price: Number(formData.price),
+        bedrooms: Number(formData.bedrooms),
+        bathrooms: Number(formData.bathrooms),
+        squareFootage: Number(formData.sqFt) || 0,
+        yearBuilt: Number(formData.yearBuilt) || 0,
+        propertyType: finalPropertyType,
+        listingType: finalListingType,
+        keyFeatures: formData.keyFeatures || '',
+        images: uploadedImages.map(url => ({ url, label: '' })),
+        neighborhoodSections: insightsAddedSections || [],
+      };
+
+      let result;
+      if (isEditing && listingId) {
+        result = await listingService.updateListing(listingId, listingDataForApi);
+        // Navigate to generation page with existing listing ID
+        navigate(`/listings/${listingId}/generate-all`);
+      } else {
+        result = await listingService.createListing(listingDataForApi);
+        // Navigate to generation page with new listing ID
+        navigate(`/listings/${result.id}/generate-all`);
+      }
+    } catch (err) {
+      console.error('❌ Error saving listing before generation:', err);
+      setFormError(`Failed to save listing: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    }
+  };
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -1038,6 +1095,15 @@ export default function ListingFormPage() {
 
               {/* Form Actions */}
               <div className="flex justify-end space-x-4 pt-8 border-t border-brand-border">
+                <Button 
+                  type="button"
+                  variant="secondary"
+                  leftIcon={<SparklesIcon className="h-5 w-5" />}
+                  className="bg-gradient-to-r from-brand-secondary to-emerald-600 hover:from-emerald-600 hover:to-brand-secondary text-white font-semibold shadow-lg transition-all duration-300"
+                  onClick={handleGenerateAllContent}
+                >
+                  Generate All Content
+                </Button>
                 <Button 
                   type="submit" 
                   variant="primary"
