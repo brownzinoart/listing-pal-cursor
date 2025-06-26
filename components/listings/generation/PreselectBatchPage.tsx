@@ -1,24 +1,35 @@
-import React, { useState, useEffect, ChangeEvent } from 'react';
-import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { useAuth } from '../../../contexts/AuthContext';
-import * as listingService from '../../../services/listingService';
-import { Listing } from '../../../types';
-import { DESCRIPTION_STYLES, DescriptionStyleId, AI_DESIGN_STYLES, AiDesignStyleId, TOOLKIT_TOOLS } from '../../../constants';
-import Button from '../../shared/Button';
-import Card from '../../shared/Card';
-import PropertySummaryHeader from './PropertySummaryHeader';
-import StyleButton from './StyleButton';
-import { 
-  ArrowLeftIcon, 
+import React, { useState, useEffect, ChangeEvent } from "react";
+import {
+  useParams,
+  useNavigate,
+  Link,
+  useSearchParams,
+} from "react-router-dom";
+import { useAuth } from "../../../contexts/AuthContext";
+import * as listingService from "../../../services/listingService";
+import { Listing } from "../../../types";
+import {
+  DESCRIPTION_STYLES,
+  DescriptionStyleId,
+  AI_DESIGN_STYLES,
+  AiDesignStyleId,
+  TOOLKIT_TOOLS,
+} from "../../../constants";
+import Button from "../../shared/Button";
+import Card from "../../shared/Card";
+import PropertySummaryHeader from "./PropertySummaryHeader";
+import StyleButton from "./StyleButton";
+import {
+  ArrowLeftIcon,
   SparklesIcon,
   DocumentTextIcon,
   MegaphoneIcon,
   PhotoIcon,
   CheckIcon,
   ExclamationTriangleIcon,
-  EnvelopeIcon
-} from '@heroicons/react/24/outline';
-import { FaFacebook, FaLinkedin, FaGoogle } from 'react-icons/fa';
+  EnvelopeIcon,
+} from "@heroicons/react/24/outline";
+import { FaFacebook, FaLinkedin, FaGoogle } from "react-icons/fa";
 
 // Types for selections
 interface BatchSelections {
@@ -42,44 +53,101 @@ interface BatchSelections {
   };
 }
 
-type AdObjective = 'WEBSITE_TRAFFIC' | 'LEAD_GENERATION' | 'BRAND_AWARENESS';
-type EmailTheme = 'OPEN_HOUSE' | 'PRICE_REDUCTION' | 'NEW_LISTING' | 'UNDER_CONTRACT' | 'MARKET_UPDATE' | 'EXCLUSIVE_SHOWING' | 'FOLLOW_UP' | 'COMING_SOON';
+type AdObjective = "WEBSITE_TRAFFIC" | "LEAD_GENERATION" | "BRAND_AWARENESS";
+type EmailTheme =
+  | "OPEN_HOUSE"
+  | "PRICE_REDUCTION"
+  | "NEW_LISTING"
+  | "UNDER_CONTRACT"
+  | "MARKET_UPDATE"
+  | "EXCLUSIVE_SHOWING"
+  | "FOLLOW_UP"
+  | "COMING_SOON";
 
 // Room type options
 const ROOM_TYPES = [
-  { id: 'livingroom', name: 'Living Room', icon: '🛋️' },
-  { id: 'bedroom', name: 'Bedroom', icon: '🛏️' },
-  { id: 'kitchen', name: 'Kitchen', icon: '🍳' },
-  { id: 'bathroom', name: 'Bathroom', icon: '🚿' },
-  { id: 'diningroom', name: 'Dining Room', icon: '🍽️' },
-  { id: 'homeoffice', name: 'Home Office', icon: '💼' },
-  { id: 'nursery', name: 'Nursery', icon: '👶' },
-  { id: 'basement', name: 'Basement', icon: '🏠' }
+  { id: "livingroom", name: "Living Room", icon: "🛋️" },
+  { id: "bedroom", name: "Bedroom", icon: "🛏️" },
+  { id: "kitchen", name: "Kitchen", icon: "🍳" },
+  { id: "bathroom", name: "Bathroom", icon: "🚿" },
+  { id: "diningroom", name: "Dining Room", icon: "🍽️" },
+  { id: "homeoffice", name: "Home Office", icon: "💼" },
+  { id: "nursery", name: "Nursery", icon: "👶" },
+  { id: "basement", name: "Basement", icon: "🏠" },
 ];
 
 // Ad platforms and objectives
-const AD_PLATFORMS: { id: keyof BatchSelections['paidAds']; name: string; icon: React.ComponentType<{ className?: string }> }[] = [
-  { id: 'facebook', name: 'Facebook & Instagram', icon: FaFacebook },
-  { id: 'linkedin', name: 'LinkedIn', icon: FaLinkedin },
-  { id: 'google', name: 'Google Ads', icon: FaGoogle },
+const AD_PLATFORMS: {
+  id: keyof BatchSelections["paidAds"];
+  name: string;
+  icon: React.ComponentType<{ className?: string }>;
+}[] = [
+  { id: "facebook", name: "Facebook & Instagram", icon: FaFacebook },
+  { id: "linkedin", name: "LinkedIn", icon: FaLinkedin },
+  { id: "google", name: "Google Ads", icon: FaGoogle },
 ];
 
 const EMAIL_THEMES: { id: EmailTheme; name: string; description: string }[] = [
-  { id: 'NEW_LISTING', name: 'New Listing Alert', description: 'Announce a fresh property on the market' },
-  { id: 'OPEN_HOUSE', name: 'Open House Invitation', description: 'Invite prospects to view the property' },
-  { id: 'PRICE_REDUCTION', name: 'Price Reduction Notice', description: 'Alert about updated pricing' },
-  { id: 'UNDER_CONTRACT', name: 'Under Contract Update', description: 'Notify that property is pending sale' },
-  { id: 'EXCLUSIVE_SHOWING', name: 'Exclusive Showing', description: 'Private viewing invitation for VIP clients' },
-  { id: 'MARKET_UPDATE', name: 'Market Report', description: 'Share neighborhood market insights' },
-  { id: 'FOLLOW_UP', name: 'Follow-up Check-in', description: 'Professional follow-up with prospects' },
-  { id: 'COMING_SOON', name: 'Coming Soon Teaser', description: 'Build anticipation for upcoming listing' },
+  {
+    id: "NEW_LISTING",
+    name: "New Listing Alert",
+    description: "Announce a fresh property on the market",
+  },
+  {
+    id: "OPEN_HOUSE",
+    name: "Open House Invitation",
+    description: "Invite prospects to view the property",
+  },
+  {
+    id: "PRICE_REDUCTION",
+    name: "Price Reduction Notice",
+    description: "Alert about updated pricing",
+  },
+  {
+    id: "UNDER_CONTRACT",
+    name: "Under Contract Update",
+    description: "Notify that property is pending sale",
+  },
+  {
+    id: "EXCLUSIVE_SHOWING",
+    name: "Exclusive Showing",
+    description: "Private viewing invitation for VIP clients",
+  },
+  {
+    id: "MARKET_UPDATE",
+    name: "Market Report",
+    description: "Share neighborhood market insights",
+  },
+  {
+    id: "FOLLOW_UP",
+    name: "Follow-up Check-in",
+    description: "Professional follow-up with prospects",
+  },
+  {
+    id: "COMING_SOON",
+    name: "Coming Soon Teaser",
+    description: "Build anticipation for upcoming listing",
+  },
 ];
 
-const AD_OBJECTIVES: { id: AdObjective; name: string; description: string }[] = [
-  { id: 'WEBSITE_TRAFFIC', name: 'Website Traffic', description: 'Send people to your property page' },
-  { id: 'LEAD_GENERATION', name: 'Lead Generation', description: 'Collect contact info with forms' },
-  { id: 'BRAND_AWARENESS', name: 'Brand Awareness', description: 'Maximize ad visibility' },
-];
+const AD_OBJECTIVES: { id: AdObjective; name: string; description: string }[] =
+  [
+    {
+      id: "WEBSITE_TRAFFIC",
+      name: "Website Traffic",
+      description: "Send people to your property page",
+    },
+    {
+      id: "LEAD_GENERATION",
+      name: "Lead Generation",
+      description: "Collect contact info with forms",
+    },
+    {
+      id: "BRAND_AWARENESS",
+      name: "Brand Awareness",
+      description: "Maximize ad visibility",
+    },
+  ];
 
 const PreselectBatchPage: React.FC = () => {
   const { id: listingId } = useParams<{ id: string }>();
@@ -94,28 +162,30 @@ const PreselectBatchPage: React.FC = () => {
   // Batch selections state
   const [selections, setSelections] = useState<BatchSelections>({
     description: {
-      style: DESCRIPTION_STYLES[0].id
+      style: DESCRIPTION_STYLES[0].id,
     },
     email: {
-      theme: 'NEW_LISTING'
+      theme: "NEW_LISTING",
     },
     roomRedesign: {
       selectedImageIndex: null,
       uploadedImage: null,
       uploadedImageFile: null,
-      roomType: 'livingroom',
-      designStyle: AI_DESIGN_STYLES[0]?.id || 'modern'
+      roomType: "livingroom",
+      designStyle: AI_DESIGN_STYLES[0]?.id || "modern",
     },
     paidAds: {
       facebook: null,
       linkedin: null,
-      google: null
-    }
+      google: null,
+    },
   });
 
   // Workflow management - Default to the four tools that require selections
-  const workflowParam = searchParams.get('workflow');
-  const workflowTools = workflowParam ? workflowParam.split(',') : ['desc', 'email', 'interior', 'paid_ads'];
+  const workflowParam = searchParams.get("workflow");
+  const workflowTools = workflowParam
+    ? workflowParam.split(",")
+    : ["desc", "email", "interior", "paid_ads"];
   const isInWorkflow = workflowTools.length > 1;
 
   useEffect(() => {
@@ -125,27 +195,32 @@ const PreselectBatchPage: React.FC = () => {
       return;
     }
 
-    listingService.getListingById(listingId)
-      .then(data => {
+    listingService
+      .getListingById(listingId)
+      .then((data) => {
         if (data && data.userId === user?.id) {
           setListing(data);
           // Pre-select first image if available
           if (data.images && data.images.length > 0) {
-            setSelections(prev => ({
+            setSelections((prev) => ({
               ...prev,
               roomRedesign: {
                 ...prev.roomRedesign,
-                selectedImageIndex: 0
-              }
+                selectedImageIndex: 0,
+              },
             }));
           }
         } else {
-          setError(data ? "You don't have permission to edit this listing." : "Listing not found.");
+          setError(
+            data
+              ? "You don't have permission to edit this listing."
+              : "Listing not found.",
+          );
         }
       })
-      .catch(err => {
+      .catch((err) => {
         console.error("Error loading listing:", err);
-        setError('Failed to fetch listing details.');
+        setError("Failed to fetch listing details.");
       })
       .finally(() => setIsLoadingPage(false));
   }, [listingId, user]);
@@ -153,59 +228,69 @@ const PreselectBatchPage: React.FC = () => {
   const handleImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (!file.type.startsWith('image/')) {
-        alert('Invalid file type. Please upload an image (PNG, JPG, WEBP).');
+      if (!file.type.startsWith("image/")) {
+        alert("Invalid file type. Please upload an image (PNG, JPG, WEBP).");
         return;
       }
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        alert('File is too large. Maximum size is 5MB.');
+      if (file.size > 5 * 1024 * 1024) {
+        // 5MB limit
+        alert("File is too large. Maximum size is 5MB.");
         return;
       }
-      
+
       const reader = new FileReader();
       reader.onloadend = () => {
-        setSelections(prev => ({
+        setSelections((prev) => ({
           ...prev,
           roomRedesign: {
             ...prev.roomRedesign,
             selectedImageIndex: null, // Clear existing image selection
             uploadedImage: reader.result as string,
-            uploadedImageFile: file
-          }
+            uploadedImageFile: file,
+          },
         }));
       };
       reader.readAsDataURL(file);
     }
-    event.target.value = '';
+    event.target.value = "";
   };
 
   const handleStartBatchGeneration = () => {
     // Validate selections
-    const hasImageSelected = selections.roomRedesign.selectedImageIndex !== null || selections.roomRedesign.uploadedImage !== null;
-    const hasAdObjectiveSelected = Object.values(selections.paidAds).some(obj => obj !== null);
+    const hasImageSelected =
+      selections.roomRedesign.selectedImageIndex !== null ||
+      selections.roomRedesign.uploadedImage !== null;
+    const hasAdObjectiveSelected = Object.values(selections.paidAds).some(
+      (obj) => obj !== null,
+    );
 
     if (!hasImageSelected) {
-      alert('Please select an image for room redesign or upload a new one.');
+      alert("Please select an image for room redesign or upload a new one.");
       return;
     }
 
     if (!hasAdObjectiveSelected) {
-      alert('Please select at least one ad objective for paid ads.');
+      alert("Please select at least one ad objective for paid ads.");
       return;
     }
 
     // Store selections in sessionStorage for the workflow
-    sessionStorage.setItem('batchSelections', JSON.stringify(selections));
+    sessionStorage.setItem("batchSelections", JSON.stringify(selections));
 
     // Navigate to the batch progress page with selections
-    navigate(`/listings/${listingId}/generate-all?workflow=${workflowTools.join(',')}&batch=true`);
+    navigate(
+      `/listings/${listingId}/generate-all?workflow=${workflowTools.join(",")}&batch=true`,
+    );
   };
 
   const getSelectedImage = () => {
     if (selections.roomRedesign.uploadedImage) {
       return selections.roomRedesign.uploadedImage;
     }
-    if (selections.roomRedesign.selectedImageIndex !== null && listing?.images) {
+    if (
+      selections.roomRedesign.selectedImageIndex !== null &&
+      listing?.images
+    ) {
       return listing.images[selections.roomRedesign.selectedImageIndex]?.url;
     }
     return null;
@@ -222,31 +307,49 @@ const PreselectBatchPage: React.FC = () => {
   if (error) {
     return (
       <div className="text-center py-10">
-        <p className="text-brand-danger bg-red-900/20 p-4 rounded-md max-w-md mx-auto">{error}</p>
-        <Button variant="ghost" onClick={() => navigate('/dashboard')} className="mt-4">
+        <p className="text-brand-danger bg-red-900/20 p-4 rounded-md max-w-md mx-auto">
+          {error}
+        </p>
+        <Button
+          variant="ghost"
+          onClick={() => navigate("/dashboard")}
+          className="mt-4"
+        >
           Go to Dashboard
         </Button>
       </div>
     );
   }
-  
+
   if (!listing) {
-     return <p className="text-center text-brand-text-secondary py-10">Listing data is unavailable.</p>;
+    return (
+      <p className="text-center text-brand-text-secondary py-10">
+        Listing data is unavailable.
+      </p>
+    );
   }
 
   return (
     <div className="min-h-screen bg-brand-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="mb-6">
-          <Link to={`/listings/${listingId}`} className="inline-flex items-center text-sm text-brand-text-secondary hover:text-brand-primary transition-colors group">
+          <Link
+            to={`/listings/${listingId}`}
+            className="inline-flex items-center text-sm text-brand-text-secondary hover:text-brand-primary transition-colors group"
+          >
             <ArrowLeftIcon className="h-4 w-4 mr-2 group-hover:text-brand-primary" />
             Back to Property
           </Link>
         </div>
-        
-        <h1 className="text-3xl font-bold text-brand-text-primary mb-2">Batch Content Generation</h1>
-        <p className="text-brand-text-secondary mb-8">Select your preferences for all content types, then generate everything at once.</p>
-        
+
+        <h1 className="text-3xl font-bold text-brand-text-primary mb-2">
+          Batch Content Generation
+        </h1>
+        <p className="text-brand-text-secondary mb-8">
+          Select your preferences for all content types, then generate
+          everything at once.
+        </p>
+
         <div className="mb-8">
           <PropertySummaryHeader listing={listing} />
         </div>
@@ -257,22 +360,28 @@ const PreselectBatchPage: React.FC = () => {
             <div className="flex items-center mb-6">
               <DocumentTextIcon className="h-6 w-6 text-brand-secondary mr-3" />
               <div>
-                <h3 className="text-xl font-semibold text-brand-text-primary">Property Description Style</h3>
-                <p className="text-sm text-brand-text-secondary">Choose the writing tone for your MLS description</p>
+                <h3 className="text-xl font-semibold text-brand-text-primary">
+                  Property Description Style
+                </h3>
+                <p className="text-sm text-brand-text-secondary">
+                  Choose the writing tone for your MLS description
+                </p>
               </div>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {DESCRIPTION_STYLES.map(style => (
+              {DESCRIPTION_STYLES.map((style) => (
                 <StyleButton
                   key={style.id}
                   name={style.name}
                   description={style.description}
                   isSelected={selections.description.style === style.id}
-                  onClick={() => setSelections(prev => ({
-                    ...prev,
-                    description: { style: style.id }
-                  }))}
+                  onClick={() =>
+                    setSelections((prev) => ({
+                      ...prev,
+                      description: { style: style.id },
+                    }))
+                  }
                 />
               ))}
             </div>
@@ -283,22 +392,28 @@ const PreselectBatchPage: React.FC = () => {
             <div className="flex items-center mb-6">
               <EnvelopeIcon className="h-6 w-6 text-brand-secondary mr-3" />
               <div>
-                <h3 className="text-xl font-semibold text-brand-text-primary">Email Campaign Theme</h3>
-                <p className="text-sm text-brand-text-secondary">Select the type of email campaign to generate</p>
+                <h3 className="text-xl font-semibold text-brand-text-primary">
+                  Email Campaign Theme
+                </h3>
+                <p className="text-sm text-brand-text-secondary">
+                  Select the type of email campaign to generate
+                </p>
               </div>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {EMAIL_THEMES.map(theme => (
+              {EMAIL_THEMES.map((theme) => (
                 <StyleButton
                   key={theme.id}
                   name={theme.name}
                   description={theme.description}
                   isSelected={selections.email.theme === theme.id}
-                  onClick={() => setSelections(prev => ({
-                    ...prev,
-                    email: { theme: theme.id }
-                  }))}
+                  onClick={() =>
+                    setSelections((prev) => ({
+                      ...prev,
+                      email: { theme: theme.id },
+                    }))
+                  }
                 />
               ))}
             </div>
@@ -309,32 +424,40 @@ const PreselectBatchPage: React.FC = () => {
             <div className="flex items-center mb-6">
               <SparklesIcon className="h-6 w-6 text-brand-secondary mr-3" />
               <div>
-                <h3 className="text-xl font-semibold text-brand-text-primary">AI Room Redesign</h3>
-                <p className="text-sm text-brand-text-secondary">Select an image and choose room type & design style</p>
+                <h3 className="text-xl font-semibold text-brand-text-primary">
+                  AI Room Redesign
+                </h3>
+                <p className="text-sm text-brand-text-secondary">
+                  Select an image and choose room type & design style
+                </p>
               </div>
             </div>
 
             {/* Image Selection */}
             <div className="mb-6">
-              <h4 className="font-medium text-brand-text-primary mb-4">Select Room Image</h4>
-              
+              <h4 className="font-medium text-brand-text-primary mb-4">
+                Select Room Image
+              </h4>
+
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                 {listing.images?.map((image, index) => (
                   <button
                     key={index}
-                    onClick={() => setSelections(prev => ({
-                      ...prev,
-                      roomRedesign: {
-                        ...prev.roomRedesign,
-                        selectedImageIndex: index,
-                        uploadedImage: null,
-                        uploadedImageFile: null
-                      }
-                    }))}
+                    onClick={() =>
+                      setSelections((prev) => ({
+                        ...prev,
+                        roomRedesign: {
+                          ...prev.roomRedesign,
+                          selectedImageIndex: index,
+                          uploadedImage: null,
+                          uploadedImageFile: null,
+                        },
+                      }))
+                    }
                     className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all duration-200 ${
                       selections.roomRedesign.selectedImageIndex === index
-                        ? 'border-brand-primary ring-2 ring-brand-primary/20'
-                        : 'border-brand-border hover:border-brand-primary/50'
+                        ? "border-brand-primary ring-2 ring-brand-primary/20"
+                        : "border-brand-border hover:border-brand-primary/50"
                     }`}
                   >
                     <img
@@ -349,13 +472,15 @@ const PreselectBatchPage: React.FC = () => {
                     )}
                   </button>
                 ))}
-                
+
                 {/* Upload new image option */}
-                <label className={`relative aspect-square rounded-lg border-2 border-dashed cursor-pointer transition-all duration-200 flex flex-col items-center justify-center ${
-                  selections.roomRedesign.uploadedImage
-                    ? 'border-brand-primary bg-brand-primary/10'
-                    : 'border-brand-border hover:border-brand-primary/50 hover:bg-brand-border/20'
-                }`}>
+                <label
+                  className={`relative aspect-square rounded-lg border-2 border-dashed cursor-pointer transition-all duration-200 flex flex-col items-center justify-center ${
+                    selections.roomRedesign.uploadedImage
+                      ? "border-brand-primary bg-brand-primary/10"
+                      : "border-brand-border hover:border-brand-primary/50 hover:bg-brand-border/20"
+                  }`}
+                >
                   <input
                     type="file"
                     accept="image/*"
@@ -376,7 +501,11 @@ const PreselectBatchPage: React.FC = () => {
                   ) : (
                     <>
                       <PhotoIcon className="h-8 w-8 text-brand-text-tertiary mb-2" />
-                      <span className="text-xs text-brand-text-tertiary text-center">Upload<br />New Image</span>
+                      <span className="text-xs text-brand-text-tertiary text-center">
+                        Upload
+                        <br />
+                        New Image
+                      </span>
                     </>
                   )}
                 </label>
@@ -387,42 +516,54 @@ const PreselectBatchPage: React.FC = () => {
             {getSelectedImage() && (
               <div className="space-y-6">
                 <div>
-                  <h4 className="font-medium text-brand-text-primary mb-4">Room Type</h4>
+                  <h4 className="font-medium text-brand-text-primary mb-4">
+                    Room Type
+                  </h4>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {ROOM_TYPES.map(room => (
+                    {ROOM_TYPES.map((room) => (
                       <StyleButton
                         key={room.id}
                         name={`${room.icon} ${room.name}`}
                         description=""
-                        isSelected={selections.roomRedesign.roomType === room.id}
-                        onClick={() => setSelections(prev => ({
-                          ...prev,
-                          roomRedesign: {
-                            ...prev.roomRedesign,
-                            roomType: room.id
-                          }
-                        }))}
+                        isSelected={
+                          selections.roomRedesign.roomType === room.id
+                        }
+                        onClick={() =>
+                          setSelections((prev) => ({
+                            ...prev,
+                            roomRedesign: {
+                              ...prev.roomRedesign,
+                              roomType: room.id,
+                            },
+                          }))
+                        }
                       />
                     ))}
                   </div>
                 </div>
 
                 <div>
-                  <h4 className="font-medium text-brand-text-primary mb-4">Design Style</h4>
+                  <h4 className="font-medium text-brand-text-primary mb-4">
+                    Design Style
+                  </h4>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {AI_DESIGN_STYLES.map(style => (
+                    {AI_DESIGN_STYLES.map((style) => (
                       <StyleButton
                         key={style.id}
                         name={style.name}
                         description={style.description}
-                        isSelected={selections.roomRedesign.designStyle === style.id}
-                        onClick={() => setSelections(prev => ({
-                          ...prev,
-                          roomRedesign: {
-                            ...prev.roomRedesign,
-                            designStyle: style.id
-                          }
-                        }))}
+                        isSelected={
+                          selections.roomRedesign.designStyle === style.id
+                        }
+                        onClick={() =>
+                          setSelections((prev) => ({
+                            ...prev,
+                            roomRedesign: {
+                              ...prev.roomRedesign,
+                              designStyle: style.id,
+                            },
+                          }))
+                        }
                       />
                     ))}
                   </div>
@@ -436,35 +577,51 @@ const PreselectBatchPage: React.FC = () => {
             <div className="flex items-center mb-6">
               <MegaphoneIcon className="h-6 w-6 text-brand-secondary mr-3" />
               <div>
-                <h3 className="text-xl font-semibold text-brand-text-primary">Paid Ad Campaigns</h3>
-                <p className="text-sm text-brand-text-secondary">Select objectives for each advertising platform</p>
+                <h3 className="text-xl font-semibold text-brand-text-primary">
+                  Paid Ad Campaigns
+                </h3>
+                <p className="text-sm text-brand-text-secondary">
+                  Select objectives for each advertising platform
+                </p>
               </div>
             </div>
 
             <div className="space-y-6">
-              {AD_PLATFORMS.map(platform => {
+              {AD_PLATFORMS.map((platform) => {
                 const Icon = platform.icon;
                 return (
-                  <div key={platform.id} className="border border-brand-border rounded-lg p-4">
+                  <div
+                    key={platform.id}
+                    className="border border-brand-border rounded-lg p-4"
+                  >
                     <div className="flex items-center mb-4">
                       <Icon className="h-5 w-5 text-brand-text-secondary mr-2" />
-                      <h4 className="font-medium text-brand-text-primary">{platform.name}</h4>
+                      <h4 className="font-medium text-brand-text-primary">
+                        {platform.name}
+                      </h4>
                     </div>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                      {AD_OBJECTIVES.map(objective => (
+                      {AD_OBJECTIVES.map((objective) => (
                         <StyleButton
                           key={objective.id}
                           name={objective.name}
                           description={objective.description}
-                          isSelected={selections.paidAds[platform.id] === objective.id}
-                          onClick={() => setSelections(prev => ({
-                            ...prev,
-                            paidAds: {
-                              ...prev.paidAds,
-                              [platform.id]: prev.paidAds[platform.id] === objective.id ? null : objective.id
-                            }
-                          }))}
+                          isSelected={
+                            selections.paidAds[platform.id] === objective.id
+                          }
+                          onClick={() =>
+                            setSelections((prev) => ({
+                              ...prev,
+                              paidAds: {
+                                ...prev.paidAds,
+                                [platform.id]:
+                                  prev.paidAds[platform.id] === objective.id
+                                    ? null
+                                    : objective.id,
+                              },
+                            }))
+                          }
                         />
                       ))}
                     </div>
@@ -499,4 +656,4 @@ const PreselectBatchPage: React.FC = () => {
   );
 };
 
-export default PreselectBatchPage; 
+export default PreselectBatchPage;

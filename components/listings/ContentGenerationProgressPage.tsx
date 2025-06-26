@@ -1,22 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
-import * as listingService from '../../services/listingService';
-import { Listing } from '../../types';
-import { 
-  CheckCircleIcon, 
-  SparklesIcon, 
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
+import * as listingService from "../../services/listingService";
+import { Listing } from "../../types";
+import {
+  CheckCircleIcon,
+  SparklesIcon,
   ClockIcon,
   ExclamationTriangleIcon,
-  ArrowRightIcon 
-} from '@heroicons/react/24/outline';
-import Button from '../shared/Button';
+  ArrowRightIcon,
+} from "@heroicons/react/24/outline";
+import Button from "../shared/Button";
 
 interface ContentGenerationStep {
   id: string;
   name: string;
   description: string;
-  status: 'pending' | 'in-progress' | 'completed' | 'failed';
+  status: "pending" | "in-progress" | "completed" | "failed";
   result?: string;
 }
 
@@ -28,41 +28,41 @@ const ContentGenerationProgressPage: React.FC = () => {
   const [listing, setListing] = useState<Listing | null>(null);
   const [steps, setSteps] = useState<ContentGenerationStep[]>([
     {
-      id: 'mls-description',
-      name: 'MLS Property Description',
-      description: 'Professional property description for MLS listing',
-      status: 'pending'
+      id: "mls-description",
+      name: "MLS Property Description",
+      description: "Professional property description for MLS listing",
+      status: "pending",
     },
     {
-      id: 'facebook-post',
-      name: 'Facebook Post',
-      description: 'Engaging social media post for Facebook',
-      status: 'pending'
+      id: "facebook-post",
+      name: "Facebook Post",
+      description: "Engaging social media post for Facebook",
+      status: "pending",
     },
     {
-      id: 'instagram-post',
-      name: 'Instagram Post',
-      description: 'Visual-focused caption for Instagram',
-      status: 'pending'
+      id: "instagram-post",
+      name: "Instagram Post",
+      description: "Visual-focused caption for Instagram",
+      status: "pending",
     },
     {
-      id: 'x-post',
-      name: 'X (Twitter) Post',
-      description: 'Concise post for X/Twitter',
-      status: 'pending'
+      id: "x-post",
+      name: "X (Twitter) Post",
+      description: "Concise post for X/Twitter",
+      status: "pending",
     },
     {
-      id: 'interior-reimagined',
-      name: 'Interior Reimagined',
-      description: 'AI-enhanced interior visualization concepts',
-      status: 'pending'
+      id: "interior-reimagined",
+      name: "Interior Reimagined",
+      description: "AI-enhanced interior visualization concepts",
+      status: "pending",
     },
     {
-      id: 'paid-ads',
-      name: 'Paid Ad Campaigns',
-      description: 'Facebook/IG, LinkedIn, and Google ad copy',
-      status: 'pending'
-    }
+      id: "paid-ads",
+      name: "Paid Ad Campaigns",
+      description: "Facebook/IG, LinkedIn, and Google ad copy",
+      status: "pending",
+    },
   ]);
 
   const [isGenerating, setIsGenerating] = useState(false);
@@ -70,9 +70,13 @@ const ContentGenerationProgressPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isComplete, setIsComplete] = useState(false);
   const [showImageSelector, setShowImageSelector] = useState(true); // Show immediately
-  const [selectedImageForInterior, setSelectedImageForInterior] = useState<string | null>(null);
+  const [selectedImageForInterior, setSelectedImageForInterior] = useState<
+    string | null
+  >(null);
   const [hasSelectedImage, setHasSelectedImage] = useState(false);
-  const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null);
+  const [redirectCountdown, setRedirectCountdown] = useState<number | null>(
+    null,
+  );
   const [batchSelections, setBatchSelections] = useState<any>(null);
 
   useEffect(() => {
@@ -82,16 +86,17 @@ const ContentGenerationProgressPage: React.FC = () => {
     }
 
     // Check for batch selections from sessionStorage
-    const storedSelections = sessionStorage.getItem('batchSelections');
+    const storedSelections = sessionStorage.getItem("batchSelections");
     if (storedSelections) {
       setBatchSelections(JSON.parse(storedSelections));
       // Clear from sessionStorage after retrieving
-      sessionStorage.removeItem('batchSelections');
+      sessionStorage.removeItem("batchSelections");
     }
 
     // Fetch listing data but don't start generation yet
-    listingService.getListingById(listingId)
-      .then(data => {
+    listingService
+      .getListingById(listingId)
+      .then((data) => {
         if (data && data.userId === user?.id) {
           setListing(data);
           // Don't start generation yet - wait for image selection or use batch selections
@@ -99,7 +104,7 @@ const ContentGenerationProgressPage: React.FC = () => {
           setError(data ? "Permission denied" : "Listing not found");
         }
       })
-      .catch(() => setError('Failed to fetch listing details'));
+      .catch(() => setError("Failed to fetch listing details"));
   }, [listingId, user]);
 
   // Auto-redirect countdown effect
@@ -120,72 +125,100 @@ const ContentGenerationProgressPage: React.FC = () => {
     }
   }, [redirectCountdown]);
 
-    const startContentGeneration = async (listingData: Listing, selectedImage: string | null) => {
+  const startContentGeneration = async (
+    listingData: Listing,
+    selectedImage: string | null,
+  ) => {
     setIsGenerating(true);
     setError(null);
     setShowImageSelector(false); // Hide selector during generation
 
     try {
       // Import the content generation service
-      const { contentGenerationService } = await import('../../services/contentGenerationService');
+      const { contentGenerationService } = await import(
+        "../../services/contentGenerationService"
+      );
 
       for (let i = 0; i < steps.length; i++) {
         const step = steps[i];
         setCurrentStepIndex(i);
 
         // Update step to in-progress
-        setSteps(prev => prev.map((s, idx) => 
-          idx === i ? { ...s, status: 'in-progress' } : s
-        ));
+        setSteps((prev) =>
+          prev.map((s, idx) =>
+            idx === i ? { ...s, status: "in-progress" } : s,
+          ),
+        );
 
         try {
-          let content = '';
+          let content = "";
 
           // Special handling for interior reimagining
-          if (step.id === 'interior-reimagined') {
-            if (!selectedImage || selectedImage === 'skip') {
+          if (step.id === "interior-reimagined") {
+            if (!selectedImage || selectedImage === "skip") {
               // User skipped, mark as completed but with skip message
-              setSteps(prev => prev.map((s, idx) => 
-                idx === i ? { ...s, status: 'completed', result: 'Interior reimagining skipped - no image selected.' } : s
-              ));
+              setSteps((prev) =>
+                prev.map((s, idx) =>
+                  idx === i
+                    ? {
+                        ...s,
+                        status: "completed",
+                        result:
+                          "Interior reimagining skipped - no image selected.",
+                      }
+                    : s,
+                ),
+              );
             } else {
               // Generate interior concepts with selected image
-              content = await contentGenerationService.generateInteriorConcepts(listingData, selectedImage);
-              
-              setSteps(prev => prev.map((s, idx) => 
-                idx === i ? { ...s, status: 'completed', result: content } : s
-              ));
+              content = await contentGenerationService.generateInteriorConcepts(
+                listingData,
+                selectedImage,
+              );
+
+              setSteps((prev) =>
+                prev.map((s, idx) =>
+                  idx === i
+                    ? { ...s, status: "completed", result: content }
+                    : s,
+                ),
+              );
 
               // Save to listing (using keyFeatures to store interior concepts for now)
-              await listingService.updateListing(listingId!, { 
+              await listingService.updateListing(listingId!, {
                 keyFeatures: `${listingData.keyFeatures}\n\nInterior Concepts:\n${content}`,
               });
             }
           } else {
             // Normal content generation for other steps
-            content = await contentGenerationService.generateContentStep(listingData, step.id);
+            content = await contentGenerationService.generateContentStep(
+              listingData,
+              step.id,
+            );
 
             // Update step to completed
-            setSteps(prev => prev.map((s, idx) => 
-              idx === i ? { ...s, status: 'completed', result: content } : s
-            ));
+            setSteps((prev) =>
+              prev.map((s, idx) =>
+                idx === i ? { ...s, status: "completed", result: content } : s,
+              ),
+            );
 
             // Save content to listing
             const updateData: any = {};
             switch (step.id) {
-              case 'mls-description':
+              case "mls-description":
                 updateData.generatedDescription = content;
                 break;
-              case 'facebook-post':
+              case "facebook-post":
                 updateData.generatedFacebookPost = content;
                 break;
-              case 'instagram-post':
+              case "instagram-post":
                 updateData.generatedInstagramPost = content;
                 break;
-              case 'x-post':
+              case "x-post":
                 updateData.generatedXPost = content;
                 break;
-              case 'paid-ads':
+              case "paid-ads":
                 updateData.generatedAdCopy = content;
                 break;
             }
@@ -194,20 +227,19 @@ const ContentGenerationProgressPage: React.FC = () => {
           }
 
           // Small delay for UX
-          await new Promise(resolve => setTimeout(resolve, 500));
-
+          await new Promise((resolve) => setTimeout(resolve, 500));
         } catch (stepError) {
           console.error(`Error generating ${step.name}:`, stepError);
-          setSteps(prev => prev.map((s, idx) => 
-            idx === i ? { ...s, status: 'failed' } : s
-          ));
+          setSteps((prev) =>
+            prev.map((s, idx) => (idx === i ? { ...s, status: "failed" } : s)),
+          );
         }
       }
 
       setIsComplete(true);
     } catch (error) {
-      console.error('Content generation error:', error);
-      setError('Failed to generate content. Please try again.');
+      console.error("Content generation error:", error);
+      setError("Failed to generate content. Please try again.");
     } finally {
       setIsGenerating(false);
     }
@@ -219,11 +251,13 @@ const ContentGenerationProgressPage: React.FC = () => {
 
   const getStepIcon = (step: ContentGenerationStep) => {
     switch (step.status) {
-      case 'completed':
+      case "completed":
         return <CheckCircleIcon className="h-6 w-6 text-green-500" />;
-      case 'in-progress':
-        return <SparklesIcon className="h-6 w-6 text-brand-primary animate-pulse" />;
-      case 'failed':
+      case "in-progress":
+        return (
+          <SparklesIcon className="h-6 w-6 text-brand-primary animate-pulse" />
+        );
+      case "failed":
         return <ExclamationTriangleIcon className="h-6 w-6 text-red-500" />;
       default:
         return <ClockIcon className="h-6 w-6 text-brand-text-tertiary" />;
@@ -232,14 +266,14 @@ const ContentGenerationProgressPage: React.FC = () => {
 
   const getStepTextColor = (step: ContentGenerationStep) => {
     switch (step.status) {
-      case 'completed':
-        return 'text-green-600';
-      case 'in-progress':
-        return 'text-brand-primary font-semibold';
-      case 'failed':
-        return 'text-red-600';
+      case "completed":
+        return "text-green-600";
+      case "in-progress":
+        return "text-brand-primary font-semibold";
+      case "failed":
+        return "text-red-600";
       default:
-        return 'text-brand-text-secondary';
+        return "text-brand-text-secondary";
     }
   };
 
@@ -249,7 +283,9 @@ const ContentGenerationProgressPage: React.FC = () => {
         <div className="text-center">
           <ExclamationTriangleIcon className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <p className="text-brand-danger mb-4">{error}</p>
-          <Button onClick={() => navigate('/dashboard')}>Back to Dashboard</Button>
+          <Button onClick={() => navigate("/dashboard")}>
+            Back to Dashboard
+          </Button>
         </div>
       </div>
     );
@@ -282,16 +318,19 @@ const ContentGenerationProgressPage: React.FC = () => {
           {/* Progress Overview */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-brand-text-secondary">Progress</span>
+              <span className="text-sm font-medium text-brand-text-secondary">
+                Progress
+              </span>
               <span className="text-sm text-brand-text-secondary">
-                {steps.filter(s => s.status === 'completed').length} of {steps.length} completed
+                {steps.filter((s) => s.status === "completed").length} of{" "}
+                {steps.length} completed
               </span>
             </div>
             <div className="w-full bg-brand-border rounded-full h-2">
-              <div 
+              <div
                 className="bg-gradient-to-r from-brand-primary to-brand-secondary h-2 rounded-full transition-all duration-300"
-                style={{ 
-                  width: `${(steps.filter(s => s.status === 'completed').length / steps.length) * 100}%` 
+                style={{
+                  width: `${(steps.filter((s) => s.status === "completed").length / steps.length) * 100}%`,
                 }}
               ></div>
             </div>
@@ -300,21 +339,19 @@ const ContentGenerationProgressPage: React.FC = () => {
           {/* Steps List */}
           <div className="space-y-4">
             {steps.map((step, index) => (
-              <div 
+              <div
                 key={step.id}
                 className={`flex items-start space-x-4 p-4 rounded-lg border transition-all duration-200 ${
-                  step.status === 'in-progress' 
-                    ? 'bg-brand-primary/5 border-brand-primary/20' 
-                    : step.status === 'completed'
-                    ? 'bg-green-50 border-green-200'
-                    : step.status === 'failed'
-                    ? 'bg-red-50 border-red-200'
-                    : 'bg-brand-card border-brand-border/50'
+                  step.status === "in-progress"
+                    ? "bg-brand-primary/5 border-brand-primary/20"
+                    : step.status === "completed"
+                      ? "bg-green-50 border-green-200"
+                      : step.status === "failed"
+                        ? "bg-red-50 border-red-200"
+                        : "bg-brand-card border-brand-border/50"
                 }`}
               >
-                <div className="flex-shrink-0 mt-1">
-                  {getStepIcon(step)}
-                </div>
+                <div className="flex-shrink-0 mt-1">{getStepIcon(step)}</div>
                 <div className="flex-grow">
                   <h3 className={`font-semibold ${getStepTextColor(step)}`}>
                     {step.name}
@@ -322,7 +359,7 @@ const ContentGenerationProgressPage: React.FC = () => {
                   <p className="text-sm text-brand-text-tertiary mt-1">
                     {step.description}
                   </p>
-                  {step.status === 'in-progress' && (
+                  {step.status === "in-progress" && (
                     <div className="mt-2">
                       <div className="flex items-center text-sm text-brand-primary">
                         <SparklesIcon className="h-4 w-4 mr-1 animate-pulse" />
@@ -330,10 +367,10 @@ const ContentGenerationProgressPage: React.FC = () => {
                       </div>
                     </div>
                   )}
-                  {step.status === 'completed' && step.result && (
+                  {step.status === "completed" && step.result && (
                     <div className="mt-2 p-3 bg-white/50 rounded border text-sm text-brand-text-secondary">
                       {step.result.substring(0, 150)}
-                      {step.result.length > 150 && '...'}
+                      {step.result.length > 150 && "..."}
                     </div>
                   )}
                 </div>
@@ -347,7 +384,9 @@ const ContentGenerationProgressPage: React.FC = () => {
               <div className="flex items-center justify-center mb-4">
                 <CheckCircleIcon className="h-12 w-12 text-green-500 mr-3" />
                 <div>
-                  <h2 className="text-2xl font-bold text-green-600">Content Complete!</h2>
+                  <h2 className="text-2xl font-bold text-green-600">
+                    Content Complete!
+                  </h2>
                   <p className="text-brand-text-secondary">
                     All marketing content has been generated successfully
                   </p>
@@ -388,16 +427,19 @@ const ContentGenerationProgressPage: React.FC = () => {
                 Ready to Generate All Content?
               </h3>
               <p className="text-brand-text-secondary mb-6">
-                First, choose an image for interior reimagining (or skip this step):
+                First, choose an image for interior reimagining (or skip this
+                step):
               </p>
 
               {/* Existing Images Grid */}
               {listing.images && listing.images.length > 0 && (
                 <div className="mb-6">
-                  <h4 className="font-semibold text-brand-text-primary mb-3">Select from uploaded images:</h4>
+                  <h4 className="font-semibold text-brand-text-primary mb-3">
+                    Select from uploaded images:
+                  </h4>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                     {listing.images.map((image, index) => (
-                      <div 
+                      <div
                         key={index}
                         className="cursor-pointer relative group"
                         onClick={() => {
@@ -406,8 +448,8 @@ const ContentGenerationProgressPage: React.FC = () => {
                           startContentGeneration(listing, image.url);
                         }}
                       >
-                        <img 
-                          src={image.url} 
+                        <img
+                          src={image.url}
                           alt={`Option ${index + 1}`}
                           className="w-full h-32 object-cover rounded-lg border-2 border-transparent hover:border-brand-primary transition-all duration-200"
                         />
@@ -424,7 +466,9 @@ const ContentGenerationProgressPage: React.FC = () => {
 
               {/* Upload New Image */}
               <div className="mb-6">
-                <h4 className="font-semibold text-brand-text-primary mb-3">Or upload a new image:</h4>
+                <h4 className="font-semibold text-brand-text-primary mb-3">
+                  Or upload a new image:
+                </h4>
                 <div className="border-2 border-dashed border-brand-border rounded-lg p-8 text-center hover:border-brand-primary transition-colors duration-200">
                   <input
                     type="file"
@@ -442,13 +486,17 @@ const ContentGenerationProgressPage: React.FC = () => {
                       }
                     }}
                   />
-                  <label 
+                  <label
                     htmlFor="interior-image-upload"
                     className="cursor-pointer flex flex-col items-center"
                   >
                     <SparklesIcon className="h-8 w-8 text-brand-text-tertiary mb-2" />
-                    <span className="text-brand-text-secondary">Click to upload & generate</span>
-                    <span className="text-xs text-brand-text-tertiary mt-1">PNG, JPG up to 10MB</span>
+                    <span className="text-brand-text-secondary">
+                      Click to upload & generate
+                    </span>
+                    <span className="text-xs text-brand-text-tertiary mt-1">
+                      PNG, JPG up to 10MB
+                    </span>
                   </label>
                 </div>
               </div>
@@ -458,9 +506,9 @@ const ContentGenerationProgressPage: React.FC = () => {
                 <Button
                   variant="ghost"
                   onClick={() => {
-                    setSelectedImageForInterior('skip');
+                    setSelectedImageForInterior("skip");
                     setHasSelectedImage(true);
-                    startContentGeneration(listing, 'skip');
+                    startContentGeneration(listing, "skip");
                   }}
                 >
                   Skip & Generate Other Content
@@ -469,8 +517,10 @@ const ContentGenerationProgressPage: React.FC = () => {
 
               <div className="mt-4 p-3 bg-brand-accent/10 rounded-lg">
                 <p className="text-sm text-brand-text-secondary">
-                  💡 <strong>What happens next:</strong> We'll generate all 6 content types in one seamless flow - 
-                  MLS description, social media posts, and paid ads automatically. Interior concepts only if you select an image.
+                  💡 <strong>What happens next:</strong> We'll generate all 6
+                  content types in one seamless flow - MLS description, social
+                  media posts, and paid ads automatically. Interior concepts
+                  only if you select an image.
                 </p>
               </div>
             </div>
@@ -481,4 +531,4 @@ const ContentGenerationProgressPage: React.FC = () => {
   );
 };
 
-export default ContentGenerationProgressPage; 
+export default ContentGenerationProgressPage;
