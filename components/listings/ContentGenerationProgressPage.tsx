@@ -73,6 +73,7 @@ const ContentGenerationProgressPage: React.FC = () => {
   const [selectedImageForInterior, setSelectedImageForInterior] = useState<string | null>(null);
   const [hasSelectedImage, setHasSelectedImage] = useState(false);
   const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null);
+  const [batchSelections, setBatchSelections] = useState<any>(null);
 
   useEffect(() => {
     if (!listingId) {
@@ -80,12 +81,20 @@ const ContentGenerationProgressPage: React.FC = () => {
       return;
     }
 
+    // Check for batch selections from sessionStorage
+    const storedSelections = sessionStorage.getItem('batchSelections');
+    if (storedSelections) {
+      setBatchSelections(JSON.parse(storedSelections));
+      // Clear from sessionStorage after retrieving
+      sessionStorage.removeItem('batchSelections');
+    }
+
     // Fetch listing data but don't start generation yet
     listingService.getListingById(listingId)
       .then(data => {
         if (data && data.userId === user?.id) {
           setListing(data);
-          // Don't start generation yet - wait for image selection
+          // Don't start generation yet - wait for image selection or use batch selections
         } else {
           setError(data ? "Permission denied" : "Listing not found");
         }

@@ -18,6 +18,7 @@ import FlyerGeneratorPage from './components/listings/generation/FlyerGeneratorP
 import PaidAdGeneratorPage from './components/listings/generation/PaidAdGeneratorPage';
 import PrintGeneratorPage from './components/print/PrintGeneratorPage';
 import ContentGenerationProgressPage from './components/listings/ContentGenerationProgressPage';
+import PreselectBatchPage from './components/listings/generation/PreselectBatchPage';
 import { OllamaStatusProvider } from './contexts/OllamaStatusContext';
 
 const PrivateRoute: React.FC<{ children: React.ReactElement }> = ({ children }) => {
@@ -87,6 +88,10 @@ const AppRoutes = () => {
           <Route
             path="/listings/:id/generate-all"
             element={<PrivateRoute><ContentGenerationProgressPage /></PrivateRoute>}
+          />
+          <Route
+            path="/listings/:id/preselect-batch"
+            element={<PrivateRoute><PreselectBatchPage /></PrivateRoute>}
           />
           
           <Route path="*" element={<Navigate to="/" />} />

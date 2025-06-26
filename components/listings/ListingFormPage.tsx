@@ -268,6 +268,8 @@ export default function ListingFormPage() {
   const { id: listingId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  
+  const DEMO_ADDRESS = "123 Demo Dr., Demo, DM 12345";
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
@@ -672,6 +674,12 @@ export default function ListingFormPage() {
   };
 
   const handleGenerateAllContent = async () => {
+    // Check if this is the demo address first
+    if (formData.address.trim().toLowerCase() !== DEMO_ADDRESS.toLowerCase()) {
+      setFormError(`Content generation is currently only available for the demo address: ${DEMO_ADDRESS}`);
+      return;
+    }
+
     // First validate the form has required data
     if (!formData.address || !formData.price || formData.price <= 0 || !formData.bedrooms || formData.bedrooms <= 0 || !formData.bathrooms || formData.bathrooms <= 0) {
       const missingFields = [];
@@ -716,11 +724,11 @@ export default function ListingFormPage() {
       if (isEditing && listingId) {
         result = await listingService.updateListing(listingId, listingDataForApi);
         // Navigate to generation page with existing listing ID
-        navigate(`/listings/${listingId}/generate-all`);
+        navigate(`/listings/${listingId}/preselect-batch`);
       } else {
         result = await listingService.createListing(listingDataForApi);
-        // Navigate to generation page with new listing ID
-        navigate(`/listings/${result.id}/generate-all`);
+        // Navigate to preselect batch page with new listing ID
+        navigate(`/listings/${result.id}/preselect-batch`);
       }
     } catch (err) {
       console.error('❌ Error saving listing before generation:', err);
@@ -1099,8 +1107,18 @@ export default function ListingFormPage() {
                   type="button"
                   variant="secondary"
                   leftIcon={<SparklesIcon className="h-5 w-5" />}
-                  className="bg-gradient-to-r from-brand-secondary to-emerald-600 hover:from-emerald-600 hover:to-brand-secondary text-white font-semibold shadow-lg transition-all duration-300"
+                  className={
+                    formData.address.trim().toLowerCase() === DEMO_ADDRESS.toLowerCase()
+                      ? "bg-gradient-to-r from-brand-secondary to-emerald-600 hover:from-emerald-600 hover:to-brand-secondary text-white font-semibold shadow-lg transition-all duration-300"
+                      : "bg-gray-400 text-gray-200 cursor-not-allowed opacity-50"
+                  }
                   onClick={handleGenerateAllContent}
+                  disabled={formData.address.trim().toLowerCase() !== DEMO_ADDRESS.toLowerCase()}
+                  title={
+                    formData.address.trim().toLowerCase() !== DEMO_ADDRESS.toLowerCase()
+                      ? `Content generation is only available for demo address: ${DEMO_ADDRESS}`
+                      : "Generate all marketing content"
+                  }
                 >
                   Generate All Content
                 </Button>
