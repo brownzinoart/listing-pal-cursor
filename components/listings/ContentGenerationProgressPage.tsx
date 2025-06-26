@@ -114,19 +114,33 @@ const ContentGenerationProgressPage: React.FC = () => {
 
   // Auto-redirect countdown effect
   useEffect(() => {
-    if (isComplete && !redirectCountdown) {
+    console.log('🔄 Checking redirect conditions:', { isComplete, redirectCountdown, listingId });
+    if (isComplete && !redirectCountdown && listingId) {
+      console.log('✅ Batch generation complete, starting redirect countdown');
+      console.log('🎯 Target URL will be:', `/listings/${listingId}`);
       setRedirectCountdown(3);
     }
-  }, [isComplete]);
+  }, [isComplete, listingId]);
 
   useEffect(() => {
+    console.log('⏱️ Redirect countdown effect triggered:', { redirectCountdown, listingId });
     if (redirectCountdown !== null && redirectCountdown > 0) {
+      console.log(`Redirecting in ${redirectCountdown} seconds to /listings/${listingId}...`);
       const timer = setTimeout(() => {
         setRedirectCountdown(redirectCountdown - 1);
       }, 1000);
       return () => clearTimeout(timer);
-    } else if (redirectCountdown === 0) {
+    } else if (redirectCountdown === 0 && listingId) {
+      console.log(`🚀 EXECUTING REDIRECT NOW to /listings/${listingId}`);
+      console.log('🔍 Current window location:', window.location.href);
       navigate(`/listings/${listingId}`);
+      console.log('✅ navigate() function called');
+      
+      // Additional fallback using window.location
+      setTimeout(() => {
+        console.log('🔄 Fallback redirect using window.location');
+        window.location.href = `/listings/${listingId}`;
+      }, 1000);
     }
   }, [redirectCountdown, listingId, navigate]);
 
@@ -169,11 +183,20 @@ const ContentGenerationProgressPage: React.FC = () => {
               if (selections?.roomRedesign) {
                 if (selections.roomRedesign.uploadedImage) {
                   options.selectedImage = selections.roomRedesign.uploadedImage;
+                  console.log('🖼️ Using uploaded image for room redesign:', selections.roomRedesign.uploadedImage.substring(0, 50) + '...');
                 } else if (selections.roomRedesign.selectedImageIndex !== null && listingData.images) {
                   options.selectedImage = listingData.images[selections.roomRedesign.selectedImageIndex]?.url;
+                  console.log('🖼️ Using listing image for room redesign:', options.selectedImage);
                 }
                 options.roomType = selections.roomRedesign.roomType;
                 options.designStyle = selections.roomRedesign.designStyle;
+                console.log('🎨 Room redesign options:', { 
+                  roomType: options.roomType, 
+                  designStyle: options.designStyle,
+                  hasImage: !!options.selectedImage 
+                });
+              } else {
+                console.warn('⚠️ No room redesign selections found');
               }
               content = await contentGenerationService.generateContentStep(listingData, 'interior-reimagined', options);
               break;
@@ -206,18 +229,23 @@ const ContentGenerationProgressPage: React.FC = () => {
           switch (step.id) {
             case 'description':
               updateData.generatedDescription = content;
+              console.log('💾 Saving description content:', content.substring(0, 100) + '...');
               break;
             case 'email':
               updateData.generatedEmail = content;
+              console.log('💾 Saving email content:', content.substring(0, 100) + '...');
               break;
             case 'facebook-post':
               updateData.generatedFacebookPost = content;
+              console.log('💾 Saving Facebook post content:', content.substring(0, 100) + '...');
               break;
             case 'instagram-post':
-              updateData.generatedInstagramPost = content;
+              updateData.generatedInstagramCaption = content;
+              console.log('💾 Saving Instagram post content:', content.substring(0, 100) + '...');
               break;
             case 'x-post':
               updateData.generatedXPost = content;
+              console.log('💾 Saving X post content:', content.substring(0, 100) + '...');
               break;
             case 'interior-reimagined':
               // Check if content is an image URL (actual redesign) or text (concepts)
@@ -230,18 +258,24 @@ const ContentGenerationProgressPage: React.FC = () => {
                   prompt: `${options.roomType} in ${options.designStyle} style`,
                   createdAt: new Date().toISOString()
                 }];
+                console.log('💾 Saving room design URL:', content);
+                console.log('💾 Room design details:', updateData.generatedRoomDesigns[0]);
               } else {
                 // It's text concepts - store as a different field or skip for now
                 // Since the listing type expects image-based redesigns, we'll skip saving text concepts
-                console.log('Generated interior concepts (text):', content);
+                console.log('🔍 Generated interior concepts (text):', content);
+                console.log('⚠️ Skipping text-based interior concepts - expected image URL');
               }
               break;
             case 'paid-ads':
               updateData.generatedAdCopy = content;
+              console.log('💾 Saving paid ads content:', content.substring(0, 100) + '...');
               break;
           }
 
-          await listingService.updateListing(listingId!, updateData);
+          console.log('📊 Update data for', step.id, ':', updateData);
+          const saveResult = await listingService.updateListing(listingId!, updateData);
+          console.log('✅ Save result for', step.id, ':', saveResult);
 
           // Small delay for UX
           await new Promise(resolve => setTimeout(resolve, 800));
@@ -256,16 +290,78 @@ const ContentGenerationProgressPage: React.FC = () => {
               endTime: Date.now()
             } : s
           ));
+          // Continue with next step even if this one failed
         }
       }
 
       setBatchEndTime(Date.now());
+      console.log('🏁 Batch generation loop completed, setting isComplete to true');
+      console.log('📊 Final step statuses:', steps.map(s => ({ name: s.name, status: s.status })));
+      console.log('🎯 About to set isComplete to true - current state:', { isComplete, isGenerating });
       setIsComplete(true);
+      console.log('✅ isComplete has been set to true');
+      
+      // Force refresh the listing data to ensure fresh data is available
+      console.log('🔄 Refreshing listing data before redirect...');
+      try {
+        const refreshedListing = await listingService.getListingById(listingId!);
+        if (refreshedListing) {
+          console.log('📊 Refreshed listing data:', {
+            id: refreshedListing.id,
+            hasDescription: !!refreshedListing.generatedDescription,
+            hasEmail: !!refreshedListing.generatedEmail,
+            hasFacebookPost: !!refreshedListing.generatedFacebookPost,
+            hasInstagramCaption: !!refreshedListing.generatedInstagramCaption,
+            hasXPost: !!refreshedListing.generatedXPost,
+            hasRoomDesigns: !!(refreshedListing.generatedRoomDesigns && refreshedListing.generatedRoomDesigns.length > 0),
+            hasAdCopy: !!refreshedListing.generatedAdCopy
+          });
+        } else {
+          console.warn('⚠️ Refreshed listing data is null');
+        }
+      } catch (refreshError) {
+        console.error('⚠️ Error refreshing listing data:', refreshError);
+      }
+      
+      // IMMEDIATE REDIRECT - Don't wait for state updates
+      console.log('🚀 IMMEDIATE REDIRECT - Bypassing state-based countdown');
+      setTimeout(() => {
+        console.log('⚡ Executing immediate redirect to:', `/listings/${listingId}`);
+        navigate(`/listings/${listingId}`);
+      }, 1000);
+      
+      // Backup redirect mechanism - force redirect after 3 seconds if state-based redirect doesn't work
+      setTimeout(() => {
+        console.log('🔄 Backup redirect check - isComplete:', isComplete);
+        console.log('🚀 Executing backup redirect to listing page');
+        window.location.href = `/#/listings/${listingId}`;
+      }, 3000);
     } catch (error) {
       console.error('Batch generation error:', error);
       setError('Failed to complete batch generation. Please try again.');
+      // Still set completion to true even if some steps failed, so user can see results and navigate
+      setBatchEndTime(Date.now());
+      console.log('❌ Batch generation failed, but setting isComplete to true for navigation');
+      console.log('🎯 About to set isComplete to true (error case) - current state:', { isComplete, isGenerating });
+      setIsComplete(true);
+      console.log('✅ isComplete has been set to true (error case)');
+      
+      // IMMEDIATE REDIRECT - Don't wait for state updates (error case)
+      console.log('🚀 IMMEDIATE REDIRECT (error case) - Bypassing state-based countdown');
+      setTimeout(() => {
+        console.log('⚡ Executing immediate redirect to:', `/listings/${listingId}`);
+        navigate(`/listings/${listingId}`);
+      }, 1000);
+      
+      // Backup redirect mechanism - force redirect after 3 seconds if state-based redirect doesn't work
+      setTimeout(() => {
+        console.log('🔄 Backup redirect check (error case) - isComplete:', isComplete);
+        console.log('🚀 Executing backup redirect to listing page');
+        window.location.href = `/#/listings/${listingId}`;
+      }, 3000);
     } finally {
       setIsGenerating(false);
+      console.log('✅ setIsGenerating(false) called');
     }
   };
 
@@ -332,42 +428,53 @@ const ContentGenerationProgressPage: React.FC = () => {
       switch (step.id) {
         case 'description':
           updateData.generatedDescription = content;
+          console.log('💾 Saving description content:', content.substring(0, 100) + '...');
           break;
         case 'email':
           updateData.generatedEmail = content;
+          console.log('💾 Saving email content:', content.substring(0, 100) + '...');
           break;
         case 'facebook-post':
           updateData.generatedFacebookPost = content;
+          console.log('💾 Saving Facebook post content:', content.substring(0, 100) + '...');
           break;
         case 'instagram-post':
-          updateData.generatedInstagramPost = content;
+          updateData.generatedInstagramCaption = content;
+          console.log('💾 Saving Instagram post content:', content.substring(0, 100) + '...');
           break;
         case 'x-post':
           updateData.generatedXPost = content;
+          console.log('💾 Saving X post content:', content.substring(0, 100) + '...');
           break;
-                 case 'interior-reimagined':
-           // Check if content is an image URL (actual redesign) or text (concepts)
-           if (content.startsWith('http') && (content.includes('cloudinary') || content.includes('decor8'))) {
-             // It's an actual redesigned image URL
-             updateData.generatedRoomDesigns = [{ 
-               originalImageUrl: options.selectedImage,
-               styleId: options.designStyle,
-               redesignedImageUrl: content,
-               prompt: `${options.roomType} in ${options.designStyle} style`,
-               createdAt: new Date().toISOString()
-             }];
-           } else {
-             // It's text concepts - store as a different field or skip for now
-             // Since the listing type expects image-based redesigns, we'll skip saving text concepts
-             console.log('Generated interior concepts (text):', content);
-           }
-           break;
+        case 'interior-reimagined':
+          // Check if content is an image URL (actual redesign) or text (concepts)
+          if (content.startsWith('http') && (content.includes('cloudinary') || content.includes('decor8'))) {
+            // It's an actual redesigned image URL
+            updateData.generatedRoomDesigns = [{ 
+              originalImageUrl: options.selectedImage,
+              styleId: options.designStyle,
+              redesignedImageUrl: content,
+              prompt: `${options.roomType} in ${options.designStyle} style`,
+              createdAt: new Date().toISOString()
+            }];
+            console.log('💾 Saving room design URL:', content);
+            console.log('💾 Room design details:', updateData.generatedRoomDesigns[0]);
+          } else {
+            // It's text concepts - store as a different field or skip for now
+            // Since the listing type expects image-based redesigns, we'll skip saving text concepts
+            console.log('🔍 Generated interior concepts (text):', content);
+            console.log('⚠️ Skipping text-based interior concepts - expected image URL');
+          }
+          break;
         case 'paid-ads':
           updateData.generatedAdCopy = content;
+          console.log('💾 Saving paid ads content:', content.substring(0, 100) + '...');
           break;
       }
 
-      await listingService.updateListing(listingId!, updateData);
+      console.log('📊 Update data for', step.id, ':', updateData);
+      const saveResult = await listingService.updateListing(listingId!, updateData);
+      console.log('✅ Save result for', step.id, ':', saveResult);
 
     } catch (error) {
       console.error(`Retry error for ${step.name}:`, error);
@@ -542,33 +649,71 @@ const ContentGenerationProgressPage: React.FC = () => {
 
           {/* Completion Message */}
           {isComplete && (
-            <div className="mt-8 text-center">
-              <div className="flex items-center justify-center mb-6">
-                <div className="relative">
-                  <CheckCircleIcon className="h-16 w-16 text-green-500 animate-pulse" />
-                  <div className="absolute inset-0 rounded-full bg-green-500/20 animate-ping"></div>
-                </div>
-              </div>
-              <h2 className="text-3xl font-bold text-green-600 mb-2">Content Generation Complete!</h2>
-              <p className="text-brand-text-secondary mb-2">
-                All marketing content has been generated successfully
-              </p>
-              <p className="text-lg font-semibold text-brand-primary mb-6">
-                Total Generation Time: {getTotalTime()}
-              </p>
-              {redirectCountdown !== null && redirectCountdown > 0 && (
-                <p className="text-sm text-brand-text-tertiary mb-4">
-                  Redirecting to your listing in {redirectCountdown}...
+            <div className="text-center py-8">
+              <div className="mb-6">
+                <CheckCircleIcon className="h-16 w-16 text-green-500 mx-auto mb-4" />
+                <h2 className="text-2xl font-bold text-brand-text-primary mb-2">
+                  Batch Generation Complete!
+                </h2>
+                <p className="text-brand-text-secondary mb-2">
+                  Generated {steps.filter(s => s.status === 'completed').length} out of {steps.length} content pieces
                 </p>
+                {batchStartTime && batchEndTime && (
+                  <p className="text-sm text-brand-text-tertiary">
+                    Total time: {formatTime(batchEndTime - batchStartTime)}
+                  </p>
+                )}
+              </div>
+              
+              {redirectCountdown !== null && redirectCountdown > 0 ? (
+                <div className="space-y-4">
+                  <p className="text-brand-text-secondary">
+                    Redirecting to your listing in {redirectCountdown} seconds...
+                  </p>
+                  <div className="flex gap-3 justify-center">
+                    <Button
+                      onClick={() => {
+                        console.log('🔄 Manual redirect button clicked');
+                        navigate(`/listings/${listingId}`);
+                      }}
+                      className="flex items-center gap-2 bg-brand-primary hover:bg-brand-primary/90"
+                    >
+                      Go to Listing Now
+                      <ArrowRightIcon className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        console.log('❌ Auto-redirect cancelled by user');
+                        setRedirectCountdown(null);
+                      }}
+                      className="text-brand-text-secondary"
+                    >
+                      Cancel Auto-Redirect
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <Button
+                    onClick={() => {
+                      console.log('🔄 View listing button clicked');
+                      navigate(`/listings/${listingId}`);
+                    }}
+                    className="flex items-center gap-2 bg-brand-primary hover:bg-brand-primary/90"
+                  >
+                    View Your Listing
+                    <ArrowRightIcon className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={() => navigate('/dashboard')}
+                    className="ml-3"
+                  >
+                    Back to Dashboard
+                  </Button>
+                </div>
               )}
-              <Button
-                onClick={() => navigate(`/listings/${listingId}`)}
-                className="bg-gradient-to-r from-brand-primary to-brand-secondary hover:shadow-lg transition-all duration-300"
-                rightIcon={<ArrowRightIcon className="h-5 w-5" />}
-                size="lg"
-              >
-                View Your Listing Now
-              </Button>
             </div>
           )}
 

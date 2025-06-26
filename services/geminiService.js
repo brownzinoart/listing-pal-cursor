@@ -43,6 +43,20 @@ export class GeminiService {
       locationHighlights = []
     } = propertyData;
 
+    // Ensure all arrays are properly formatted
+    const featuresArray = Array.isArray(keyFeatures) ? keyFeatures : 
+                         (typeof keyFeatures === 'string' ? [keyFeatures] : []);
+    const amenitiesArray = Array.isArray(amenities) ? amenities : 
+                          (typeof amenities === 'string' ? [amenities] : []);
+    const appliancesArray = Array.isArray(appliances) ? appliances : 
+                           (typeof appliances === 'string' ? [appliances] : []);
+    const exteriorArray = Array.isArray(exteriorFeatures) ? exteriorFeatures : 
+                         (typeof exteriorFeatures === 'string' ? [exteriorFeatures] : []);
+    const interiorArray = Array.isArray(interiorFeatures) ? interiorFeatures : 
+                         (typeof interiorFeatures === 'string' ? [interiorFeatures] : []);
+    const highlightsArray = Array.isArray(locationHighlights) ? locationHighlights : 
+                           (typeof locationHighlights === 'string' ? [locationHighlights] : []);
+
     // Style-specific tone and approach - Updated to match UI
     const styleGuides = {
       professional: {
@@ -93,22 +107,22 @@ PROPERTY DETAILS:
 - Parking: ${parking}
 
 KEY FEATURES PROVIDED:
-${keyFeatures.length > 0 ? keyFeatures.map(feature => `- ${feature}`).join('\n') : 'No specific key features provided'}
+${featuresArray.length > 0 ? featuresArray.map(feature => `- ${feature}`).join('\n') : 'No specific key features provided'}
 
 AMENITIES:
-${amenities.length > 0 ? amenities.map(amenity => `- ${amenity}`).join('\n') : 'Standard amenities'}
+${amenitiesArray.length > 0 ? amenitiesArray.map(amenity => `- ${amenity}`).join('\n') : 'Standard amenities'}
 
 INTERIOR FEATURES:
-${interiorFeatures.length > 0 ? interiorFeatures.map(feature => `- ${feature}`).join('\n') : 'Standard interior features'}
+${interiorArray.length > 0 ? interiorArray.map(feature => `- ${feature}`).join('\n') : 'Standard interior features'}
 
 EXTERIOR FEATURES:
-${exteriorFeatures.length > 0 ? exteriorFeatures.map(feature => `- ${feature}`).join('\n') : 'Standard exterior features'}
+${exteriorArray.length > 0 ? exteriorArray.map(feature => `- ${feature}`).join('\n') : 'Standard exterior features'}
 
 APPLIANCES INCLUDED:
-${appliances.length > 0 ? appliances.map(appliance => `- ${appliance}`).join('\n') : 'Standard appliances'}
+${appliancesArray.length > 0 ? appliancesArray.map(appliance => `- ${appliance}`).join('\n') : 'Standard appliances'}
 
 LOCATION HIGHLIGHTS:
-${locationHighlights.length > 0 ? locationHighlights.map(highlight => `- ${highlight}`).join('\n') : 'Great location'}
+${highlightsArray.length > 0 ? highlightsArray.map(highlight => `- ${highlight}`).join('\n') : 'Great location'}
 
 HVAC: ${hvac || 'Central air and heating'}
 FLOORING: ${flooring || 'Mixed flooring throughout'}
@@ -209,6 +223,10 @@ Generate a description that feels authentic, incorporates all the property detai
       keyFeatures = []
     } = propertyData;
 
+    // Ensure keyFeatures is always an array
+    const featuresArray = Array.isArray(keyFeatures) ? keyFeatures : 
+                         (typeof keyFeatures === 'string' ? [keyFeatures] : []);
+
     const platformSpecs = {
       facebook: {
         charLimit: 500,
@@ -240,7 +258,7 @@ PROPERTY DETAILS:
 - ${propertyType} at ${address}
 - ${bedrooms} bed, ${bathrooms} bath
 - Price: ${price}
-- Key Features: ${keyFeatures.join(', ')}
+- Key Features: ${featuresArray.join(', ')}
 
 PLATFORM: ${platform.toUpperCase()}
 CHARACTER LIMIT: ${spec.charLimit}
@@ -296,18 +314,24 @@ Make it engaging and shareable while maintaining the ${style} tone throughout.`;
       bedrooms,
       bathrooms,
       squareFootage,
-      keyFeatures = [],
-      amenities = []
+      keyFeatures,
+      amenities
     } = propertyData;
+
+    // Ensure arrays are properly formatted
+    const featuresArray = Array.isArray(keyFeatures) ? keyFeatures : 
+                         (typeof keyFeatures === 'string' ? keyFeatures.split(',').map(f => f.trim()) : []);
+    const amenitiesArray = Array.isArray(amenities) ? amenities : 
+                          (typeof amenities === 'string' ? amenities.split(',').map(a => a.trim()) : []);
 
     return `Generate compelling flyer content for this property in ${style} style:
 
-PROPERTY: ${bedrooms} bed, ${bathrooms} bath ${propertyData.propertyType}
+PROPERTY: ${bedrooms} bed, ${bathrooms} bath ${propertyData.propertyType || 'home'}
 ADDRESS: ${address}
 PRICE: ${price}
 SIZE: ${squareFootage} sq ft
-KEY FEATURES: ${keyFeatures.join(', ')}
-AMENITIES: ${amenities.join(', ')}
+KEY FEATURES: ${featuresArray.join(', ') || 'None specified'}
+AMENITIES: ${amenitiesArray.join(', ') || 'None specified'}
 
 FLYER STYLE: ${style}
 
@@ -362,6 +386,12 @@ Match the ${style} tone throughout all content sections.`;
       amenities = []
     } = propertyData;
 
+    // Ensure arrays are properly formatted
+    const featuresArray = Array.isArray(keyFeatures) ? keyFeatures : 
+                         (typeof keyFeatures === 'string' ? [keyFeatures] : []);
+    const amenitiesArray = Array.isArray(amenities) ? amenities : 
+                          (typeof amenities === 'string' ? [amenities] : []);
+
     return `Generate a compelling email campaign for this property listing in ${style} style:
 
 PROPERTY DETAILS:
@@ -369,8 +399,8 @@ PROPERTY DETAILS:
 - ${bedrooms} bed, ${bathrooms} bath
 - ${squareFootage} sq ft
 - Price: ${price}
-- Key Features: ${keyFeatures.join(', ')}
-- Amenities: ${amenities.join(', ')}
+- Key Features: ${featuresArray.join(', ')}
+- Amenities: ${amenitiesArray.join(', ')}
 
 EMAIL STYLE: ${style}
 

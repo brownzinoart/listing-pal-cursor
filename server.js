@@ -24,7 +24,8 @@ const app = express();
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' })); // Increase JSON payload limit
+app.use(express.urlencoded({ limit: '50mb', extended: true })); // Increase URL-encoded payload limit
 
 const upload = multer({ memory: true });
 
@@ -75,7 +76,7 @@ class Decor8AIService {
                         reject(new Error(`Cloudinary upload failed: ${error.message}`));
                     } else {
                         console.log('✅ Cloudinary upload successful:', result.secure_url);
-                        resolve(result.secure_url);
+                        resolve(result); // Return full result object, not just URL
                     }
                 }
             ).end(imageBuffer);
@@ -391,7 +392,24 @@ app.post('/api/redesign-url', async (req, res) => {
 
         console.log(`Processing ${room_type} with ${style} style using Decor8AI...`);
         
-        const result = await decor8ai.generateDesign(imageUrl, {
+        let finalImageUrl = imageUrl;
+        
+        // Check if imageUrl is a base64 data URL
+        if (imageUrl.startsWith('data:image/')) {
+            console.log('Base64 image detected, uploading to Cloudinary...');
+            
+            // Convert base64 to buffer
+            const base64Data = imageUrl.split(',')[1];
+            const imageBuffer = Buffer.from(base64Data, 'base64');
+            
+            // Upload to Cloudinary
+            const uploadResult = await decor8ai.uploadImageToCloudinary(imageBuffer, `room-${Date.now()}.jpg`);
+            finalImageUrl = uploadResult.secure_url;
+            
+            console.log('Image uploaded to Cloudinary:', finalImageUrl);
+        }
+        
+        const result = await decor8ai.generateDesign(finalImageUrl, {
             roomType: room_type,
             designStyle: style
         });
@@ -2550,5 +2568,78 @@ app.listen(PORT, () => {
         console.log('⚠️  Warning: DECOR8AI_API_KEY not set. Using embedded token for demo.');
     } else {
         console.log('✅ Decor8AI API token configured');
+    }
+});
+
+// Test endpoint for Decor8AI debugging
+app.post('/api/test-decor8ai', async (req, res) => {
+    try {
+        console.log('🧪 Testing Decor8AI with sample image...');
+        
+        // Use a known working image URL
+        const testImageUrl = "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&h=600&fit=crop";
+        
+        const result = await decor8ai.generateDesign(testImageUrl, {
+            roomType: 'Living Room',
+            designStyle: 'Scandinavian'
+        });
+        
+        console.log('✅ Decor8AI test result:', result);
+        
+        res.json({
+            success: true,
+            message: 'Decor8AI test successful!',
+            original: testImageUrl,
+            result: result,
+            generated: result.info?.images?.[0]?.url || 'No image URL found',
+            cost: 0.20
+        });
+        
+    } catch (error) {
+        console.error('❌ Decor8AI test failed:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message,
+            details: error.stack
+        });
+    }
+});
+
+// Test endpoint for base64 image handling
+app.post('/api/test-base64-upload', async (req, res) => {
+    try {
+        const { base64Image } = req.body;
+        
+        if (!base64Image || !base64Image.startsWith('data:image/')) {
+            return res.status(400).json({
+                success: false,
+                error: 'Valid base64 image required'
+            });
+        }
+        
+        console.log('🧪 Testing base64 image upload...');
+        
+        // Convert base64 to buffer
+        const base64Data = base64Image.split(',')[1];
+        const imageBuffer = Buffer.from(base64Data, 'base64');
+        
+        // Upload to Cloudinary
+        const uploadResult = await decor8ai.uploadImageToCloudinary(imageBuffer, `test-${Date.now()}.jpg`);
+        
+        console.log('✅ Base64 upload test successful:', uploadResult.secure_url);
+        
+        res.json({
+            success: true,
+            message: 'Base64 upload test successful!',
+            cloudinaryUrl: uploadResult.secure_url,
+            publicId: uploadResult.public_id
+        });
+        
+    } catch (error) {
+        console.error('❌ Base64 upload test failed:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
     }
 }); 

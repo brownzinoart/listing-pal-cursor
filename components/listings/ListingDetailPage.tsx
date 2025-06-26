@@ -125,6 +125,17 @@ const ListingDetailPage: React.FC = () => {
     listingService.getListingById(id)
       .then(data => {
         if (data && data.userId === user?.id) {
+          console.log('📊 Listing loaded successfully:', {
+            id: data.id,
+            address: data.address,
+            hasDescription: !!data.generatedDescription,
+            hasEmail: !!data.generatedEmail,
+            hasFacebookPost: !!data.generatedFacebookPost,
+            hasInstagramCaption: !!data.generatedInstagramCaption,
+            hasXPost: !!data.generatedXPost,
+            hasRoomDesigns: !!(data.generatedRoomDesigns && data.generatedRoomDesigns.length > 0),
+            hasAdCopy: !!data.generatedAdCopy
+          });
           setListing(data);
         } else if (data && data.userId !== user?.id) {
           setError("You do not have permission to view this listing's details.");
@@ -682,7 +693,7 @@ const ListingDetailPage: React.FC = () => {
                       </span>
                     </div>
                   </div>
-                  <Link to={`/listings/${listing.id}/generate/flyer`} className="flex-shrink-0">
+                  <Link to={`/listings/${listing.id}/print`} className="flex-shrink-0">
                     <Button 
                       variant='edit' 
                       leftIcon={<PencilSquareIcon className='h-4 w-4' />}
@@ -739,52 +750,97 @@ const ListingDetailPage: React.FC = () => {
             )}
 
             {/* Paid Ad Campaigns Section */}
-            {listing.generatedAdCopy && listing.generatedAdCopy.length > 0 && (
+            {listing.generatedAdCopy && (
               <section className="bg-brand-panel border border-brand-border rounded-xl p-6 sm:p-8 shadow-xl overflow-hidden">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 overflow-hidden">
                   <div className="mb-4 sm:mb-0 min-w-0 flex-1">
                     <h3 className="text-2xl font-bold text-brand-text-primary mb-2 break-words">Paid Ad Campaigns</h3>
                     <div className="flex items-center">
                       <span className="bg-brand-secondary h-2 w-2 rounded-full mr-2"></span>
-                      <span className="text-sm font-medium text-brand-secondary break-words">
-                        {listing.generatedAdCopy.length} campaign{listing.generatedAdCopy.length > 1 ? 's' : ''} generated
+                      <span className="text-sm font-medium text-brand-secondary">
+                        {(() => {
+                          try {
+                            const parsed = JSON.parse(listing.generatedAdCopy);
+                            return Array.isArray(parsed) ? `${parsed.length} campaigns generated` : 'Generated';
+                          } catch {
+                            return 'Generated';
+                          }
+                        })()}
                       </span>
                     </div>
                   </div>
-                  <Link to={`/listings/${listing.id}/ai/paid-ads`} className="flex-shrink-0">
+                  <Link to={`/listings/${listing.id}/generate/paid-ad`} className="flex-shrink-0">
                     <Button 
                       variant='edit' 
                       leftIcon={<PencilSquareIcon className='h-4 w-4' />} 
                       size="md"
                     >
-                      Create New Campaign
+                      Edit Ad Campaigns
                     </Button>
                   </Link>
                 </div>
 
-                <div className="space-y-4 overflow-hidden">
-                  {listing.generatedAdCopy.map((ad, index) => (
-                    <div key={index} className="bg-brand-background/30 border border-brand-border/50 rounded-lg p-4 sm:p-6 overflow-hidden">
+                {(() => {
+                  try {
+                    // Try to parse as JSON array first
+                    const parsedCampaigns = JSON.parse(listing.generatedAdCopy);
+                    if (Array.isArray(parsedCampaigns)) {
+                      return (
+                        <div className="space-y-4 overflow-hidden">
+                          {parsedCampaigns.map((ad: any, index: number) => (
+                            <div key={index} className="bg-brand-background/30 border border-brand-border/50 rounded-lg p-4 sm:p-6 overflow-hidden">
+                              <div className="flex items-center justify-between mb-3 overflow-hidden">
+                                <div className="flex items-center space-x-2 min-w-0">
+                                  <BuildingOfficeIcon className="h-5 w-5 text-brand-primary flex-shrink-0" />
+                                  <h4 className="font-semibold text-brand-text-primary text-base truncate capitalize">
+                                    {ad.platform} • {ad.objective.toLowerCase().replace('_',' ')}
+                                  </h4>
+                                </div>
+                                <Button 
+                                  variant='secondary' 
+                                  size='sm'
+                                  onClick={() => {
+                                    const text = `${ad.headline}\n\n${ad.body}\n\n${ad.cta}`;
+                                    navigator.clipboard.writeText(text);
+                                  }}
+                                >Copy</Button>
+                              </div>
+                              <p className="text-brand-text-primary font-medium mb-1 break-words">{ad.headline}</p>
+                              <p className="text-brand-text-secondary text-sm mb-2 whitespace-pre-line break-words">{ad.body}</p>
+                              <p className="text-brand-primary text-sm font-semibold break-words">{ad.cta}</p>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    }
+                  } catch (e) {
+                    // Fall back to legacy format or text display
+                  }
+                  
+                  // Fallback: display as plain text
+                  return (
+                    <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6 overflow-hidden shadow-sm">
                       <div className="flex items-center justify-between mb-3 overflow-hidden">
                         <div className="flex items-center space-x-2 min-w-0">
                           <BuildingOfficeIcon className="h-5 w-5 text-brand-primary flex-shrink-0" />
-                          <h4 className="font-semibold text-brand-text-primary text-base truncate capitalize">{ad.platform} • {ad.objective.toLowerCase().replace('_',' ')}</h4>
+                          <h4 className="font-semibold text-brand-text-primary text-base">Ad Campaign Copy</h4>
                         </div>
                         <Button 
-                          variant='secondary' 
+                          variant='ghost' 
                           size='sm'
                           onClick={() => {
-                            const text = `${ad.headline}\n\n${ad.body}\n\n${ad.cta}`;
-                            navigator.clipboard.writeText(text);
+                            navigator.clipboard.writeText(listing.generatedAdCopy || '');
                           }}
-                        >Copy</Button>
+                        >
+                          Copy
+                        </Button>
                       </div>
-                      <p className="text-brand-text-primary font-medium mb-1 break-words">{ad.headline}</p>
-                      <p className="text-brand-text-secondary text-sm mb-2 whitespace-pre-line break-words">{ad.body}</p>
-                      <p className="text-brand-primary text-sm font-semibold break-words">{ad.cta}</p>
+                      <div className="text-gray-800 leading-relaxed whitespace-pre-line break-words">
+                        {listing.generatedAdCopy}
+                      </div>
                     </div>
-                  ))}
-                </div>
+                  );
+                })()}
               </section>
             )}
           </div>

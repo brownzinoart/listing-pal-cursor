@@ -247,7 +247,11 @@ Generate the property description now:`;
   }
 
   buildSocialMediaPrompt(propertyData, platform, style) {
-    const { address, price, bedrooms, bathrooms, keyFeatures = [] } = propertyData;
+    const { address, price, bedrooms, bathrooms, keyFeatures } = propertyData;
+    
+    // Ensure keyFeatures is properly formatted as array
+    const featuresArray = Array.isArray(keyFeatures) ? keyFeatures : 
+                         (typeof keyFeatures === 'string' ? keyFeatures.split(',').map(f => f.trim()) : []);
     
     const platformSpecs = {
       facebook: { charLimit: 2000, hashtags: 3, tone: 'conversational and community-focused' },
@@ -264,7 +268,7 @@ Property: ${address}
 Price: ${price}
 Bedrooms: ${bedrooms}
 Bathrooms: ${bathrooms}
-Key Features: ${keyFeatures.join(', ')}
+Key Features: ${featuresArray.join(', ')}
 
 Platform: ${platform}
 Style: ${style}
@@ -311,7 +315,11 @@ Generate the ${platform} post:`;
   }
 
   buildFlyerPrompt(propertyData, style) {
-    const { address, price, bedrooms, bathrooms, squareFootage, keyFeatures = [] } = propertyData;
+    const { address, price, bedrooms, bathrooms, squareFootage, keyFeatures } = propertyData;
+    
+    // Ensure keyFeatures is properly formatted as array
+    const featuresArray = Array.isArray(keyFeatures) ? keyFeatures : 
+                         (typeof keyFeatures === 'string' ? keyFeatures.split(',').map(f => f.trim()) : []);
 
     return `Create compelling flyer content for this property:
 
@@ -321,7 +329,7 @@ Property Details:
 - Bedrooms: ${bedrooms}
 - Bathrooms: ${bathrooms}
 - Square Footage: ${squareFootage}
-- Key Features: ${keyFeatures.join(', ')}
+- Key Features: ${featuresArray.join(', ')}
 
 Style: ${style}
 
@@ -376,7 +384,11 @@ Generate the flyer content:`;
   }
 
   buildEmailPrompt(propertyData, style) {
-    const { address, price, bedrooms, bathrooms, keyFeatures = [] } = propertyData;
+    const { address, price, bedrooms, bathrooms, keyFeatures } = propertyData;
+    
+    // Ensure keyFeatures is properly formatted as array
+    const featuresArray = Array.isArray(keyFeatures) ? keyFeatures : 
+                         (typeof keyFeatures === 'string' ? keyFeatures.split(',').map(f => f.trim()) : []);
 
     return `Create a compelling real estate email for this property:
 
@@ -384,7 +396,7 @@ Property: ${address}
 Price: ${price}
 Bedrooms: ${bedrooms}
 Bathrooms: ${bathrooms}
-Key Features: ${keyFeatures.join(', ')}
+Key Features: ${featuresArray.join(', ')}
 
 Style: ${style}
 

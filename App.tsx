@@ -14,7 +14,6 @@ import FacebookPostGeneratorPage from './components/listings/generation/Facebook
 import InstagramPostGeneratorPage from './components/listings/generation/InstagramPostGeneratorPage';
 import XPostGeneratorPage from './components/listings/generation/XPostGeneratorPage';
 import EmailGeneratorPage from './components/listings/generation/EmailGeneratorPage';
-import FlyerGeneratorPage from './components/listings/generation/FlyerGeneratorPage';
 import PaidAdGeneratorPage from './components/listings/generation/PaidAdGeneratorPage';
 import PrintGeneratorPage from './components/print/PrintGeneratorPage';
 import ContentGenerationProgressPage from './components/listings/ContentGenerationProgressPage';
@@ -68,10 +67,6 @@ const AppRoutes = () => {
           <Route
             path="/listings/:id/generate/email"
             element={<PrivateRoute><EmailGeneratorPage /></PrivateRoute>}
-          />
-          <Route
-            path="/listings/:id/generate/flyer"
-            element={<PrivateRoute><FlyerGeneratorPage /></PrivateRoute>}
           />
           <Route
             path="/listings/:id/generate/paid-ad"
