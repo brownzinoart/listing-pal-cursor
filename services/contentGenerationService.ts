@@ -206,6 +206,38 @@ Make it actionable for staging and help buyers visualize the transformation pote
     return await this.callOpenAI(messages, 600, 0.7);
   }
 
+  async generateActualRoomRedesign(imageUrl: string, roomType: string, designStyle: string): Promise<string> {
+    try {
+      const response = await fetch('/api/redesign-url', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          imageUrl: imageUrl,
+          room_type: roomType,
+          style: designStyle
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Room redesign API failed');
+      }
+
+      const result = await response.json();
+      
+      if (result.success && result.imageUrl) {
+        return result.imageUrl;
+      } else {
+        throw new Error('No redesigned image received from API');
+      }
+    } catch (error) {
+      console.error('Room redesign error:', error);
+      throw error;
+    }
+  }
+
   async generatePaidAdCopy(listing: Listing): Promise<string> {
     const basePrompt = this.getBasePrompt(listing);
     const messages = [
@@ -284,7 +316,18 @@ Focus on the most compelling selling points and strong calls-to-action.`
       case 'email':
         return await this.generateEmailContent(listing, options?.theme);
       case 'interior-reimagined':
-        return await this.generateInteriorConcepts(listing, options?.selectedImage);
+        if (options?.selectedImage && options?.roomType && options?.designStyle) {
+          // Generate actual room redesign image
+          const redesignedImageUrl = await this.generateActualRoomRedesign(
+            options.selectedImage, 
+            options.roomType, 
+            options.designStyle
+          );
+          return redesignedImageUrl;
+        } else {
+          // Fallback to text concepts if no image/options provided
+          return await this.generateInteriorConcepts(listing, options?.selectedImage);
+        }
       case 'paid-ads':
         return await this.generatePaidAdCopy(listing);
       default:

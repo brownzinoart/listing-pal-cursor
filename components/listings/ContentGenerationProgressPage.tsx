@@ -220,7 +220,21 @@ const ContentGenerationProgressPage: React.FC = () => {
               updateData.generatedXPost = content;
               break;
             case 'interior-reimagined':
-              updateData.generatedRoomDesigns = [{ content, type: 'concept' }];
+              // Check if content is an image URL (actual redesign) or text (concepts)
+              if (content.startsWith('http') && (content.includes('cloudinary') || content.includes('decor8'))) {
+                // It's an actual redesigned image URL
+                updateData.generatedRoomDesigns = [{ 
+                  originalImageUrl: options.selectedImage,
+                  styleId: options.designStyle,
+                  redesignedImageUrl: content,
+                  prompt: `${options.roomType} in ${options.designStyle} style`,
+                  createdAt: new Date().toISOString()
+                }];
+              } else {
+                // It's text concepts - store as a different field or skip for now
+                // Since the listing type expects image-based redesigns, we'll skip saving text concepts
+                console.log('Generated interior concepts (text):', content);
+              }
               break;
             case 'paid-ads':
               updateData.generatedAdCopy = content;
@@ -331,9 +345,23 @@ const ContentGenerationProgressPage: React.FC = () => {
         case 'x-post':
           updateData.generatedXPost = content;
           break;
-        case 'interior-reimagined':
-          updateData.generatedRoomDesigns = [{ content, type: 'concept' }];
-          break;
+                 case 'interior-reimagined':
+           // Check if content is an image URL (actual redesign) or text (concepts)
+           if (content.startsWith('http') && (content.includes('cloudinary') || content.includes('decor8'))) {
+             // It's an actual redesigned image URL
+             updateData.generatedRoomDesigns = [{ 
+               originalImageUrl: options.selectedImage,
+               styleId: options.designStyle,
+               redesignedImageUrl: content,
+               prompt: `${options.roomType} in ${options.designStyle} style`,
+               createdAt: new Date().toISOString()
+             }];
+           } else {
+             // It's text concepts - store as a different field or skip for now
+             // Since the listing type expects image-based redesigns, we'll skip saving text concepts
+             console.log('Generated interior concepts (text):', content);
+           }
+           break;
         case 'paid-ads':
           updateData.generatedAdCopy = content;
           break;
