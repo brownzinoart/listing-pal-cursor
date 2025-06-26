@@ -5,6 +5,7 @@ interface ContentGenerationResult {
   facebookPost: string;
   instagramPost: string;
   xPost: string;
+  emailContent: string;
   interiorConcepts: string;
   paidAdCopy: string;
 }
@@ -118,6 +119,46 @@ export class ContentGenerationService {
     return await this.callOpenAI(messages, 150, 0.8);
   }
 
+  async generateEmailContent(listing: Listing, theme: string = 'NEW_LISTING'): Promise<string> {
+    const basePrompt = this.getBasePrompt(listing);
+    
+    const themePrompts = {
+      'NEW_LISTING': 'Create a professional new listing announcement email that generates excitement about this fresh property opportunity.',
+      'OPEN_HOUSE': 'Create an inviting open house invitation email that encourages attendance and creates urgency.',
+      'PRICE_REDUCTION': 'Create a compelling price reduction announcement email that highlights the new value opportunity.',
+      'UNDER_CONTRACT': 'Create a professional under contract notification email that maintains client relationships.',
+      'EXCLUSIVE_SHOWING': 'Create an exclusive private showing invitation email for VIP clients.',
+      'MARKET_UPDATE': 'Create a neighborhood market update email using this property as a market example.',
+      'FOLLOW_UP': 'Create a professional follow-up email for prospects who have shown interest.',
+      'COMING_SOON': 'Create a coming soon teaser email that builds anticipation for this upcoming listing.'
+    };
+
+    const messages = [
+      {
+        role: 'system',
+        content: 'You are a professional real estate email marketing expert. Create compelling, professional emails that drive engagement and generate leads for real estate agents.'
+      },
+      {
+        role: 'user',
+        content: `${themePrompts[theme as keyof typeof themePrompts] || themePrompts['NEW_LISTING']} 
+
+Property details: ${basePrompt}
+
+Include:
+- Compelling subject line
+- Professional greeting
+- Property highlights
+- Clear call-to-action
+- Professional signature placeholder
+- Appropriate urgency and excitement for the theme
+
+Keep it professional but engaging, around 200-300 words.`
+      }
+    ];
+
+    return await this.callOpenAI(messages, 500, 0.7);
+  }
+
   async generateInteriorConcepts(listing: Listing, selectedImage?: string): Promise<string> {
     const basePrompt = this.getBasePrompt(listing);
     
@@ -205,6 +246,7 @@ Focus on the most compelling selling points and strong calls-to-action.`
       facebookPost,
       instagramPost,
       xPost,
+      emailContent,
       interiorConcepts,
       paidAdCopy
     ] = await Promise.all([
@@ -212,6 +254,7 @@ Focus on the most compelling selling points and strong calls-to-action.`
       this.generateFacebookPost(listing),
       this.generateInstagramPost(listing),
       this.generateXPost(listing),
+      this.generateEmailContent(listing),
       this.generateInteriorConcepts(listing),
       this.generatePaidAdCopy(listing)
     ]);
@@ -221,13 +264,14 @@ Focus on the most compelling selling points and strong calls-to-action.`
       facebookPost,
       instagramPost,
       xPost,
+      emailContent,
       interiorConcepts,
       paidAdCopy
     };
   }
 
   // Individual generation functions for step-by-step progress
-  async generateContentStep(listing: Listing, stepId: string): Promise<string> {
+  async generateContentStep(listing: Listing, stepId: string, options?: any): Promise<string> {
     switch (stepId) {
       case 'mls-description':
         return await this.generateMLSDescription(listing);
@@ -237,8 +281,10 @@ Focus on the most compelling selling points and strong calls-to-action.`
         return await this.generateInstagramPost(listing);
       case 'x-post':
         return await this.generateXPost(listing);
+      case 'email':
+        return await this.generateEmailContent(listing, options?.theme);
       case 'interior-reimagined':
-        return await this.generateInteriorConcepts(listing);
+        return await this.generateInteriorConcepts(listing, options?.selectedImage);
       case 'paid-ads':
         return await this.generatePaidAdCopy(listing);
       default:
