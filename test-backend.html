@@ -1,263 +1,418 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Backend Data Tester</title>
     <style>
-        body { font-family: system-ui, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; }
-        .container { background: #f5f5f5; border-radius: 8px; padding: 20px; margin: 20px 0; }
-        .button { background: #3b82f6; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; margin: 5px; }
-        .button:hover { background: #2563eb; }
-        .log { background: #1f2937; color: #f3f4f6; padding: 15px; border-radius: 5px; font-family: monospace; white-space: pre-wrap; max-height: 400px; overflow-y: auto; margin: 10px 0; }
-        .input { padding: 8px; border: 1px solid #d1d5db; border-radius: 4px; margin: 5px; }
-        .success { color: #059669; font-weight: bold; }
-        .error { color: #dc2626; font-weight: bold; }
-        .warning { color: #d97706; font-weight: bold; }
+      body {
+        font-family: system-ui, sans-serif;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .container {
+        background: #f5f5f5;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+      }
+      .button {
+        background: #3b82f6;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 5px;
+        cursor: pointer;
+        margin: 5px;
+      }
+      .button:hover {
+        background: #2563eb;
+      }
+      .log {
+        background: #1f2937;
+        color: #f3f4f6;
+        padding: 15px;
+        border-radius: 5px;
+        font-family: monospace;
+        white-space: pre-wrap;
+        max-height: 400px;
+        overflow-y: auto;
+        margin: 10px 0;
+      }
+      .input {
+        padding: 8px;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        margin: 5px;
+      }
+      .success {
+        color: #059669;
+        font-weight: bold;
+      }
+      .error {
+        color: #dc2626;
+        font-weight: bold;
+      }
+      .warning {
+        color: #d97706;
+        font-weight: bold;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <h1>🧪 Backend Data Tester</h1>
-    <p>This tool helps you test and manipulate the backend data stored in localStorage.</p>
+    <p>
+      This tool helps you test and manipulate the backend data stored in
+      localStorage.
+    </p>
 
     <div class="container">
-        <h2>1. List All Listings</h2>
-        <button class="button" onclick="listAllListings()">Show All Listings</button>
-        <div id="listingsOutput" class="log"></div>
+      <h2>1. List All Listings</h2>
+      <button class="button" onclick="listAllListings()">
+        Show All Listings
+      </button>
+      <div id="listingsOutput" class="log"></div>
     </div>
 
     <div class="container">
-        <h2>2. Inspect Room Designs</h2>
-        <input type="text" id="listingIdInput" placeholder="Enter listing ID" class="input">
-        <button class="button" onclick="inspectRoomDesigns()">Inspect Room Designs</button>
-        <div id="roomDesignsOutput" class="log"></div>
+      <h2>2. Inspect Room Designs</h2>
+      <input
+        type="text"
+        id="listingIdInput"
+        placeholder="Enter listing ID"
+        class="input"
+      />
+      <button class="button" onclick="inspectRoomDesigns()">
+        Inspect Room Designs
+      </button>
+      <div id="roomDesignsOutput" class="log"></div>
     </div>
 
     <div class="container">
-        <h2>3. Add Test Room Design</h2>
-        <input type="text" id="testListingIdInput" placeholder="Enter listing ID" class="input">
-        <input type="text" id="testImageUrlInput" placeholder="Image URL (optional)" class="input" value="https://picsum.photos/400/300?test=1">
-        <button class="button" onclick="addTestRoomDesign()">Add Test Room Design</button>
-        <div id="testOutput" class="log"></div>
+      <h2>3. Add Test Room Design</h2>
+      <input
+        type="text"
+        id="testListingIdInput"
+        placeholder="Enter listing ID"
+        class="input"
+      />
+      <input
+        type="text"
+        id="testImageUrlInput"
+        placeholder="Image URL (optional)"
+        class="input"
+        value="https://picsum.photos/400/300?test=1"
+      />
+      <button class="button" onclick="addTestRoomDesign()">
+        Add Test Room Design
+      </button>
+      <div id="testOutput" class="log"></div>
     </div>
 
     <div class="container">
-        <h2>4. Simulate Batch Generation</h2>
-        <input type="text" id="batchListingIdInput" placeholder="Enter listing ID" class="input">
-        <button class="button" onclick="simulateBatchGeneration()">Simulate Batch Room Design</button>
-        <div id="batchOutput" class="log"></div>
+      <h2>4. Simulate Batch Generation</h2>
+      <input
+        type="text"
+        id="batchListingIdInput"
+        placeholder="Enter listing ID"
+        class="input"
+      />
+      <button class="button" onclick="simulateBatchGeneration()">
+        Simulate Batch Room Design
+      </button>
+      <div id="batchOutput" class="log"></div>
     </div>
 
     <div class="container">
-        <h2>5. Export Listing Data</h2>
-        <input type="text" id="exportListingIdInput" placeholder="Enter listing ID" class="input">
-        <button class="button" onclick="exportListing()">Export Listing JSON</button>
-        <div id="exportOutput" class="log"></div>
+      <h2>5. Export Listing Data</h2>
+      <input
+        type="text"
+        id="exportListingIdInput"
+        placeholder="Enter listing ID"
+        class="input"
+      />
+      <button class="button" onclick="exportListing()">
+        Export Listing JSON
+      </button>
+      <div id="exportOutput" class="log"></div>
     </div>
 
     <div class="container">
-        <h2>6. Clear Room Designs</h2>
-        <input type="text" id="clearListingIdInput" placeholder="Enter listing ID" class="input">
-        <button class="button" onclick="clearRoomDesigns()" style="background: #dc2626;">Clear All Room Designs</button>
-        <div id="clearOutput" class="log"></div>
+      <h2>6. Clear Room Designs</h2>
+      <input
+        type="text"
+        id="clearListingIdInput"
+        placeholder="Enter listing ID"
+        class="input"
+      />
+      <button
+        class="button"
+        onclick="clearRoomDesigns()"
+        style="background: #dc2626"
+      >
+        Clear All Room Designs
+      </button>
+      <div id="clearOutput" class="log"></div>
     </div>
 
     <script>
-        // Backend Data Testing Utility (embedded)
-        const testBackendData = {
-            getAllListings() {
-                const data = localStorage.getItem('realtyboost_listings');
-                return data ? JSON.parse(data) : [];
+      // Backend Data Testing Utility (embedded)
+      const testBackendData = {
+        getAllListings() {
+          const data = localStorage.getItem("realtyboost_listings");
+          return data ? JSON.parse(data) : [];
+        },
+
+        findListing(idOrAddress) {
+          const listings = this.getAllListings();
+          return listings.find(
+            (l) =>
+              l.id === idOrAddress ||
+              l.address.toLowerCase().includes(idOrAddress.toLowerCase()),
+          );
+        },
+
+        inspectRoomDesigns(listingId) {
+          const listing = this.findListing(listingId);
+          if (!listing) {
+            return { error: "Listing not found" };
+          }
+
+          return {
+            listingAddress: listing.address,
+            roomDesigns: listing.generatedRoomDesigns,
+            type: typeof listing.generatedRoomDesigns,
+            isArray: Array.isArray(listing.generatedRoomDesigns),
+            length: listing.generatedRoomDesigns?.length,
+            rawValue: listing.generatedRoomDesigns,
+          };
+        },
+
+        addTestRoomDesign(
+          listingId,
+          testImageUrl = "https://picsum.photos/400/300",
+        ) {
+          const listings = this.getAllListings();
+          const listingIndex = listings.findIndex((l) => l.id === listingId);
+
+          if (listingIndex === -1) {
+            return { error: "Listing not found" };
+          }
+
+          const testRoomDesign = {
+            originalImageUrl: "https://picsum.photos/400/300",
+            styleId: "modern",
+            redesignedImageUrl: testImageUrl,
+            prompt: "Living room in modern style - TEST",
+            createdAt: new Date().toISOString(),
+          };
+
+          const existingDesigns =
+            listings[listingIndex].generatedRoomDesigns || [];
+          listings[listingIndex].generatedRoomDesigns = [
+            ...existingDesigns,
+            testRoomDesign,
+          ];
+
+          localStorage.setItem(
+            "realtyboost_listings",
+            JSON.stringify(listings),
+          );
+
+          return {
+            success: true,
+            testRoomDesign,
+            totalDesigns: listings[listingIndex].generatedRoomDesigns.length,
+          };
+        },
+
+        clearRoomDesigns(listingId) {
+          const listings = this.getAllListings();
+          const listingIndex = listings.findIndex((l) => l.id === listingId);
+
+          if (listingIndex === -1) {
+            return { error: "Listing not found" };
+          }
+
+          listings[listingIndex].generatedRoomDesigns = [];
+          localStorage.setItem(
+            "realtyboost_listings",
+            JSON.stringify(listings),
+          );
+
+          return { success: true, message: "Room designs cleared" };
+        },
+
+        listAllWithStatus() {
+          const listings = this.getAllListings();
+
+          return listings.map((listing) => ({
+            id: listing.id,
+            address: listing.address,
+            content: {
+              description: !!listing.generatedDescription,
+              email: !!listing.generatedEmail,
+              facebook: !!listing.generatedFacebookPost,
+              instagram: !!listing.generatedInstagramCaption,
+              twitter: !!listing.generatedXPost,
+              roomDesigns: listing.generatedRoomDesigns?.length || 0,
+              paidAds: !!listing.generatedAdCopy,
+              flyers: listing.generatedFlyers?.length || 0,
             },
+          }));
+        },
 
-            findListing(idOrAddress) {
-                const listings = this.getAllListings();
-                return listings.find(l => 
-                    l.id === idOrAddress || 
-                    l.address.toLowerCase().includes(idOrAddress.toLowerCase())
-                );
-            },
+        exportListing(listingId) {
+          const listing = this.findListing(listingId);
+          if (!listing) {
+            return { error: "Listing not found" };
+          }
+          return listing;
+        },
+      };
 
-            inspectRoomDesigns(listingId) {
-                const listing = this.findListing(listingId);
-                if (!listing) {
-                    return { error: 'Listing not found' };
-                }
+      // UI Functions
+      function updateOutput(elementId, data, isError = false) {
+        const element = document.getElementById(elementId);
+        const className = isError ? "error" : "success";
+        element.innerHTML = `<span class="${className}">${JSON.stringify(data, null, 2)}</span>`;
+      }
 
-                return {
-                    listingAddress: listing.address,
-                    roomDesigns: listing.generatedRoomDesigns,
-                    type: typeof listing.generatedRoomDesigns,
-                    isArray: Array.isArray(listing.generatedRoomDesigns),
-                    length: listing.generatedRoomDesigns?.length,
-                    rawValue: listing.generatedRoomDesigns
-                };
-            },
+      function listAllListings() {
+        const result = testBackendData.listAllWithStatus();
+        updateOutput("listingsOutput", result);
+      }
 
-            addTestRoomDesign(listingId, testImageUrl = 'https://picsum.photos/400/300') {
-                const listings = this.getAllListings();
-                const listingIndex = listings.findIndex(l => l.id === listingId);
-                
-                if (listingIndex === -1) {
-                    return { error: 'Listing not found' };
-                }
+      function inspectRoomDesigns() {
+        const listingId = document
+          .getElementById("listingIdInput")
+          .value.trim();
+        if (!listingId) {
+          updateOutput(
+            "roomDesignsOutput",
+            { error: "Please enter a listing ID" },
+            true,
+          );
+          return;
+        }
+        const result = testBackendData.inspectRoomDesigns(listingId);
+        updateOutput("roomDesignsOutput", result, !!result.error);
+      }
 
-                const testRoomDesign = {
-                    originalImageUrl: 'https://picsum.photos/400/300',
-                    styleId: 'modern',
-                    redesignedImageUrl: testImageUrl,
-                    prompt: 'Living room in modern style - TEST',
-                    createdAt: new Date().toISOString()
-                };
+      function addTestRoomDesign() {
+        const listingId = document
+          .getElementById("testListingIdInput")
+          .value.trim();
+        const imageUrl = document
+          .getElementById("testImageUrlInput")
+          .value.trim();
 
-                const existingDesigns = listings[listingIndex].generatedRoomDesigns || [];
-                listings[listingIndex].generatedRoomDesigns = [...existingDesigns, testRoomDesign];
+        if (!listingId) {
+          updateOutput(
+            "testOutput",
+            { error: "Please enter a listing ID" },
+            true,
+          );
+          return;
+        }
 
-                localStorage.setItem('realtyboost_listings', JSON.stringify(listings));
-                
-                return {
-                    success: true,
-                    testRoomDesign,
-                    totalDesigns: listings[listingIndex].generatedRoomDesigns.length
-                };
-            },
+        const result = testBackendData.addTestRoomDesign(
+          listingId,
+          imageUrl || undefined,
+        );
+        updateOutput("testOutput", result, !!result.error);
+      }
 
-            clearRoomDesigns(listingId) {
-                const listings = this.getAllListings();
-                const listingIndex = listings.findIndex(l => l.id === listingId);
-                
-                if (listingIndex === -1) {
-                    return { error: 'Listing not found' };
-                }
+      function simulateBatchGeneration() {
+        const listingId = document
+          .getElementById("batchListingIdInput")
+          .value.trim();
+        if (!listingId) {
+          updateOutput(
+            "batchOutput",
+            { error: "Please enter a listing ID" },
+            true,
+          );
+          return;
+        }
 
-                listings[listingIndex].generatedRoomDesigns = [];
-                localStorage.setItem('realtyboost_listings', JSON.stringify(listings));
-                
-                return { success: true, message: 'Room designs cleared' };
-            },
-
-            listAllWithStatus() {
-                const listings = this.getAllListings();
-                
-                return listings.map(listing => ({
-                    id: listing.id,
-                    address: listing.address,
-                    content: {
-                        description: !!listing.generatedDescription,
-                        email: !!listing.generatedEmail,
-                        facebook: !!listing.generatedFacebookPost,
-                        instagram: !!listing.generatedInstagramCaption,
-                        twitter: !!listing.generatedXPost,
-                        roomDesigns: listing.generatedRoomDesigns?.length || 0,
-                        paidAds: !!listing.generatedAdCopy,
-                        flyers: listing.generatedFlyers?.length || 0
-                    }
-                }));
-            },
-
-            exportListing(listingId) {
-                const listing = this.findListing(listingId);
-                if (!listing) {
-                    return { error: 'Listing not found' };
-                }
-                return listing;
-            }
+        const mockRoomDesign = {
+          originalImageUrl: "https://picsum.photos/400/300?room=original",
+          styleId: "modern-minimalist",
+          redesignedImageUrl:
+            "https://picsum.photos/400/300?room=redesigned&t=" + Date.now(),
+          prompt: "Living room in modern minimalist style - Batch Generated",
+          createdAt: new Date().toISOString(),
         };
 
-        // UI Functions
-        function updateOutput(elementId, data, isError = false) {
-            const element = document.getElementById(elementId);
-            const className = isError ? 'error' : 'success';
-            element.innerHTML = `<span class="${className}">${JSON.stringify(data, null, 2)}</span>`;
+        const result = testBackendData.addTestRoomDesign(
+          listingId,
+          mockRoomDesign.redesignedImageUrl,
+        );
+        updateOutput(
+          "batchOutput",
+          {
+            message: "Simulated batch generation",
+            mockRoomDesign,
+            result,
+          },
+          !!result.error,
+        );
+      }
+
+      function exportListing() {
+        const listingId = document
+          .getElementById("exportListingIdInput")
+          .value.trim();
+        if (!listingId) {
+          updateOutput(
+            "exportOutput",
+            { error: "Please enter a listing ID" },
+            true,
+          );
+          return;
         }
 
-        function listAllListings() {
-            const result = testBackendData.listAllWithStatus();
-            updateOutput('listingsOutput', result);
+        const result = testBackendData.exportListing(listingId);
+        updateOutput("exportOutput", result, !!result.error);
+
+        // Also copy to clipboard
+        if (!result.error && navigator.clipboard) {
+          navigator.clipboard.writeText(JSON.stringify(result, null, 2));
+          alert("Data copied to clipboard!");
+        }
+      }
+
+      function clearRoomDesigns() {
+        const listingId = document
+          .getElementById("clearListingIdInput")
+          .value.trim();
+        if (!listingId) {
+          updateOutput(
+            "clearOutput",
+            { error: "Please enter a listing ID" },
+            true,
+          );
+          return;
         }
 
-        function inspectRoomDesigns() {
-            const listingId = document.getElementById('listingIdInput').value.trim();
-            if (!listingId) {
-                updateOutput('roomDesignsOutput', { error: 'Please enter a listing ID' }, true);
-                return;
-            }
-            const result = testBackendData.inspectRoomDesigns(listingId);
-            updateOutput('roomDesignsOutput', result, !!result.error);
+        if (
+          !confirm(
+            "Are you sure you want to clear all room designs for this listing?",
+          )
+        ) {
+          return;
         }
 
-        function addTestRoomDesign() {
-            const listingId = document.getElementById('testListingIdInput').value.trim();
-            const imageUrl = document.getElementById('testImageUrlInput').value.trim();
-            
-            if (!listingId) {
-                updateOutput('testOutput', { error: 'Please enter a listing ID' }, true);
-                return;
-            }
-            
-            const result = testBackendData.addTestRoomDesign(listingId, imageUrl || undefined);
-            updateOutput('testOutput', result, !!result.error);
-        }
+        const result = testBackendData.clearRoomDesigns(listingId);
+        updateOutput("clearOutput", result, !!result.error);
+      }
 
-        function simulateBatchGeneration() {
-            const listingId = document.getElementById('batchListingIdInput').value.trim();
-            if (!listingId) {
-                updateOutput('batchOutput', { error: 'Please enter a listing ID' }, true);
-                return;
-            }
-            
-            const mockRoomDesign = {
-                originalImageUrl: 'https://picsum.photos/400/300?room=original',
-                styleId: 'modern-minimalist',
-                redesignedImageUrl: 'https://picsum.photos/400/300?room=redesigned&t=' + Date.now(),
-                prompt: 'Living room in modern minimalist style - Batch Generated',
-                createdAt: new Date().toISOString()
-            };
-            
-            const result = testBackendData.addTestRoomDesign(listingId, mockRoomDesign.redesignedImageUrl);
-            updateOutput('batchOutput', { 
-                message: 'Simulated batch generation',
-                mockRoomDesign,
-                result 
-            }, !!result.error);
-        }
-
-        function exportListing() {
-            const listingId = document.getElementById('exportListingIdInput').value.trim();
-            if (!listingId) {
-                updateOutput('exportOutput', { error: 'Please enter a listing ID' }, true);
-                return;
-            }
-            
-            const result = testBackendData.exportListing(listingId);
-            updateOutput('exportOutput', result, !!result.error);
-            
-            // Also copy to clipboard
-            if (!result.error && navigator.clipboard) {
-                navigator.clipboard.writeText(JSON.stringify(result, null, 2));
-                alert('Data copied to clipboard!');
-            }
-        }
-
-        function clearRoomDesigns() {
-            const listingId = document.getElementById('clearListingIdInput').value.trim();
-            if (!listingId) {
-                updateOutput('clearOutput', { error: 'Please enter a listing ID' }, true);
-                return;
-            }
-            
-            if (!confirm('Are you sure you want to clear all room designs for this listing?')) {
-                return;
-            }
-            
-            const result = testBackendData.clearRoomDesigns(listingId);
-            updateOutput('clearOutput', result, !!result.error);
-        }
-
-        // Auto-load listings on page load
-        window.addEventListener('load', () => {
-            listAllListings();
-        });
+      // Auto-load listings on page load
+      window.addEventListener("load", () => {
+        listAllListings();
+      });
     </script>
-</body>
-</html> 
+  </body>
+</html>
