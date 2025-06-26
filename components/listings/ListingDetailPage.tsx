@@ -73,10 +73,20 @@ const FormattedKeyFeatures: React.FC<{ content: string }> = ({ content }) => {
       );
     }
     
-    // Legacy format - comma-separated features with error handling
-    const features = content.split(',')
-      .map(feat => feat?.trim())
-      .filter(feat => feat && feat.length > 0);
+    // Legacy format - handle both comma-separated and bullet-separated content
+    let features: string[] = [];
+    
+    // Check if content contains bullet characters - if so, split on bullets instead of commas
+    if (content.includes('•') || content.includes('·') || content.includes('*')) {
+      features = content.split(/[•·*]/g)
+        .map(feat => feat?.trim())
+        .filter(feat => feat && feat.length > 0);
+    } else {
+      // Fall back to comma-separated splitting
+      features = content.split(',')
+        .map(feat => feat?.trim())
+        .filter(feat => feat && feat.length > 0);
+    }
       
     if (features.length === 0) {
       return (
@@ -87,11 +97,12 @@ const FormattedKeyFeatures: React.FC<{ content: string }> = ({ content }) => {
     }
 
     return (
-      <div className="flex flex-wrap items-start gap-1.5 max-h-60 overflow-y-auto overflow-x-hidden">
+      <div className="max-h-80 overflow-y-auto overflow-x-hidden space-y-3">
         {features.map((feature, index) => (
-          <span key={`feature-${index}`} className="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full break-words">
-            {feature}
-          </span>
+          <div key={`feature-${index}`} className="flex items-start space-x-3">
+            <span className="text-brand-primary mt-1 text-sm flex-shrink-0 font-medium">•</span>
+            <span className="text-brand-text-primary text-sm leading-relaxed break-words">{feature}</span>
+          </div>
         ))}
       </div>
     );
@@ -135,6 +146,13 @@ const ListingDetailPage: React.FC = () => {
             hasXPost: !!data.generatedXPost,
             hasRoomDesigns: !!(data.generatedRoomDesigns && data.generatedRoomDesigns.length > 0),
             hasAdCopy: !!data.generatedAdCopy
+          });
+          console.log('🔍 DETAILED ROOM DESIGNS DEBUG:', {
+            generatedRoomDesigns: data.generatedRoomDesigns,
+            type: typeof data.generatedRoomDesigns,
+            isArray: Array.isArray(data.generatedRoomDesigns),
+            length: data.generatedRoomDesigns?.length,
+            firstItem: data.generatedRoomDesigns?.[0]
           });
           setListing(data);
         } else if (data && data.userId !== user?.id) {
@@ -618,7 +636,44 @@ const ListingDetailPage: React.FC = () => {
             )}
 
             {/* Interior Reimagined Section */}
-            {listing.generatedRoomDesigns && listing.generatedRoomDesigns.length > 0 && (
+            {(() => {
+              // Defensive parsing logic similar to paid ads
+              let roomDesigns = null;
+              let roomDesignsCount = 0;
+              
+              console.log('🏠 Room designs debug:', { 
+                hasRoomDesigns: !!listing.generatedRoomDesigns, 
+                roomDesigns: listing.generatedRoomDesigns,
+                typeOfRoomDesigns: typeof listing.generatedRoomDesigns,
+                isArrayRoomDesigns: Array.isArray(listing.generatedRoomDesigns)
+              });
+              
+              if (listing.generatedRoomDesigns) {
+                if (Array.isArray(listing.generatedRoomDesigns)) {
+                  // Already an array - use directly
+                  roomDesigns = listing.generatedRoomDesigns;
+                  roomDesignsCount = roomDesigns.length;
+                  console.log('✅ Room designs are already an array:', roomDesignsCount);
+                } else if (typeof listing.generatedRoomDesigns === 'string') {
+                  // String - try to parse as JSON
+                  console.log('⚠️ Room designs stored as string, attempting to parse...');
+                  try {
+                    const parsed = JSON.parse(listing.generatedRoomDesigns);
+                    if (Array.isArray(parsed)) {
+                      roomDesigns = parsed;
+                      roomDesignsCount = roomDesigns.length;
+                      console.log('✅ Successfully parsed room designs:', roomDesignsCount);
+                    } else {
+                      console.warn('⚠️ Parsed room designs is not an array:', parsed);
+                    }
+                  } catch (e) {
+                    console.error('❌ Failed to parse room designs string:', e);
+                  }
+                }
+              }
+              
+              return roomDesigns && roomDesignsCount > 0 ? roomDesigns : null;
+            })() && (
               <section className="bg-brand-panel border border-brand-border rounded-xl p-6 sm:p-8 shadow-xl overflow-hidden">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 overflow-hidden">
                   <div className="mb-4 sm:mb-0 min-w-0 flex-1">
@@ -626,7 +681,24 @@ const ListingDetailPage: React.FC = () => {
                     <div className="flex items-center">
                       <span className="bg-brand-secondary h-2 w-2 rounded-full mr-2"></span>
                       <span className="text-sm font-medium text-brand-secondary break-words">
-                        {listing.generatedRoomDesigns.length} redesign{listing.generatedRoomDesigns.length > 1 ? 's' : ''} generated
+                        {(() => {
+                          let count = 0;
+                          if (listing.generatedRoomDesigns) {
+                            if (Array.isArray(listing.generatedRoomDesigns)) {
+                              count = listing.generatedRoomDesigns.length;
+                            } else if (typeof listing.generatedRoomDesigns === 'string') {
+                              try {
+                                const parsed = JSON.parse(listing.generatedRoomDesigns);
+                                if (Array.isArray(parsed)) {
+                                  count = parsed.length;
+                                }
+                              } catch (e) {
+                                // Ignore parsing errors for count
+                              }
+                            }
+                          }
+                          return `${count} redesign${count > 1 ? 's' : ''} generated`;
+                        })()}
                       </span>
                     </div>
                   </div>
@@ -642,9 +714,28 @@ const ListingDetailPage: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 overflow-hidden">
-                  {listing.generatedRoomDesigns.map((design, index) => {
-                    const style: AiDesignStyle | undefined = AI_DESIGN_STYLES.find(s => s.id === design.styleId);
-                                          return (
+                  {(() => {
+                    // Get the parsed room designs from the earlier logic
+                    let roomDesigns = null;
+                    
+                    if (listing.generatedRoomDesigns) {
+                      if (Array.isArray(listing.generatedRoomDesigns)) {
+                        roomDesigns = listing.generatedRoomDesigns;
+                      } else if (typeof listing.generatedRoomDesigns === 'string') {
+                        try {
+                          const parsed = JSON.parse(listing.generatedRoomDesigns);
+                          if (Array.isArray(parsed)) {
+                            roomDesigns = parsed;
+                          }
+                        } catch (e) {
+                          console.error('Failed to parse room designs in display:', e);
+                        }
+                      }
+                    }
+                    
+                    return roomDesigns?.map((design: any, index: number) => {
+                      const style: AiDesignStyle | undefined = AI_DESIGN_STYLES.find(s => s.id === design.styleId);
+                      return (
                         <div key={index} className="bg-brand-background/30 border border-brand-border/50 rounded-lg overflow-hidden">
                           <div className="relative overflow-hidden">
                             <img 
@@ -674,8 +765,9 @@ const ListingDetailPage: React.FC = () => {
                             )}
                           </div>
                         </div>
-                    );
-                  })}
+                      );
+                    });
+                  })()}
                 </div>
               </section>
             )}
@@ -760,7 +852,10 @@ const ListingDetailPage: React.FC = () => {
                       <span className="text-sm font-medium text-brand-secondary">
                         {(() => {
                           try {
-                            const parsed = JSON.parse(listing.generatedAdCopy);
+                            const adCopyString = typeof listing.generatedAdCopy === 'string' 
+                              ? listing.generatedAdCopy 
+                              : JSON.stringify(listing.generatedAdCopy);
+                            const parsed = JSON.parse(adCopyString);
                             return Array.isArray(parsed) ? `${parsed.length} campaigns generated` : 'Generated';
                           } catch {
                             return 'Generated';
@@ -782,8 +877,12 @@ const ListingDetailPage: React.FC = () => {
 
                 {(() => {
                   try {
-                    // Try to parse as JSON array first
-                    const parsedCampaigns = JSON.parse(listing.generatedAdCopy);
+                    // Handle type mismatch - generatedAdCopy might be string or array
+                    const adCopyString = typeof listing.generatedAdCopy === 'string' 
+                      ? listing.generatedAdCopy 
+                      : JSON.stringify(listing.generatedAdCopy);
+                    
+                    const parsedCampaigns = JSON.parse(adCopyString);
                     if (Array.isArray(parsedCampaigns)) {
                       return (
                         <div className="space-y-4 overflow-hidden">
@@ -818,6 +917,10 @@ const ListingDetailPage: React.FC = () => {
                   }
                   
                   // Fallback: display as plain text
+                  const adCopyText = typeof listing.generatedAdCopy === 'string' 
+                    ? listing.generatedAdCopy 
+                    : JSON.stringify(listing.generatedAdCopy, null, 2);
+                  
                   return (
                     <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6 overflow-hidden shadow-sm">
                       <div className="flex items-center justify-between mb-3 overflow-hidden">
@@ -829,14 +932,14 @@ const ListingDetailPage: React.FC = () => {
                           variant='ghost' 
                           size='sm'
                           onClick={() => {
-                            navigator.clipboard.writeText(listing.generatedAdCopy || '');
+                            navigator.clipboard.writeText(adCopyText);
                           }}
                         >
                           Copy
                         </Button>
                       </div>
                       <div className="text-gray-800 leading-relaxed whitespace-pre-line break-words">
-                        {listing.generatedAdCopy}
+                        {adCopyText}
                       </div>
                     </div>
                   );

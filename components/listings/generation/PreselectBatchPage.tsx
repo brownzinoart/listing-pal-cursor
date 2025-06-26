@@ -113,6 +113,29 @@ const PreselectBatchPage: React.FC = () => {
     }
   });
 
+  // Ensure design style is properly initialized on mount
+  useEffect(() => {
+    const defaultDesignStyle = AI_DESIGN_STYLES[0]?.id || 'modern';
+    console.log('🎨 Ensuring design style is initialized:', defaultDesignStyle);
+    console.log('📋 Available design styles:', AI_DESIGN_STYLES.map(s => s.id));
+    
+    if (!selections.roomRedesign.designStyle || selections.roomRedesign.designStyle !== defaultDesignStyle) {
+      console.log('🔄 Forcing design style update from', selections.roomRedesign.designStyle, 'to', defaultDesignStyle);
+      setSelections(prev => ({
+        ...prev,
+        roomRedesign: {
+          ...prev.roomRedesign,
+          designStyle: defaultDesignStyle
+        }
+      }));
+    }
+  }, []); // Run only once on mount
+
+  // Debug log for selections
+  useEffect(() => {
+    console.log('🔍 Current selections state:', selections);
+  }, [selections]);
+
   // Workflow management - Default to the four tools that require selections
   const workflowParam = searchParams.get('workflow');
   const workflowTools = workflowParam ? workflowParam.split(',') : ['desc', 'email', 'interior', 'paid_ads'];
@@ -129,13 +152,26 @@ const PreselectBatchPage: React.FC = () => {
       .then(data => {
         if (data && data.userId === user?.id) {
           setListing(data);
-          // Pre-select first image if available
+          // Pre-select first image if available and ensure design style is set
           if (data.images && data.images.length > 0) {
+            console.log('🖼️ Auto-selecting first image for room redesign');
             setSelections(prev => ({
               ...prev,
               roomRedesign: {
                 ...prev.roomRedesign,
-                selectedImageIndex: 0
+                selectedImageIndex: 0,
+                // Ensure design style is properly set
+                designStyle: AI_DESIGN_STYLES[0]?.id || 'modern'
+              }
+            }));
+          } else {
+            // Even if no images, ensure design style is set
+            console.log('🎨 Ensuring design style is set (no images available)');
+            setSelections(prev => ({
+              ...prev,
+              roomRedesign: {
+                ...prev.roomRedesign,
+                designStyle: AI_DESIGN_STYLES[0]?.id || 'modern'
               }
             }));
           }
@@ -180,24 +216,40 @@ const PreselectBatchPage: React.FC = () => {
   };
 
   const handleStartBatchGeneration = () => {
+    console.log('🚀 Starting batch generation with selections:', selections);
+    
     // Validate selections
     const hasImageSelected = selections.roomRedesign.selectedImageIndex !== null || selections.roomRedesign.uploadedImage !== null;
     const hasAdObjectiveSelected = Object.values(selections.paidAds).some(obj => obj !== null);
 
+    console.log('✅ Validation checks:', {
+      hasImageSelected,
+      selectedImageIndex: selections.roomRedesign.selectedImageIndex,
+      uploadedImage: !!selections.roomRedesign.uploadedImage,
+      roomType: selections.roomRedesign.roomType,
+      designStyle: selections.roomRedesign.designStyle,
+      hasAdObjectiveSelected,
+      adObjectives: selections.paidAds
+    });
+
     if (!hasImageSelected) {
+      console.error('❌ No image selected for room redesign');
       alert('Please select an image for room redesign or upload a new one.');
       return;
     }
 
     if (!hasAdObjectiveSelected) {
+      console.error('❌ No ad objectives selected');
       alert('Please select at least one ad objective for paid ads.');
       return;
     }
 
     // Store selections in sessionStorage for the workflow
+    console.log('💾 Storing batch selections in sessionStorage:', selections);
     sessionStorage.setItem('batchSelections', JSON.stringify(selections));
 
     // Navigate to the batch progress page with selections
+    console.log('🎯 Navigating to batch generation page with workflow:', workflowTools);
     navigate(`/listings/${listingId}/generate-all?workflow=${workflowTools.join(',')}&batch=true`);
   };
 
@@ -322,15 +374,18 @@ const PreselectBatchPage: React.FC = () => {
                 {listing.images?.map((image, index) => (
                   <button
                     key={index}
-                    onClick={() => setSelections(prev => ({
-                      ...prev,
-                      roomRedesign: {
-                        ...prev.roomRedesign,
-                        selectedImageIndex: index,
-                        uploadedImage: null,
-                        uploadedImageFile: null
-                      }
-                    }))}
+                    onClick={() => {
+                      console.log(`🖼️ Image ${index} clicked (was: ${selections.roomRedesign.selectedImageIndex})`);
+                      setSelections(prev => ({
+                        ...prev,
+                        roomRedesign: {
+                          ...prev.roomRedesign,
+                          selectedImageIndex: index,
+                          uploadedImage: null,
+                          uploadedImageFile: null
+                        }
+                      }));
+                    }}
                     className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all duration-200 ${
                       selections.roomRedesign.selectedImageIndex === index
                         ? 'border-brand-primary ring-2 ring-brand-primary/20'
@@ -395,13 +450,16 @@ const PreselectBatchPage: React.FC = () => {
                         name={`${room.icon} ${room.name}`}
                         description=""
                         isSelected={selections.roomRedesign.roomType === room.id}
-                        onClick={() => setSelections(prev => ({
-                          ...prev,
-                          roomRedesign: {
-                            ...prev.roomRedesign,
-                            roomType: room.id
-                          }
-                        }))}
+                        onClick={() => {
+                          console.log(`🏠 Room type clicked: ${room.id} (was: ${selections.roomRedesign.roomType})`);
+                          setSelections(prev => ({
+                            ...prev,
+                            roomRedesign: {
+                              ...prev.roomRedesign,
+                              roomType: room.id
+                            }
+                          }));
+                        }}
                       />
                     ))}
                   </div>
@@ -416,13 +474,16 @@ const PreselectBatchPage: React.FC = () => {
                         name={style.name}
                         description={style.description}
                         isSelected={selections.roomRedesign.designStyle === style.id}
-                        onClick={() => setSelections(prev => ({
-                          ...prev,
-                          roomRedesign: {
-                            ...prev.roomRedesign,
-                            designStyle: style.id
-                          }
-                        }))}
+                        onClick={() => {
+                          console.log(`🎨 Design style clicked: ${style.id} (was: ${selections.roomRedesign.designStyle})`);
+                          setSelections(prev => ({
+                            ...prev,
+                            roomRedesign: {
+                              ...prev.roomRedesign,
+                              designStyle: style.id
+                            }
+                          }));
+                        }}
                       />
                     ))}
                   </div>
@@ -471,6 +532,40 @@ const PreselectBatchPage: React.FC = () => {
                   </div>
                 );
               })}
+            </div>
+          </Card>
+
+          {/* Selection Summary for Debugging */}
+          <Card variant="gradient" padding="lg">
+            <h3 className="text-lg font-semibold text-brand-text-primary mb-4">Current Selections Summary</h3>
+            <div className="space-y-2 text-sm">
+              <div>
+                <span className="font-medium">Description Style:</span> {selections.description.style}
+              </div>
+              <div>
+                <span className="font-medium">Email Theme:</span> {selections.email.theme}
+              </div>
+              <div>
+                <span className="font-medium">Room Image:</span> {
+                  selections.roomRedesign.uploadedImage ? 'Custom uploaded image' :
+                  selections.roomRedesign.selectedImageIndex !== null ? `Image ${selections.roomRedesign.selectedImageIndex + 1}` :
+                  'None selected'
+                }
+              </div>
+              <div>
+                <span className="font-medium">Room Type:</span> {selections.roomRedesign.roomType}
+              </div>
+              <div>
+                <span className="font-medium">Design Style:</span> {selections.roomRedesign.designStyle}
+              </div>
+              <div>
+                <span className="font-medium">Paid Ads:</span> {
+                  Object.entries(selections.paidAds)
+                    .filter(([_, value]) => value !== null)
+                    .map(([platform, objective]) => `${platform}: ${objective}`)
+                    .join(', ') || 'None selected'
+                }
+              </div>
             </div>
           </Card>
 

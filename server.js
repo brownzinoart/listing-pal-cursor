@@ -92,7 +92,7 @@ class Decor8AIService {
             scale_factor: 2
         };
 
-        console.log('Decor8AI Request:', payload);
+        console.log('🎯 Decor8AI Request:', payload);
 
         try {
             const response = await axios.post(
@@ -101,12 +101,78 @@ class Decor8AIService {
                 { headers: this.headers }
             );
             
-            console.log('Decor8AI Response:', response.data);
+            console.log('🔍 Decor8AI Initial Response:', JSON.stringify(response.data, null, 2));
+            
+            // Check if we got an immediate result or need to poll
+            if (response.data.info && response.data.info.images && response.data.info.images.length > 0) {
+                console.log('✅ Decor8AI returned immediate result');
+                return response.data;
+            }
+            
+            // If we have a job ID or status indicating processing, poll for completion
+            if (response.data.job_id || response.data.status === 'processing' || response.data.status === 'pending') {
+                console.log('⏳ Decor8AI job started, polling for completion...');
+                return await this.pollForCompletion(response.data);
+            }
+            
+            // If response structure is different, log and return as-is
+            console.log('⚠️ Unexpected Decor8AI response structure, returning as-is');
             return response.data;
+            
         } catch (error) {
-            console.error('Decor8AI Error:', error.response?.data || error.message);
+            console.error('❌ Decor8AI Error:', error.response?.data || error.message);
             throw new Error(`Decor8AI Error: ${error.response?.data?.message || error.message}`);
         }
+    }
+
+    async pollForCompletion(initialResponse, maxAttempts = 30, intervalMs = 2000) {
+        const jobId = initialResponse.job_id || initialResponse.id;
+        
+        if (!jobId) {
+            console.log('⚠️ No job ID found for polling, returning initial response');
+            return initialResponse;
+        }
+        
+        console.log(`🔄 Starting to poll for job ${jobId} (max ${maxAttempts} attempts, ${intervalMs}ms interval)`);
+        
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                await new Promise(resolve => setTimeout(resolve, intervalMs));
+                
+                // Poll the status endpoint
+                const statusResponse = await axios.get(
+                    `${DECOR8AI_BASE_URL}/get_job_status/${jobId}`,
+                    { headers: this.headers }
+                );
+                
+                console.log(`🔍 Poll attempt ${attempt}/${maxAttempts}:`, statusResponse.data.status);
+                
+                if (statusResponse.data.status === 'completed' && statusResponse.data.info?.images?.length > 0) {
+                    console.log('✅ Decor8AI job completed successfully!');
+                    return statusResponse.data;
+                }
+                
+                if (statusResponse.data.status === 'failed' || statusResponse.data.status === 'error') {
+                    throw new Error(`Decor8AI job failed: ${statusResponse.data.error || 'Unknown error'}`);
+                }
+                
+                // Continue polling if still processing
+                if (statusResponse.data.status === 'processing' || statusResponse.data.status === 'pending') {
+                    console.log(`⏳ Job still ${statusResponse.data.status}, continuing to poll...`);
+                    continue;
+                }
+                
+            } catch (pollError) {
+                console.warn(`⚠️ Poll attempt ${attempt} failed:`, pollError.message);
+                
+                // If it's the last attempt, throw the error
+                if (attempt === maxAttempts) {
+                    throw new Error(`Polling failed after ${maxAttempts} attempts: ${pollError.message}`);
+                }
+            }
+        }
+        
+        throw new Error(`Decor8AI job did not complete within ${maxAttempts * intervalMs / 1000} seconds`);
     }
 
     async generateWithPrompt(imageUrl, prompt, numImages = 1) {
@@ -409,25 +475,34 @@ app.post('/api/redesign-url', async (req, res) => {
             console.log('Image uploaded to Cloudinary:', finalImageUrl);
         }
         
+        console.log('🎨 Calling Decor8AI generateDesign...');
         const result = await decor8ai.generateDesign(finalImageUrl, {
             roomType: room_type,
             designStyle: style
         });
         
+        console.log('🔍 Final Decor8AI result structure:', JSON.stringify(result, null, 2));
+        
         if (result.info && result.info.images && result.info.images.length > 0) {
+            const generatedImage = result.info.images[0];
             console.log('✅ Decor8AI generation successful!');
+            console.log('🖼️ Generated image URL:', generatedImage.url);
+            
             res.json({ 
                 success: true, 
-                imageUrl: result.info.images[0].url,
+                imageUrl: generatedImage.url,
                 cost: 0.20, // $0.20 per generation
                 provider: 'Decor8AI',
                 dimensions: {
-                    width: result.info.images[0].width,
-                    height: result.info.images[0].height
-                }
+                    width: generatedImage.width,
+                    height: generatedImage.height
+                },
+                processingTime: result.processing_time || 'Unknown',
+                jobId: result.job_id || 'N/A'
             });
         } else {
-            throw new Error('No images received from Decor8AI');
+            console.error('❌ Unexpected result structure from Decor8AI:', result);
+            throw new Error('No images received from Decor8AI - check API response structure');
         }
         
     } catch (error) {

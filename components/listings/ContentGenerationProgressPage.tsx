@@ -248,23 +248,36 @@ const ContentGenerationProgressPage: React.FC = () => {
               console.log('💾 Saving X post content:', content.substring(0, 100) + '...');
               break;
             case 'interior-reimagined':
+              console.log('🔍 Processing interior-reimagined content:', content);
+              console.log('🎯 Content type check - starts with http?', content.startsWith('http'));
+              console.log('🎯 Content preview:', content.substring(0, 100));
+              
               // Check if content is an image URL (actual redesign) or text (concepts)
-              if (content.startsWith('http') && (content.includes('cloudinary') || content.includes('decor8'))) {
-                // It's an actual redesigned image URL
-                updateData.generatedRoomDesigns = [{ 
+              if (content.startsWith('http')) {
+                // It's an actual redesigned image URL - save it regardless of domain
+                const newRoomDesign = { 
                   originalImageUrl: options.selectedImage,
                   styleId: options.designStyle,
                   redesignedImageUrl: content,
                   prompt: `${options.roomType} in ${options.designStyle} style`,
                   createdAt: new Date().toISOString()
-                }];
+                };
+                
+                // IMPORTANT: Append to existing room designs, don't overwrite (matching individual workflow)
+                const existingRoomDesigns = listingData.generatedRoomDesigns || [];
+                updateData.generatedRoomDesigns = [...existingRoomDesigns, newRoomDesign];
+                
                 console.log('💾 Saving room design URL:', content);
-                console.log('💾 Room design details:', updateData.generatedRoomDesigns[0]);
+                console.log('💾 Room design details:', newRoomDesign);
+                console.log('💾 Existing room designs count:', existingRoomDesigns.length);
+                console.log('💾 New total room designs count:', updateData.generatedRoomDesigns.length);
+                console.log('✅ Interior redesign will be saved to listing');
               } else {
-                // It's text concepts - store as a different field or skip for now
-                // Since the listing type expects image-based redesigns, we'll skip saving text concepts
+                // It's text concepts - still save them for debugging but also flag the issue
                 console.log('🔍 Generated interior concepts (text):', content);
-                console.log('⚠️ Skipping text-based interior concepts - expected image URL');
+                console.log('⚠️ Got text instead of image URL - this might indicate an API issue');
+                // For now, let's save it as a note so we can debug
+                updateData.generatedInteriorConcepts = content;
               }
               break;
             case 'paid-ads':
@@ -276,6 +289,12 @@ const ContentGenerationProgressPage: React.FC = () => {
           console.log('📊 Update data for', step.id, ':', updateData);
           const saveResult = await listingService.updateListing(listingId!, updateData);
           console.log('✅ Save result for', step.id, ':', saveResult);
+          
+          // For interior redesign, let's log more details about what was actually saved
+          if (step.id === 'interior-reimagined' && saveResult) {
+            console.log('🔍 Saved listing room designs:', saveResult.generatedRoomDesigns);
+            console.log('🔍 Room designs count:', saveResult.generatedRoomDesigns?.length || 0);
+          }
 
           // Small delay for UX
           await new Promise(resolve => setTimeout(resolve, 800));
@@ -327,7 +346,8 @@ const ContentGenerationProgressPage: React.FC = () => {
       console.log('🚀 IMMEDIATE REDIRECT - Bypassing state-based countdown');
       setTimeout(() => {
         console.log('⚡ Executing immediate redirect to:', `/listings/${listingId}`);
-        navigate(`/listings/${listingId}`);
+        // Force a hard refresh to ensure the listing page loads fresh data
+        window.location.href = `/#/listings/${listingId}?refresh=${Date.now()}`;
       }, 1000);
       
       // Backup redirect mechanism - force redirect after 3 seconds if state-based redirect doesn't work
@@ -447,23 +467,34 @@ const ContentGenerationProgressPage: React.FC = () => {
           console.log('💾 Saving X post content:', content.substring(0, 100) + '...');
           break;
         case 'interior-reimagined':
+          console.log('🔍 Retry - Processing interior-reimagined content:', content);
+          console.log('🎯 Retry - Content type check - starts with http?', content.startsWith('http'));
+          
           // Check if content is an image URL (actual redesign) or text (concepts)
-          if (content.startsWith('http') && (content.includes('cloudinary') || content.includes('decor8'))) {
-            // It's an actual redesigned image URL
-            updateData.generatedRoomDesigns = [{ 
+          if (content.startsWith('http')) {
+            // It's an actual redesigned image URL - save it regardless of domain
+            const newRoomDesign = { 
               originalImageUrl: options.selectedImage,
               styleId: options.designStyle,
               redesignedImageUrl: content,
               prompt: `${options.roomType} in ${options.designStyle} style`,
               createdAt: new Date().toISOString()
-            }];
-            console.log('💾 Saving room design URL:', content);
-            console.log('💾 Room design details:', updateData.generatedRoomDesigns[0]);
+            };
+            
+            // IMPORTANT: Append to existing room designs, don't overwrite (matching individual workflow)
+            const existingRoomDesigns = listing.generatedRoomDesigns || [];
+            updateData.generatedRoomDesigns = [...existingRoomDesigns, newRoomDesign];
+            
+            console.log('💾 Retry - Saving room design URL:', content);
+            console.log('💾 Retry - Room design details:', newRoomDesign);
+            console.log('💾 Retry - Existing room designs count:', existingRoomDesigns.length);
+            console.log('💾 Retry - New total room designs count:', updateData.generatedRoomDesigns.length);
+            console.log('✅ Retry - Interior redesign will be saved to listing');
           } else {
-            // It's text concepts - store as a different field or skip for now
-            // Since the listing type expects image-based redesigns, we'll skip saving text concepts
-            console.log('🔍 Generated interior concepts (text):', content);
-            console.log('⚠️ Skipping text-based interior concepts - expected image URL');
+            // It's text concepts - still save them for debugging
+            console.log('🔍 Retry - Generated interior concepts (text):', content);
+            console.log('⚠️ Retry - Got text instead of image URL - this might indicate an API issue');
+            updateData.generatedInteriorConcepts = content;
           }
           break;
         case 'paid-ads':

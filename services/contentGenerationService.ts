@@ -171,10 +171,16 @@ export class ContentGenerationService {
 
   async generateActualRoomRedesign(imageUrl: string, roomType: string, designStyle: string): Promise<string> {
     try {
+      // Map frontend room types and design styles to API format (matching roomRestyleService.ts)
+      const mappedRoomType = this.mapRoomTypeToAPI(roomType);
+      const mappedStyle = this.mapStyleToAPI(designStyle);
+      
       console.log('🎯 Sending room redesign request:', { 
         imageUrl: imageUrl.substring(0, 50) + '...', 
-        roomType, 
-        designStyle 
+        originalRoomType: roomType,
+        originalDesignStyle: designStyle,
+        mappedRoomType,
+        mappedStyle
       });
       
       const response = await fetch('/api/redesign-url', {
@@ -184,8 +190,8 @@ export class ContentGenerationService {
         },
         body: JSON.stringify({
           imageUrl: imageUrl,
-          room_type: roomType,
-          style: designStyle
+          room_type: mappedRoomType,
+          style: mappedStyle
         }),
       });
 
@@ -350,6 +356,46 @@ export class ContentGenerationService {
       default:
         throw new Error(`Unknown content step: ${stepId}`);
     }
+  }
+
+  /**
+   * Map frontend room types to API expected format (matching roomRestyleService.ts)
+   */
+  private mapRoomTypeToAPI(roomType?: string): string {
+    const mapping: Record<string, string> = {
+      'livingroom': 'Living Room',
+      'bedroom': 'Bedroom',
+      'kitchen': 'Kitchen',
+      'bathroom': 'Bathroom',
+      'diningroom': 'Dining Room',
+      'homeoffice': 'Office',
+      'nursery': 'Bedroom',
+      'basement': 'Living Room'
+    };
+    
+    return mapping[roomType || 'livingroom'] || 'Living Room';
+  }
+
+  /**
+   * Map frontend styles to API expected format (matching roomRestyleService.ts)
+   */
+  private mapStyleToAPI(style?: string): string {
+    const mapping: Record<string, string> = {
+      'modern': 'Modern',
+      'scandinavian': 'Scandinavian',
+      'minimalist': 'Minimalist',
+      'industrial': 'Industrial',
+      'bohemian': 'Bohemian',
+      'traditional': 'Traditional',
+      'midcenturymodern': 'Mid-Century Modern',
+      'glamorous': 'Luxury',
+      'rustic': 'Rustic',
+      'contemporary': 'Contemporary',
+      'eclectic': 'Contemporary',
+      'farmhouse': 'Farmhouse'
+    };
+    
+    return mapping[style || 'modern'] || 'Modern';
   }
 }
 
