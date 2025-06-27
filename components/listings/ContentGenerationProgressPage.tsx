@@ -249,7 +249,7 @@ const ContentGenerationProgressPage: React.FC = () => {
                 } : s
               ));
               
-              // Generate the room redesign - this will poll until completion
+              // Generate the room redesign - this will handle both immediate and async results
               content = await contentGenerationService.generateContentStep(listingData, 'interior-reimagined', options);
               
               // Validate the response - should be an image URL
@@ -272,7 +272,7 @@ const ContentGenerationProgressPage: React.FC = () => {
                 setSteps(prev => prev.map((s, idx) =>
                   idx === i ? { 
                     ...s, 
-                    description: 'Verifying image accessibility...',
+                    description: 'Finalizing image processing...',
                     status: 'in-progress'
                   } : s
                 ));
@@ -557,7 +557,7 @@ const ContentGenerationProgressPage: React.FC = () => {
             setSteps(prev => prev.map((s, idx) =>
               idx === stepIndex ? { 
                 ...s, 
-                description: 'Verifying image accessibility...',
+                description: 'Finalizing image processing...',
                 status: 'in-progress'
               } : s
             ));
