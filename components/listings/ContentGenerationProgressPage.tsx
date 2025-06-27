@@ -85,6 +85,54 @@ const ContentGenerationProgressPage: React.FC = () => {
   const [batchEndTime, setBatchEndTime] = useState<number | null>(null);
   const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null);
 
+  const waitUntilImageIsAccessible = async (url: string, timeout = 15000, retries = 4): Promise<void> => {
+    let attempts = 0;
+
+    const tryCheck = async (): Promise<void> => {
+      try {
+        // Try HEAD request (no-cors removed for better control)
+        const res = await fetch(url, { method: 'HEAD' });
+        if (!res.ok) throw new Error(`HEAD request failed with status ${res.status}`);
+      } catch (err) {
+        console.warn(`⚠️ HEAD request failed, falling back to image load check:`, err);
+      }
+
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        const timer = setTimeout(() => {
+          img.src = ''; // cancel load
+          reject(new Error('⏳ Timeout loading image'));
+        }, timeout);
+
+        img.onload = () => {
+          clearTimeout(timer);
+          console.log('✅ Image verified via <img>.onload:', url);
+          resolve();
+        };
+
+        img.onerror = (e) => {
+          clearTimeout(timer);
+          reject(new Error('❌ Image load failed via <img>.onerror'));
+        };
+
+        img.src = `${url}?cacheBust=${Date.now()}`;
+      });
+    };
+
+    while (attempts < retries) {
+      try {
+        await tryCheck();
+        return; // success!
+      } catch (e) {
+        attempts++;
+        console.warn(`Retry ${attempts}/${retries}:`, e);
+        await new Promise(res => setTimeout(res, 1000));
+      }
+    }
+
+    throw new Error('Image not accessible after multiple retries');
+  };
+
   useEffect(() => {
     if (!listingId) {
       setError("No listing ID provided");
@@ -206,6 +254,25 @@ const ContentGenerationProgressPage: React.FC = () => {
                 // If it's not a URL, treat it as an error but allow retry
                 console.warn('⚠️ Interior redesign returned non-URL content:', content.substring(0, 100));
                 throw new Error('Interior redesign API did not return a valid image URL. Please retry.');
+              }
+              
+              if (content.startsWith('http')) {
+                // Show interim status while image loads
+                setSteps(prev => prev.map((s, idx) =>
+                  idx === i ? { 
+                    ...s, 
+                    description: 'Waiting for image to load...',
+                    status: 'in-progress' // optionally add a custom value like 'verifying' if your UI supports it
+                  } : s
+                ));
+                
+                try {
+                  await waitUntilImageIsAccessible(content, 15000, 4);
+                  console.log('🖼️ Image confirmed loaded and accessible:', content);
+                } catch (imgErr) {
+                  console.warn('⚠️ Image not fully loaded before timeout or error:', imgErr);
+                  throw new Error('Interior redesign image is not ready yet. Please retry.');
+                }
               }
               break;
               

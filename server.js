@@ -522,16 +522,16 @@ app.post('/api/redesign-url', async (req, res) => {
         // The 'result' is the raw response from Decor8AI when isAsync is true.
         // We must inspect it carefully to decide the next step.
         
-        // Case 1: Successful async job start
+        // Case 1: Successful immediate (synchronous) result - check this FIRST
+        if (result.info?.images?.[0]?.url) {
+            console.log('✅ Decor8AI returned immediate result with image URL.');
+            return res.json({ success: true, imageUrl: result.info.images[0].url });
+        }
+        
+        // Case 2: Successful async job start (only if no immediate result)
         if (isAsync && result.job_id) {
             console.log(`✅ Async job started. Returning job ID: ${result.job_id}`);
             return res.json({ success: true, jobId: result.job_id });
-        }
-        
-        // Case 2: Successful immediate (synchronous) result
-        if (result.info?.images?.[0]?.url) {
-            console.log('✅ Sync/immediate job finished. Returning image URL.');
-            return res.json({ success: true, imageUrl: result.info.images[0].url });
         }
 
         // Case 3: The API returned a specific error message
