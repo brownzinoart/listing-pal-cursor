@@ -1,4 +1,4 @@
-import { Listing } from '../types';
+import { Listing } from "../types";
 
 interface ContentGenerationResult {
   mlsDescription: string;
@@ -15,16 +15,19 @@ export class ContentGenerationService {
     // Using Gemini AI backend - no API key needed in frontend
   }
 
-  async generateMLSDescription(listing: Listing, style: string = 'professional'): Promise<string> {
+  async generateMLSDescription(
+    listing: Listing,
+    style: string = "professional",
+  ): Promise<string> {
     try {
-      const response = await fetch('/api/listings/generate-description', {
-        method: 'POST',
+      const response = await fetch("/api/listings/generate-description", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           propertyData: listing,
-          style: style
+          style: style,
         }),
       });
 
@@ -33,24 +36,27 @@ export class ContentGenerationService {
       }
 
       const data = await response.json();
-      return data.description || '';
+      return data.description || "";
     } catch (error) {
-      console.error('Error generating MLS description:', error);
+      console.error("Error generating MLS description:", error);
       throw error;
     }
   }
 
-  async generateFacebookPost(listing: Listing, style: string = 'professional'): Promise<string> {
+  async generateFacebookPost(
+    listing: Listing,
+    style: string = "professional",
+  ): Promise<string> {
     try {
-      const response = await fetch('/api/listings/generate-social', {
-        method: 'POST',
+      const response = await fetch("/api/listings/generate-social", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           propertyData: listing,
-          platform: 'facebook',
-          style: style
+          platform: "facebook",
+          style: style,
         }),
       });
 
@@ -59,50 +65,58 @@ export class ContentGenerationService {
       }
 
       const data = await response.json();
-      return data.content || '';
+      return data.content || "";
     } catch (error) {
-      console.error('Error generating Facebook post:', error);
+      console.error("Error generating Facebook post:", error);
       throw error;
     }
   }
 
-  async generateInstagramPost(listing: Listing, style: string = 'professional'): Promise<string> {
+  async generateInstagramPost(
+    listing: Listing,
+    style: string = "professional",
+  ): Promise<string> {
     try {
-      const response = await fetch('/api/listings/generate-social', {
-        method: 'POST',
+      const response = await fetch("/api/listings/generate-social", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           propertyData: listing,
-          platform: 'instagram',
-          style: style
+          platform: "instagram",
+          style: style,
         }),
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to generate Instagram post: ${response.status}`);
+        throw new Error(
+          `Failed to generate Instagram post: ${response.status}`,
+        );
       }
 
       const data = await response.json();
-      return data.content || '';
+      return data.content || "";
     } catch (error) {
-      console.error('Error generating Instagram post:', error);
+      console.error("Error generating Instagram post:", error);
       throw error;
     }
   }
 
-  async generateXPost(listing: Listing, style: string = 'professional'): Promise<string> {
+  async generateXPost(
+    listing: Listing,
+    style: string = "professional",
+  ): Promise<string> {
     try {
-      const response = await fetch('/api/listings/generate-social', {
-        method: 'POST',
+      const response = await fetch("/api/listings/generate-social", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           propertyData: listing,
-          platform: 'twitter', // X/Twitter
-          style: style
+          platform: "twitter", // X/Twitter
+          style: style,
         }),
       });
 
@@ -111,24 +125,28 @@ export class ContentGenerationService {
       }
 
       const data = await response.json();
-      return data.content || '';
+      return data.content || "";
     } catch (error) {
-      console.error('Error generating X post:', error);
+      console.error("Error generating X post:", error);
       throw error;
     }
   }
 
-  async generateEmailContent(listing: Listing, theme: string = 'NEW_LISTING', style: string = 'professional'): Promise<string> {
+  async generateEmailContent(
+    listing: Listing,
+    theme: string = "NEW_LISTING",
+    style: string = "professional",
+  ): Promise<string> {
     try {
-      const response = await fetch('/api/listings/generate-email', {
-        method: 'POST',
+      const response = await fetch("/api/listings/generate-email", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           propertyData: listing,
           theme: theme,
-          style: style
+          style: style,
         }),
       });
 
@@ -137,63 +155,74 @@ export class ContentGenerationService {
       }
 
       const data = await response.json();
-      return data.content || '';
+      return data.content || "";
     } catch (error) {
-      console.error('Error generating email content:', error);
+      console.error("Error generating email content:", error);
       throw error;
     }
   }
 
-  async generateInteriorConcepts(listing: Listing, selectedImage?: string): Promise<string> {
+  async generateInteriorConcepts(
+    listing: Listing,
+    selectedImage?: string,
+  ): Promise<string> {
     try {
-      const response = await fetch('/api/listings/generate-flyer', {
-        method: 'POST',
+      const response = await fetch("/api/listings/generate-flyer", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           propertyData: listing,
-          style: 'interior-concepts'
+          style: "interior-concepts",
         }),
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to generate interior concepts: ${response.status}`);
+        throw new Error(
+          `Failed to generate interior concepts: ${response.status}`,
+        );
       }
 
       const data = await response.json();
-      return data.content || '';
+      return data.content || "";
     } catch (error) {
-      console.error('Error generating interior concepts:', error);
+      console.error("Error generating interior concepts:", error);
       throw error;
     }
   }
 
-  async generateActualRoomRedesign(imageUrl: string, roomType: string, designStyle: string): Promise<string> {
+  async generateActualRoomRedesign(
+    imageUrl: string,
+    roomType: string,
+    designStyle: string,
+  ): Promise<string> {
     try {
       const mappedRoomType = this.mapRoomTypeToAPI(roomType);
       const mappedStyle = this.mapStyleToAPI(designStyle);
-      
-      console.log('🎯 Sending initial room redesign request:', { 
-        imageUrl: imageUrl.substring(0, 50) + '...',
+
+      console.log("🎯 Sending initial room redesign request:", {
+        imageUrl: imageUrl.substring(0, 50) + "...",
         roomType: mappedRoomType,
-        designStyle: mappedStyle
+        designStyle: mappedStyle,
       });
 
-      const initialResponse = await fetch('/api/redesign-url', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const initialResponse = await fetch("/api/redesign-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           imageUrl: imageUrl,
           room_type: mappedRoomType,
           style: mappedStyle,
-          isAsync: true // Use async flow
+          isAsync: true, // Use async flow
         }),
       });
 
       if (!initialResponse.ok) {
         const errorData = await initialResponse.json();
-        throw new Error(errorData.error || 'Initial room redesign request failed');
+        throw new Error(
+          errorData.error || "Initial room redesign request failed",
+        );
       }
 
       const initialData = await initialResponse.json();
@@ -202,161 +231,210 @@ export class ContentGenerationService {
       if (!jobId) {
         // Handle immediate success if API returns URL directly (backwards compatibility)
         if (initialData.success && initialData.imageUrl) {
-          console.log('✅ Decor8AI returned immediate result.');
+          console.log("✅ Decor8AI returned immediate result.");
           return initialData.imageUrl;
         }
-        throw new Error('No job ID received from initial redesign request.');
+        throw new Error("No job ID received from initial redesign request.");
       }
-      
-      console.log(`⏳ Received job ID: ${jobId}. Starting to poll for results...`);
 
-      const pollUntilComplete = async (retries = 30, delay = 5000): Promise<string> => {
+      console.log(
+        `⏳ Received job ID: ${jobId}. Starting to poll for results...`,
+      );
+
+      const pollUntilComplete = async (
+        retries = 30,
+        delay = 5000,
+      ): Promise<string> => {
         for (let i = 0; i < retries; i++) {
           try {
-            await new Promise(resolve => setTimeout(resolve, delay));
-            console.log(`🔄 Polling attempt ${i + 1}/${retries} for job ${jobId}`);
-            
-            const statusResponse = await fetch(`/api/redesign-status/${jobId}`, {
-              method: 'GET',
-              headers: { 'Content-Type': 'application/json' }
-            });
+            await new Promise((resolve) => setTimeout(resolve, delay));
+            console.log(
+              `🔄 Polling attempt ${i + 1}/${retries} for job ${jobId}`,
+            );
+
+            const statusResponse = await fetch(
+              `/api/redesign-status/${jobId}`,
+              {
+                method: "GET",
+                headers: { "Content-Type": "application/json" },
+              },
+            );
 
             if (statusResponse.ok) {
               const statusData = await statusResponse.json();
               console.log(`📊 Job ${jobId} status:`, statusData.status);
-              
-              if (statusData.status === 'completed' && statusData.imageUrl) {
+
+              if (statusData.status === "completed" && statusData.imageUrl) {
                 console.log(`✅ Job ${jobId} completed successfully!`);
                 console.log(`🖼️ Generated image URL: ${statusData.imageUrl}`);
                 return statusData.imageUrl;
               }
-              
-              if (statusData.status === 'failed' || statusData.status === 'error') {
-                throw new Error(`Job failed: ${statusData.error || 'Unknown error during processing'}`);
+
+              if (
+                statusData.status === "failed" ||
+                statusData.status === "error"
+              ) {
+                throw new Error(
+                  `Job failed: ${statusData.error || "Unknown error during processing"}`,
+                );
               }
-              
+
               // Still processing, continue polling
-              console.log(`⏳ Job ${jobId} still ${statusData.status}, continuing to poll...`);
+              console.log(
+                `⏳ Job ${jobId} still ${statusData.status}, continuing to poll...`,
+              );
             } else if (statusResponse.status === 202) {
               // Job is still processing (202 Accepted)
-              console.log(`⏳ Job ${jobId} still processing (202), continuing to poll...`);
+              console.log(
+                `⏳ Job ${jobId} still processing (202), continuing to poll...`,
+              );
             } else {
               // Other error status
               const errorData = await statusResponse.json().catch(() => ({}));
-              console.warn(`⚠️ Status check failed with HTTP ${statusResponse.status}: ${errorData.error || 'Unknown error'}`);
-              
+              console.warn(
+                `⚠️ Status check failed with HTTP ${statusResponse.status}: ${errorData.error || "Unknown error"}`,
+              );
+
               // For certain errors, we might want to continue polling
               if (statusResponse.status === 500 && i < retries - 3) {
-                console.log('🔄 Server error, but continuing to poll (server might be temporarily unavailable)');
+                console.log(
+                  "🔄 Server error, but continuing to poll (server might be temporarily unavailable)",
+                );
                 continue;
               }
-              
-              throw new Error(`Status check failed: ${errorData.error || `HTTP ${statusResponse.status}`}`);
+
+              throw new Error(
+                `Status check failed: ${errorData.error || `HTTP ${statusResponse.status}`}`,
+              );
             }
           } catch (error) {
-            console.error(`❌ Polling error on attempt ${i + 1}:`, error instanceof Error ? error.message : String(error));
-            
+            console.error(
+              `❌ Polling error on attempt ${i + 1}:`,
+              error instanceof Error ? error.message : String(error),
+            );
+
             // If it's the last attempt or a critical error, throw
-            if (i === retries - 1 || (error instanceof Error && error.message.includes('Job failed'))) {
+            if (
+              i === retries - 1 ||
+              (error instanceof Error && error.message.includes("Job failed"))
+            ) {
               throw error;
             }
-            
+
             // For network errors, continue polling with exponential backoff
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            if (errorMessage.includes('fetch') || errorMessage.includes('network')) {
-              console.log('🔄 Network error, continuing to poll with exponential backoff...');
+            const errorMessage =
+              error instanceof Error ? error.message : String(error);
+            if (
+              errorMessage.includes("fetch") ||
+              errorMessage.includes("network")
+            ) {
+              console.log(
+                "🔄 Network error, continuing to poll with exponential backoff...",
+              );
               delay = Math.min(delay * 1.2, 10000); // Increase delay but cap at 10s
               continue;
             }
-            
+
             // For other errors, continue polling
-            console.log('🔄 Error occurred, but continuing to poll...');
+            console.log("🔄 Error occurred, but continuing to poll...");
           }
         }
-        
-        throw new Error(`Room redesign job timed out after ${retries} attempts (${retries * delay / 1000}s total)`);
+
+        throw new Error(
+          `Room redesign job timed out after ${retries} attempts (${(retries * delay) / 1000}s total)`,
+        );
       };
 
       return await pollUntilComplete();
-      
     } catch (error) {
-      console.error('Room redesign error:', error);
+      console.error("Room redesign error:", error);
       throw error;
     }
   }
 
-  async generatePaidAdCopy(listing: Listing, style: string = 'professional'): Promise<string> {
+  async generatePaidAdCopy(
+    listing: Listing,
+    style: string = "professional",
+  ): Promise<string> {
     try {
       const objectives = style; // In batch mode, 'style' carries the objectives object
       // Generate structured ad campaigns and format as string for now
       const campaigns = [
         {
-          platform: 'Facebook',
-          objective: 'WEBSITE_TRAFFIC',
-          headline: this.generateAdHeadline(listing, 'facebook', style),
-          body: this.generateAdBody(listing, 'facebook', style),
-          cta: 'View Listing'
+          platform: "Facebook",
+          objective: "WEBSITE_TRAFFIC",
+          headline: this.generateAdHeadline(listing, "facebook", style),
+          body: this.generateAdBody(listing, "facebook", style),
+          cta: "View Listing",
         },
         {
-          platform: 'LinkedIn',
-          objective: 'WEBSITE_TRAFFIC', 
-          headline: this.generateAdHeadline(listing, 'linkedin', style),
-          body: this.generateAdBody(listing, 'linkedin', style),
-          cta: 'View Property Profile'
+          platform: "LinkedIn",
+          objective: "WEBSITE_TRAFFIC",
+          headline: this.generateAdHeadline(listing, "linkedin", style),
+          body: this.generateAdBody(listing, "linkedin", style),
+          cta: "View Property Profile",
         },
         {
-          platform: 'Google',
-          objective: 'WEBSITE_TRAFFIC',
-          headline: this.generateAdHeadline(listing, 'google', style),
-          body: this.generateAdBody(listing, 'google', style),
-          cta: 'Schedule a Tour'
-        }
+          platform: "Google",
+          objective: "WEBSITE_TRAFFIC",
+          headline: this.generateAdHeadline(listing, "google", style),
+          body: this.generateAdBody(listing, "google", style),
+          cta: "Schedule a Tour",
+        },
       ];
 
       // Format as string for compatibility with existing system
       return JSON.stringify(campaigns);
     } catch (error) {
-      console.error('Error generating paid ad campaigns:', error);
+      console.error("Error generating paid ad campaigns:", error);
       throw error;
     }
   }
 
-  private generateAdHeadline(listing: Listing, platform: string, style: string): string {
+  private generateAdHeadline(
+    listing: Listing,
+    platform: string,
+    style: string,
+  ): string {
     const { address, bedrooms, bathrooms, price } = listing;
-    const location = address.split(',').slice(-2).join(',').trim(); // Get city, state
-    
+    const location = address.split(",").slice(-2).join(",").trim(); // Get city, state
+
     switch (platform) {
-      case 'facebook':
-        if (style === 'luxury') {
-          return `Sparkle in the Heart of ${location.split(',')[0]}`;
+      case "facebook":
+        if (style === "luxury") {
+          return `Sparkle in the Heart of ${location.split(",")[0]}`;
         }
-        return `${bedrooms}-Bed, ${bathrooms}-Bath Home in ${location.split(',')[0]}`;
-      
-      case 'linkedin':
+        return `${bedrooms}-Bed, ${bathrooms}-Bath Home in ${location.split(",")[0]}`;
+
+      case "linkedin":
         return `Luxury Investment Opportunity: $${(price / 1000).toFixed(0)}K | ${listing.squareFootage} Sqft | ${location}`;
-      
-      case 'google':
-        return `Luxury ${bedrooms}-Bed Home in ${location.split(',')[0]} - $${(price / 1000).toFixed(0)}K`;
-      
+
+      case "google":
+        return `Luxury ${bedrooms}-Bed Home in ${location.split(",")[0]} - $${(price / 1000).toFixed(0)}K`;
+
       default:
         return `${bedrooms}-Bed, ${bathrooms}-Bath Home - $${(price / 1000).toFixed(0)}K`;
     }
   }
 
-  private generateAdBody(listing: Listing, platform: string, style: string): string {
+  private generateAdBody(
+    listing: Listing,
+    platform: string,
+    style: string,
+  ): string {
     const { bedrooms, bathrooms, keyFeatures } = listing;
-    const features = keyFeatures || 'Premium features';
-    
+    const features = keyFeatures || "Premium features";
+
     switch (platform) {
-      case 'facebook':
+      case "facebook":
         return `Imagine sipping summer nights by your very own pool, surrounded by lush greenery and a shed full of storage secrets waiting to be uncovered. This ${bedrooms}-bed, ${bathrooms}-bath haven is calling your name!`;
-      
-      case 'linkedin':
+
+      case "linkedin":
         return `Invest in prime real estate with this exceptional property boasting a backyard, pool, and shed storage. In a highly sought-after location, this ${bedrooms}-bedroom, ${bathrooms}-bathroom residence offers unparalleled luxury and potential for strong ROI.`;
-      
-      case 'google':
+
+      case "google":
         return `Stunning ${bedrooms}-bed, ${bathrooms}-bath colonial with pool & shed storage. Perfect for families seeking a private oasis.`;
-      
+
       default:
         return `Beautiful ${bedrooms}-bedroom, ${bathrooms}-bathroom home with ${features}.`;
     }
@@ -371,7 +449,7 @@ export class ContentGenerationService {
       xPost,
       emailContent,
       interiorConcepts,
-      paidAdCopy
+      paidAdCopy,
     ] = await Promise.all([
       this.generateMLSDescription(listing),
       this.generateFacebookPost(listing),
@@ -379,7 +457,7 @@ export class ContentGenerationService {
       this.generateXPost(listing),
       this.generateEmailContent(listing),
       this.generateInteriorConcepts(listing),
-      this.generatePaidAdCopy(listing)
+      this.generatePaidAdCopy(listing),
     ]);
 
     return {
@@ -389,40 +467,55 @@ export class ContentGenerationService {
       xPost,
       emailContent,
       interiorConcepts,
-      paidAdCopy
+      paidAdCopy,
     };
   }
 
   // Individual generation functions for step-by-step progress
-  async generateContentStep(listing: Listing, stepId: string, options?: any): Promise<string> {
-    const style = options?.style || 'professional';
-    
+  async generateContentStep(
+    listing: Listing,
+    stepId: string,
+    options?: any,
+  ): Promise<string> {
+    const style = options?.style || "professional";
+
     switch (stepId) {
-      case 'mls-description':
-      case 'description':
+      case "mls-description":
+      case "description":
         return await this.generateMLSDescription(listing, style);
-      case 'facebook-post':
+      case "facebook-post":
         return await this.generateFacebookPost(listing, style);
-      case 'instagram-post':
+      case "instagram-post":
         return await this.generateInstagramPost(listing, style);
-      case 'x-post':
+      case "x-post":
         return await this.generateXPost(listing, style);
-      case 'email':
-        return await this.generateEmailContent(listing, options?.theme || 'NEW_LISTING', style);
-      case 'interior-reimagined':
-        if (options?.selectedImage && options?.roomType && options?.designStyle) {
+      case "email":
+        return await this.generateEmailContent(
+          listing,
+          options?.theme || "NEW_LISTING",
+          style,
+        );
+      case "interior-reimagined":
+        if (
+          options?.selectedImage &&
+          options?.roomType &&
+          options?.designStyle
+        ) {
           // Generate actual room redesign image
           const redesignedImageUrl = await this.generateActualRoomRedesign(
-            options.selectedImage, 
-            options.roomType, 
-            options.designStyle
+            options.selectedImage,
+            options.roomType,
+            options.designStyle,
           );
           return redesignedImageUrl;
         } else {
           // Fallback to text concepts if no image/options provided
-          return await this.generateInteriorConcepts(listing, options?.selectedImage);
+          return await this.generateInteriorConcepts(
+            listing,
+            options?.selectedImage,
+          );
         }
-      case 'paid-ads':
+      case "paid-ads":
         return await this.generatePaidAdCopy(listing);
       default:
         throw new Error(`Unknown content step: ${stepId}`);
@@ -434,17 +527,17 @@ export class ContentGenerationService {
    */
   private mapRoomTypeToAPI(roomType?: string): string {
     const mapping: Record<string, string> = {
-      'livingroom': 'Living Room',
-      'bedroom': 'Bedroom',
-      'kitchen': 'Kitchen',
-      'bathroom': 'Bathroom',
-      'diningroom': 'Dining Room',
-      'homeoffice': 'Office',
-      'nursery': 'Bedroom',
-      'basement': 'Living Room'
+      livingroom: "Living Room",
+      bedroom: "Bedroom",
+      kitchen: "Kitchen",
+      bathroom: "Bathroom",
+      diningroom: "Dining Room",
+      homeoffice: "Office",
+      nursery: "Bedroom",
+      basement: "Living Room",
     };
-    
-    return mapping[roomType || 'livingroom'] || 'Living Room';
+
+    return mapping[roomType || "livingroom"] || "Living Room";
   }
 
   /**
@@ -452,22 +545,22 @@ export class ContentGenerationService {
    */
   private mapStyleToAPI(style?: string): string {
     const mapping: Record<string, string> = {
-      'modern': 'Modern',
-      'scandinavian': 'Scandinavian',
-      'minimalist': 'Minimalist',
-      'industrial': 'Industrial',
-      'bohemian': 'Bohemian',
-      'traditional': 'Traditional',
-      'midcenturymodern': 'Mid-Century Modern',
-      'glamorous': 'Luxury',
-      'rustic': 'Rustic',
-      'contemporary': 'Contemporary',
-      'eclectic': 'Contemporary',
-      'farmhouse': 'Farmhouse'
+      modern: "Modern",
+      scandinavian: "Scandinavian",
+      minimalist: "Minimalist",
+      industrial: "Industrial",
+      bohemian: "Bohemian",
+      traditional: "Traditional",
+      midcenturymodern: "Mid-Century Modern",
+      glamorous: "Luxury",
+      rustic: "Rustic",
+      contemporary: "Contemporary",
+      eclectic: "Contemporary",
+      farmhouse: "Farmhouse",
     };
-    
-    return mapping[style || 'modern'] || 'Modern';
+
+    return mapping[style || "modern"] || "Modern";
   }
 }
 
-export const contentGenerationService = new ContentGenerationService(); 
+export const contentGenerationService = new ContentGenerationService();
