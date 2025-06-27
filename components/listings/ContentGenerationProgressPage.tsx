@@ -306,6 +306,8 @@ const ContentGenerationProgressPage: React.FC = () => {
           }
 
           // Update step to completed
+          console.log(`🎯 Updating step ${step.id} (${step.name}) to completed status`);
+          console.log(`📊 Step content length: ${content ? content.length : 0}`);
           setSteps(prev => prev.map((s, idx) => 
             idx === i ? { 
               ...s, 
@@ -314,6 +316,7 @@ const ContentGenerationProgressPage: React.FC = () => {
               endTime: Date.now()
             } : s
           ));
+          console.log(`✅ Step ${step.id} marked as completed`);
 
           // Save content to listing
           const updateData: any = {};
@@ -406,7 +409,9 @@ const ContentGenerationProgressPage: React.FC = () => {
           }
 
           // Small delay for UX
+          console.log(`⏳ Waiting 800ms before moving to next step (current step: ${step.id})`);
           await new Promise(resolve => setTimeout(resolve, 800));
+          console.log(`🚀 Moving to next step after ${step.id} completion`);
 
         } catch (stepError) {
           console.error(`Error generating ${step.name}:`, stepError);
