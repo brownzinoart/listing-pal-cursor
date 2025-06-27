@@ -204,13 +204,15 @@ export class ContentGenerationService {
         hasJobId: !!initialData.jobId,
         successValue: initialData.success,
         imageUrlValue: initialData.imageUrl,
-        jobIdValue: initialData.jobId
+        jobIdValue: initialData.jobId,
+        fullResponse: initialData
       });
 
       // Case 1: Immediate success with image URL - this IS the completion signal
       if (initialData.success && initialData.imageUrl) {
         console.log('✅ Decor8AI returned immediate result with image URL.');
         console.log('🎯 Image URL received:', initialData.imageUrl);
+        console.log('🚀 About to return image URL and complete step...');
         
         // Validate the image URL format
         try {
@@ -223,6 +225,7 @@ export class ContentGenerationService {
         
         // This immediate result IS the completion - no need for additional polling
         console.log('🎉 Decor8AI processing completed successfully - proceeding to next step');
+        console.log('📤 Returning image URL:', initialData.imageUrl);
         return initialData.imageUrl;
       }
 

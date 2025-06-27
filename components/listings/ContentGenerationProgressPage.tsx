@@ -253,6 +253,9 @@ const ContentGenerationProgressPage: React.FC = () => {
               console.log('🚀 Starting interior-reimagined generation...');
               content = await contentGenerationService.generateContentStep(listingData, 'interior-reimagined', options);
               console.log('✅ Interior-reimagined generation completed. Content:', content ? content.substring(0, 100) + '...' : 'null');
+              console.log('🔍 Content type:', typeof content);
+              console.log('🔍 Content length:', content ? content.length : 0);
+              console.log('🔍 Content starts with http:', content ? content.startsWith('http') : 'N/A');
               
               // Validate the response - should be an image URL
               if (!content || typeof content !== 'string') {
@@ -290,6 +293,7 @@ const ContentGenerationProgressPage: React.FC = () => {
                 }
               }
               console.log('🎉 Interior-reimagined step processing completed successfully');
+              console.log('📋 About to update step status to completed...');
               break;
               
             case 'paid-ads':
@@ -308,6 +312,7 @@ const ContentGenerationProgressPage: React.FC = () => {
           // Update step to completed
           console.log(`🎯 Updating step ${step.id} (${step.name}) to completed status`);
           console.log(`📊 Step content length: ${content ? content.length : 0}`);
+          console.log(`📊 Step content preview: ${content ? content.substring(0, 50) + '...' : 'null'}`);
           setSteps(prev => prev.map((s, idx) => 
             idx === i ? { 
               ...s, 
@@ -317,6 +322,8 @@ const ContentGenerationProgressPage: React.FC = () => {
             } : s
           ));
           console.log(`✅ Step ${step.id} marked as completed`);
+          console.log(`📊 Current step index: ${i}, total steps: ${steps.length}`);
+          console.log(`🔄 Next step will be: ${i + 1 < steps.length ? steps[i + 1].id : 'none (last step)'}`);
 
           // Save content to listing
           const updateData: any = {};
