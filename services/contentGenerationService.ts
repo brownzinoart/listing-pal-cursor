@@ -207,26 +207,73 @@ export class ContentGenerationService {
         jobIdValue: initialData.jobId
       });
 
-      // Case 1: Immediate success with image URL
+      // Case 1: Immediate success with image URL - BUT we still need to poll to ensure it's fully processed
       if (initialData.success && initialData.imageUrl) {
         console.log('✅ Decor8AI returned immediate result with image URL.');
         console.log('🎯 Image URL received:', initialData.imageUrl);
         
-        // Validate the image URL
+        // Validate the image URL format
         try {
           new URL(initialData.imageUrl);
-          console.log('✅ Decor8AI image URL is valid and ready for use');
-          
-          // Wait a moment to ensure the image is fully processed
-          console.log('⏳ Waiting for image processing to complete...');
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          
-          console.log('🎉 Returning image URL from immediate result:', initialData.imageUrl);
-          return initialData.imageUrl;
+          console.log('✅ Decor8AI image URL format is valid');
         } catch (urlError) {
           console.error('❌ Invalid image URL format:', initialData.imageUrl);
           throw new Error('Decor8AI returned invalid image URL format');
         }
+        
+        // IMPORTANT: Even with immediate result, we need to poll to ensure the image is fully processed
+        // This prevents the step from completing before the image is actually ready
+        console.log('🔄 Starting polling to ensure image is fully processed...');
+        
+        const pollUntilImageReady = async (imageUrl: string, retries = 15, delay = 3000): Promise<string> => {
+          for (let i = 0; i < retries; i++) {
+            try {
+              console.log(`🔄 Polling attempt ${i + 1}/${retries} to verify image is ready: ${imageUrl.substring(0, 50)}...`);
+              
+              // Try to load the image to verify it's accessible
+              const imgResponse = await fetch(imageUrl, { method: 'HEAD' });
+              
+              if (imgResponse.ok) {
+                // Image is accessible, but let's also verify it loads properly
+                const img = new Image();
+                await new Promise((resolve, reject) => {
+                  const timer = setTimeout(() => {
+                    img.src = '';
+                    reject(new Error('Image load timeout'));
+                  }, 10000);
+                  
+                  img.onload = () => {
+                    clearTimeout(timer);
+                    resolve(true);
+                  };
+                  
+                  img.onerror = () => {
+                    clearTimeout(timer);
+                    reject(new Error('Image failed to load'));
+                  };
+                  
+                  img.src = `${imageUrl}?cacheBust=${Date.now()}`;
+                });
+                
+                console.log('✅ Image is fully processed and accessible:', imageUrl);
+                return imageUrl;
+              } else {
+                console.log(`⏳ Image not ready yet (HTTP ${imgResponse.status}), waiting ${delay}ms...`);
+              }
+            } catch (error) {
+              console.log(`⏳ Image verification attempt ${i + 1} failed, waiting ${delay}ms...`, error instanceof Error ? error.message : String(error));
+            }
+            
+            // Wait before next attempt
+            await new Promise(resolve => setTimeout(resolve, delay));
+          }
+          
+          throw new Error(`Image processing verification timed out after ${retries} attempts. The image may not be fully ready.`);
+        };
+        
+        const verifiedImageUrl = await pollUntilImageReady(initialData.imageUrl);
+        console.log('🎉 Image verified and ready for use:', verifiedImageUrl);
+        return verifiedImageUrl;
       }
 
       // Case 2: Async job with jobId for polling
