@@ -239,6 +239,17 @@ const ContentGenerationProgressPage: React.FC = () => {
               } else {
                 console.warn('⚠️ No room redesign selections found');
               }
+              
+              // Update step description to show Decor8AI processing
+              setSteps(prev => prev.map((s, idx) =>
+                idx === i ? { 
+                  ...s, 
+                  description: 'Processing with Decor8AI...',
+                  status: 'in-progress'
+                } : s
+              ));
+              
+              // Generate the room redesign - this will poll until completion
               content = await contentGenerationService.generateContentStep(listingData, 'interior-reimagined', options);
               
               // Validate the response - should be an image URL
@@ -249,7 +260,7 @@ const ContentGenerationProgressPage: React.FC = () => {
               // Check if it's a valid URL (more flexible than just checking for 'http')
               try {
                 new URL(content);
-                console.log('✅ Valid image URL received:', content);
+                console.log('✅ Valid image URL received from Decor8AI:', content);
               } catch (urlError) {
                 // If it's not a URL, treat it as an error but allow retry
                 console.warn('⚠️ Interior redesign returned non-URL content:', content.substring(0, 100));
@@ -261,8 +272,8 @@ const ContentGenerationProgressPage: React.FC = () => {
                 setSteps(prev => prev.map((s, idx) =>
                   idx === i ? { 
                     ...s, 
-                    description: 'Waiting for image to load...',
-                    status: 'in-progress' // optionally add a custom value like 'verifying' if your UI supports it
+                    description: 'Verifying image accessibility...',
+                    status: 'in-progress'
                   } : s
                 ));
                 
@@ -514,6 +525,16 @@ const ContentGenerationProgressPage: React.FC = () => {
             options.roomType = batchSelections.roomRedesign.roomType;
             options.designStyle = batchSelections.roomRedesign.designStyle;
           }
+          
+          // Update step description to show Decor8AI processing
+          setSteps(prev => prev.map((s, idx) =>
+            idx === stepIndex ? { 
+              ...s, 
+              description: 'Processing with Decor8AI...',
+              status: 'in-progress'
+            } : s
+          ));
+          
           content = await contentGenerationService.generateContentStep(listing, 'interior-reimagined', options);
           
           // Validate the response - should be an image URL (matching main generation logic)
@@ -524,11 +545,30 @@ const ContentGenerationProgressPage: React.FC = () => {
           // Check if it's a valid URL (more flexible than just checking for 'http')
           try {
             new URL(content);
-            console.log('✅ Retry - Valid image URL received:', content);
+            console.log('✅ Retry - Valid image URL received from Decor8AI:', content);
           } catch (urlError) {
             // If it's not a URL, treat it as an error but allow retry
             console.warn('⚠️ Retry - Interior redesign returned non-URL content:', content.substring(0, 100));
             throw new Error('Interior redesign API did not return a valid image URL. Please retry.');
+          }
+          
+          if (content.startsWith('http')) {
+            // Show interim status while image loads
+            setSteps(prev => prev.map((s, idx) =>
+              idx === stepIndex ? { 
+                ...s, 
+                description: 'Verifying image accessibility...',
+                status: 'in-progress'
+              } : s
+            ));
+            
+            try {
+              await waitUntilImageIsAccessible(content, 15000, 4);
+              console.log('🖼️ Retry - Image confirmed loaded and accessible:', content);
+            } catch (imgErr) {
+              console.warn('⚠️ Retry - Image not fully loaded before timeout or error:', imgErr);
+              throw new Error('Interior redesign image is not ready yet. Please retry.');
+            }
           }
           break;
         case 'paid-ads':

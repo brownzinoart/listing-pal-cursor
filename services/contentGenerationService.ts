@@ -174,7 +174,7 @@ export class ContentGenerationService {
       const mappedRoomType = this.mapRoomTypeToAPI(roomType);
       const mappedStyle = this.mapStyleToAPI(designStyle);
       
-      console.log('🎯 Sending initial room redesign request:', { 
+      console.log('🎯 Sending initial room redesign request to Decor8AI:', { 
         imageUrl: imageUrl.substring(0, 50) + '...',
         roomType: mappedRoomType,
         designStyle: mappedStyle
@@ -208,13 +208,13 @@ export class ContentGenerationService {
         throw new Error('No job ID received from initial redesign request.');
       }
       
-      console.log(`⏳ Received job ID: ${jobId}. Starting to poll for results...`);
+      console.log(`⏳ Received job ID: ${jobId}. Starting to poll for Decor8AI results...`);
 
       const pollUntilComplete = async (retries = 30, delay = 5000): Promise<string> => {
         for (let i = 0; i < retries; i++) {
           try {
             await new Promise(resolve => setTimeout(resolve, delay));
-            console.log(`🔄 Polling attempt ${i + 1}/${retries} for job ${jobId}`);
+            console.log(`🔄 Polling attempt ${i + 1}/${retries} for Decor8AI job ${jobId}`);
             
             const statusResponse = await fetch(`/api/redesign-status/${jobId}`, {
               method: 'GET',
@@ -223,27 +223,35 @@ export class ContentGenerationService {
 
             if (statusResponse.ok) {
               const statusData = await statusResponse.json();
-              console.log(`📊 Job ${jobId} status:`, statusData.status);
+              console.log(`📊 Decor8AI job ${jobId} status:`, statusData.status);
               
               if (statusData.status === 'completed' && statusData.imageUrl) {
-                console.log(`✅ Job ${jobId} completed successfully!`);
+                console.log(`✅ Decor8AI job ${jobId} completed successfully!`);
                 console.log(`🖼️ Generated image URL: ${statusData.imageUrl}`);
-                return statusData.imageUrl;
+                
+                // Additional validation to ensure the image URL is accessible
+                try {
+                  new URL(statusData.imageUrl);
+                  console.log('✅ Decor8AI image URL is valid and ready for use');
+                  return statusData.imageUrl;
+                } catch (urlError) {
+                  throw new Error('Decor8AI returned invalid image URL format');
+                }
               }
               
               if (statusData.status === 'failed' || statusData.status === 'error') {
-                throw new Error(`Job failed: ${statusData.error || 'Unknown error during processing'}`);
+                throw new Error(`Decor8AI job failed: ${statusData.error || 'Unknown error during processing'}`);
               }
               
               // Still processing, continue polling
-              console.log(`⏳ Job ${jobId} still ${statusData.status}, continuing to poll...`);
+              console.log(`⏳ Decor8AI job ${jobId} still ${statusData.status}, continuing to poll...`);
             } else if (statusResponse.status === 202) {
               // Job is still processing (202 Accepted)
-              console.log(`⏳ Job ${jobId} still processing (202), continuing to poll...`);
+              console.log(`⏳ Decor8AI job ${jobId} still processing (202), continuing to poll...`);
             } else {
               // Other error status
               const errorData = await statusResponse.json().catch(() => ({}));
-              console.warn(`⚠️ Status check failed with HTTP ${statusResponse.status}: ${errorData.error || 'Unknown error'}`);
+              console.warn(`⚠️ Decor8AI status check failed with HTTP ${statusResponse.status}: ${errorData.error || 'Unknown error'}`);
               
               // For certain errors, we might want to continue polling
               if (statusResponse.status === 500 && i < retries - 3) {
@@ -251,10 +259,10 @@ export class ContentGenerationService {
                 continue;
               }
               
-              throw new Error(`Status check failed: ${errorData.error || `HTTP ${statusResponse.status}`}`);
+              throw new Error(`Decor8AI status check failed: ${errorData.error || `HTTP ${statusResponse.status}`}`);
             }
           } catch (error) {
-            console.error(`❌ Polling error on attempt ${i + 1}:`, error instanceof Error ? error.message : String(error));
+            console.error(`❌ Decor8AI polling error on attempt ${i + 1}:`, error instanceof Error ? error.message : String(error));
             
             // If it's the last attempt or a critical error, throw
             if (i === retries - 1 || (error instanceof Error && error.message.includes('Job failed'))) {
@@ -274,13 +282,15 @@ export class ContentGenerationService {
           }
         }
         
-        throw new Error(`Room redesign job timed out after ${retries} attempts (${retries * delay / 1000}s total)`);
+        throw new Error(`Decor8AI room redesign job timed out after ${retries} attempts (${retries * delay / 1000}s total)`);
       };
 
-      return await pollUntilComplete();
+      const result = await pollUntilComplete();
+      console.log('🎉 Decor8AI room redesign completed successfully and ready for listing');
+      return result;
       
     } catch (error) {
-      console.error('Room redesign error:', error);
+      console.error('Decor8AI room redesign error:', error);
       throw error;
     }
   }
