@@ -171,44 +171,114 @@ export class ContentGenerationService {
 
   async generateActualRoomRedesign(imageUrl: string, roomType: string, designStyle: string): Promise<string> {
     try {
-      // Map frontend room types and design styles to API format (matching roomRestyleService.ts)
       const mappedRoomType = this.mapRoomTypeToAPI(roomType);
       const mappedStyle = this.mapStyleToAPI(designStyle);
       
-      console.log('🎯 Sending room redesign request:', { 
-        imageUrl: imageUrl.substring(0, 50) + '...', 
-        originalRoomType: roomType,
-        originalDesignStyle: designStyle,
-        mappedRoomType,
-        mappedStyle
+      console.log('🎯 Sending initial room redesign request:', { 
+        imageUrl: imageUrl.substring(0, 50) + '...',
+        roomType: mappedRoomType,
+        designStyle: mappedStyle
       });
-      
-      const response = await fetch('/api/redesign-url', {
+
+      const initialResponse = await fetch('/api/redesign-url', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           imageUrl: imageUrl,
           room_type: mappedRoomType,
-          style: mappedStyle
+          style: mappedStyle,
+          isAsync: true // Use async flow
         }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('❌ Room redesign API error:', errorData);
-        throw new Error(errorData.error || 'Room redesign API failed');
+      if (!initialResponse.ok) {
+        const errorData = await initialResponse.json();
+        throw new Error(errorData.error || 'Initial room redesign request failed');
       }
 
-      const result = await response.json();
-      console.log('✅ Room redesign successful:', result);
-      
-      if (result.success && result.imageUrl) {
-        return result.imageUrl;
-      } else {
-        throw new Error('No redesigned image received from API');
+      const initialData = await initialResponse.json();
+      const jobId = initialData.jobId;
+
+      if (!jobId) {
+        // Handle immediate success if API returns URL directly (backwards compatibility)
+        if (initialData.success && initialData.imageUrl) {
+          console.log('✅ Decor8AI returned immediate result.');
+          return initialData.imageUrl;
+        }
+        throw new Error('No job ID received from initial redesign request.');
       }
+      
+      console.log(`⏳ Received job ID: ${jobId}. Starting to poll for results...`);
+
+      const pollUntilComplete = async (retries = 30, delay = 5000): Promise<string> => {
+        for (let i = 0; i < retries; i++) {
+          try {
+            await new Promise(resolve => setTimeout(resolve, delay));
+            console.log(`🔄 Polling attempt ${i + 1}/${retries} for job ${jobId}`);
+            
+            const statusResponse = await fetch(`/api/redesign-status/${jobId}`, {
+              method: 'GET',
+              headers: { 'Content-Type': 'application/json' }
+            });
+
+            if (statusResponse.ok) {
+              const statusData = await statusResponse.json();
+              console.log(`📊 Job ${jobId} status:`, statusData.status);
+              
+              if (statusData.status === 'completed' && statusData.imageUrl) {
+                console.log(`✅ Job ${jobId} completed successfully!`);
+                console.log(`🖼️ Generated image URL: ${statusData.imageUrl}`);
+                return statusData.imageUrl;
+              }
+              
+              if (statusData.status === 'failed' || statusData.status === 'error') {
+                throw new Error(`Job failed: ${statusData.error || 'Unknown error during processing'}`);
+              }
+              
+              // Still processing, continue polling
+              console.log(`⏳ Job ${jobId} still ${statusData.status}, continuing to poll...`);
+            } else if (statusResponse.status === 202) {
+              // Job is still processing (202 Accepted)
+              console.log(`⏳ Job ${jobId} still processing (202), continuing to poll...`);
+            } else {
+              // Other error status
+              const errorData = await statusResponse.json().catch(() => ({}));
+              console.warn(`⚠️ Status check failed with HTTP ${statusResponse.status}: ${errorData.error || 'Unknown error'}`);
+              
+              // For certain errors, we might want to continue polling
+              if (statusResponse.status === 500 && i < retries - 3) {
+                console.log('🔄 Server error, but continuing to poll (server might be temporarily unavailable)');
+                continue;
+              }
+              
+              throw new Error(`Status check failed: ${errorData.error || `HTTP ${statusResponse.status}`}`);
+            }
+          } catch (error) {
+            console.error(`❌ Polling error on attempt ${i + 1}:`, error instanceof Error ? error.message : String(error));
+            
+            // If it's the last attempt or a critical error, throw
+            if (i === retries - 1 || (error instanceof Error && error.message.includes('Job failed'))) {
+              throw error;
+            }
+            
+            // For network errors, continue polling with exponential backoff
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            if (errorMessage.includes('fetch') || errorMessage.includes('network')) {
+              console.log('🔄 Network error, continuing to poll with exponential backoff...');
+              delay = Math.min(delay * 1.2, 10000); // Increase delay but cap at 10s
+              continue;
+            }
+            
+            // For other errors, continue polling
+            console.log('🔄 Error occurred, but continuing to poll...');
+          }
+        }
+        
+        throw new Error(`Room redesign job timed out after ${retries} attempts (${retries * delay / 1000}s total)`);
+      };
+
+      return await pollUntilComplete();
+      
     } catch (error) {
       console.error('Room redesign error:', error);
       throw error;
@@ -217,6 +287,7 @@ export class ContentGenerationService {
 
   async generatePaidAdCopy(listing: Listing, style: string = 'professional'): Promise<string> {
     try {
+      const objectives = style; // In batch mode, 'style' carries the objectives object
       // Generate structured ad campaigns and format as string for now
       const campaigns = [
         {

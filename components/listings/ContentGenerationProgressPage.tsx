@@ -132,17 +132,10 @@ const ContentGenerationProgressPage: React.FC = () => {
       return () => clearTimeout(timer);
     } else if (redirectCountdown === 0 && listingId) {
       console.log(`🚀 EXECUTING REDIRECT NOW to /listings/${listingId}`);
-      console.log('🔍 Current window location:', window.location.href);
-      navigate(`/listings/${listingId}`);
-      console.log('✅ navigate() function called');
-      
-      // Additional fallback using window.location
-      setTimeout(() => {
-        console.log('🔄 Fallback redirect using window.location');
-        window.location.href = `/listings/${listingId}`;
-      }, 1000);
+      // Use window.location.href to force a full page reload, ensuring fresh data.
+      window.location.href = `/#/listings/${listingId}?refresh=${Date.now()}`;
     }
-  }, [redirectCountdown, listingId, navigate]);
+  }, [redirectCountdown, listingId]);
 
   const startBatchGeneration = async (listingData: Listing, selections: any) => {
     setIsGenerating(true);
@@ -199,6 +192,21 @@ const ContentGenerationProgressPage: React.FC = () => {
                 console.warn('⚠️ No room redesign selections found');
               }
               content = await contentGenerationService.generateContentStep(listingData, 'interior-reimagined', options);
+              
+              // Validate the response - should be an image URL
+              if (!content || typeof content !== 'string') {
+                throw new Error('Interior redesign API returned invalid response');
+              }
+              
+              // Check if it's a valid URL (more flexible than just checking for 'http')
+              try {
+                new URL(content);
+                console.log('✅ Valid image URL received:', content);
+              } catch (urlError) {
+                // If it's not a URL, treat it as an error but allow retry
+                console.warn('⚠️ Interior redesign returned non-URL content:', content.substring(0, 100));
+                throw new Error('Interior redesign API did not return a valid image URL. Please retry.');
+              }
               break;
               
             case 'paid-ads':
@@ -264,7 +272,25 @@ const ContentGenerationProgressPage: React.FC = () => {
                 };
                 
                 // IMPORTANT: Append to existing room designs, don't overwrite (matching individual workflow)
-                const existingRoomDesigns = listingData.generatedRoomDesigns || [];
+                let existingRoomDesigns = [];
+                if (listingData.generatedRoomDesigns) {
+                  if (Array.isArray(listingData.generatedRoomDesigns)) {
+                    existingRoomDesigns = listingData.generatedRoomDesigns;
+                  } else if (typeof listingData.generatedRoomDesigns === 'string') {
+                    try {
+                      const parsed = JSON.parse(listingData.generatedRoomDesigns);
+                      if (Array.isArray(parsed)) {
+                        existingRoomDesigns = parsed;
+                      } else {
+                        console.warn('Parsed generatedRoomDesigns is not an array, starting fresh.', parsed);
+                        existingRoomDesigns = [];
+                      }
+                    } catch (e) {
+                      console.error('Failed to parse generatedRoomDesigns string, starting fresh.', e);
+                      existingRoomDesigns = [];
+                    }
+                  }
+                }
                 updateData.generatedRoomDesigns = [...existingRoomDesigns, newRoomDesign];
                 
                 console.log('💾 Saving room design URL:', content);
@@ -422,6 +448,21 @@ const ContentGenerationProgressPage: React.FC = () => {
             options.designStyle = batchSelections.roomRedesign.designStyle;
           }
           content = await contentGenerationService.generateContentStep(listing, 'interior-reimagined', options);
+          
+          // Validate the response - should be an image URL (matching main generation logic)
+          if (!content || typeof content !== 'string') {
+            throw new Error('Interior redesign API returned invalid response');
+          }
+          
+          // Check if it's a valid URL (more flexible than just checking for 'http')
+          try {
+            new URL(content);
+            console.log('✅ Retry - Valid image URL received:', content);
+          } catch (urlError) {
+            // If it's not a URL, treat it as an error but allow retry
+            console.warn('⚠️ Retry - Interior redesign returned non-URL content:', content.substring(0, 100));
+            throw new Error('Interior redesign API did not return a valid image URL. Please retry.');
+          }
           break;
         case 'paid-ads':
           if (batchSelections?.paidAds) {
@@ -482,7 +523,25 @@ const ContentGenerationProgressPage: React.FC = () => {
             };
             
             // IMPORTANT: Append to existing room designs, don't overwrite (matching individual workflow)
-            const existingRoomDesigns = listing.generatedRoomDesigns || [];
+            let existingRoomDesigns = [];
+            if (listing.generatedRoomDesigns) {
+                if (Array.isArray(listing.generatedRoomDesigns)) {
+                    existingRoomDesigns = listing.generatedRoomDesigns;
+                } else if (typeof listing.generatedRoomDesigns === 'string') {
+                    try {
+                        const parsed = JSON.parse(listing.generatedRoomDesigns);
+                        if (Array.isArray(parsed)) {
+                            existingRoomDesigns = parsed;
+                        } else {
+                            console.warn('Parsed generatedRoomDesigns is not an array on retry, starting fresh.', parsed);
+                            existingRoomDesigns = [];
+                        }
+                    } catch (e) {
+                        console.error('Failed to parse generatedRoomDesigns string on retry, starting fresh.', e);
+                        existingRoomDesigns = [];
+                    }
+                }
+            }
             updateData.generatedRoomDesigns = [...existingRoomDesigns, newRoomDesign];
             
             console.log('💾 Retry - Saving room design URL:', content);
@@ -705,7 +764,7 @@ const ContentGenerationProgressPage: React.FC = () => {
                     <Button
                       onClick={() => {
                         console.log('🔄 Manual redirect button clicked');
-                        navigate(`/listings/${listingId}`);
+                        window.location.href = `/#/listings/${listingId}?refresh=${Date.now()}`;
                       }}
                       className="flex items-center gap-2 bg-brand-primary hover:bg-brand-primary/90"
                     >
@@ -729,7 +788,7 @@ const ContentGenerationProgressPage: React.FC = () => {
                   <Button
                     onClick={() => {
                       console.log('🔄 View listing button clicked');
-                      navigate(`/listings/${listingId}`);
+                      window.location.href = `/#/listings/${listingId}?refresh=${Date.now()}`;
                     }}
                     className="flex items-center gap-2 bg-brand-primary hover:bg-brand-primary/90"
                   >
