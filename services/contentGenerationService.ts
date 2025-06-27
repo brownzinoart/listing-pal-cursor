@@ -207,14 +207,7 @@ export class ContentGenerationService {
         jobIdValue: initialData.jobId
       });
 
-      // IMPORTANT: Decor8AI always requires polling for completion, even with immediate responses
-      // The immediate response is just the start of the process, not the final result
-      console.log('🔄 Decor8AI process started - beginning polling for completion...');
-      
-      // Extract job ID from response (either direct or from immediate result)
-      let jobId = initialData.jobId;
-      
-      // If we got an immediate result, we still need to poll to ensure the image is fully processed
+      // Case 1: Immediate success with image URL - this IS the completion signal
       if (initialData.success && initialData.imageUrl) {
         console.log('✅ Decor8AI returned immediate result with image URL.');
         console.log('🎯 Image URL received:', initialData.imageUrl);
@@ -222,86 +215,38 @@ export class ContentGenerationService {
         // Validate the image URL format
         try {
           new URL(initialData.imageUrl);
-          console.log('✅ Decor8AI image URL format is valid');
+          console.log('✅ Decor8AI image URL format is valid and ready for use');
         } catch (urlError) {
           console.error('❌ Invalid image URL format:', initialData.imageUrl);
           throw new Error('Decor8AI returned invalid image URL format');
         }
         
-        // Even with immediate result, we need to poll to ensure the image is fully processed
-        // The immediate response might just be the upload confirmation, not the final AI result
-        console.log('🔄 Starting polling to ensure Decor8AI processing is complete...');
-        
-        const pollUntilComplete = async (retries = 30, delay = 5000): Promise<string> => {
-          for (let i = 0; i < retries; i++) {
-            try {
-              await new Promise(resolve => setTimeout(resolve, delay));
-              console.log(`🔄 Polling attempt ${i + 1}/${retries} to verify Decor8AI completion...`);
-              
-              // Try to verify the image is actually ready and accessible
-              const imgResponse = await fetch(initialData.imageUrl, { method: 'HEAD' });
-              
-              if (imgResponse.ok) {
-                // Image is accessible, but let's also verify it loads properly
-                const img = new Image();
-                await new Promise((resolve, reject) => {
-                  const timer = setTimeout(() => {
-                    img.src = '';
-                    reject(new Error('Image load timeout'));
-                  }, 10000);
-                  
-                  img.onload = () => {
-                    clearTimeout(timer);
-                    resolve(true);
-                  };
-                  
-                  img.onerror = () => {
-                    clearTimeout(timer);
-                    reject(new Error('Image failed to load'));
-                  };
-                  
-                  img.src = `${initialData.imageUrl}?cacheBust=${Date.now()}`;
-                });
-                
-                console.log('✅ Decor8AI image is fully processed and accessible:', initialData.imageUrl);
-                return initialData.imageUrl;
-              } else {
-                console.log(`⏳ Decor8AI image not ready yet (HTTP ${imgResponse.status}), waiting ${delay}ms...`);
-              }
-            } catch (error) {
-              console.log(`⏳ Decor8AI verification attempt ${i + 1} failed, waiting ${delay}ms...`, error instanceof Error ? error.message : String(error));
-            }
-          }
-          
-          throw new Error(`Decor8AI processing verification timed out after ${retries} attempts. The image may not be fully ready.`);
-        };
-        
-        const verifiedImageUrl = await pollUntilComplete();
-        console.log('🎉 Decor8AI processing completed successfully:', verifiedImageUrl);
-        return verifiedImageUrl;
+        // This immediate result IS the completion - no need for additional polling
+        console.log('🎉 Decor8AI processing completed successfully - proceeding to next step');
+        return initialData.imageUrl;
       }
 
       // Case 2: Async job with jobId for polling
-      if (jobId) {
-        console.log(`⏳ Received job ID: ${jobId}. Starting to poll for Decor8AI results...`);
+      if (initialData.jobId) {
+        console.log(`⏳ Received job ID: ${initialData.jobId}. Starting to poll for Decor8AI results...`);
 
         const pollUntilComplete = async (retries = 30, delay = 5000): Promise<string> => {
           for (let i = 0; i < retries; i++) {
             try {
               await new Promise(resolve => setTimeout(resolve, delay));
-              console.log(`🔄 Polling attempt ${i + 1}/${retries} for Decor8AI job ${jobId}`);
+              console.log(`🔄 Polling attempt ${i + 1}/${retries} for Decor8AI job ${initialData.jobId}`);
               
-              const statusResponse = await fetch(`/api/redesign-status/${jobId}`, {
+              const statusResponse = await fetch(`/api/redesign-status/${initialData.jobId}`, {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' }
               });
 
               if (statusResponse.ok) {
                 const statusData = await statusResponse.json();
-                console.log(`📊 Decor8AI job ${jobId} status:`, statusData.status);
+                console.log(`📊 Decor8AI job ${initialData.jobId} status:`, statusData.status);
                 
                 if (statusData.status === 'completed' && statusData.imageUrl) {
-                  console.log(`✅ Decor8AI job ${jobId} completed successfully!`);
+                  console.log(`✅ Decor8AI job ${initialData.jobId} completed successfully!`);
                   console.log(`🖼️ Generated image URL: ${statusData.imageUrl}`);
                   
                   // Additional validation to ensure the image URL is accessible
@@ -319,10 +264,10 @@ export class ContentGenerationService {
                 }
                 
                 // Still processing, continue polling
-                console.log(`⏳ Decor8AI job ${jobId} still ${statusData.status}, continuing to poll...`);
+                console.log(`⏳ Decor8AI job ${initialData.jobId} still ${statusData.status}, continuing to poll...`);
               } else if (statusResponse.status === 202) {
                 // Job is still processing (202 Accepted)
-                console.log(`⏳ Decor8AI job ${jobId} still processing (202), continuing to poll...`);
+                console.log(`⏳ Decor8AI job ${initialData.jobId} still processing (202), continuing to poll...`);
               } else {
                 // Other error status
                 const errorData = await statusResponse.json().catch(() => ({}));
