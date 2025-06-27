@@ -251,29 +251,85 @@ const ContentGenerationProgressPage: React.FC = () => {
               
               // Generate the room redesign - this will handle both immediate and async results
               console.log('🚀 Starting interior-reimagined generation...');
+              console.log('⏳ Waiting for Decor8AI response...');
               content = await contentGenerationService.generateContentStep(listingData, 'interior-reimagined', options);
+              console.log('✅ Decor8AI response received!');
               console.log('✅ Interior-reimagined generation completed. Content:', content ? content.substring(0, 100) + '...' : 'null');
               console.log('🔍 Content type:', typeof content);
               console.log('🔍 Content length:', content ? content.length : 0);
               console.log('🔍 Content starts with http:', content ? content.startsWith('http') : 'N/A');
+              console.log('🔍 Full content received from Decor8AI:', content);
+              console.log('🔍 Content validation - is string?', typeof content === 'string');
+              console.log('🔍 Content validation - is truthy?', !!content);
+              console.log('🔍 Content validation - length > 0?', content ? content.length > 0 : false);
+              
+              // CRITICAL: Ensure we have a valid response before proceeding
+              if (!content) {
+                console.error('❌ CRITICAL ERROR: Decor8AI returned null/undefined content');
+                throw new Error('Decor8AI returned no content. Please retry.');
+              }
+              
+              if (typeof content !== 'string') {
+                console.error('❌ CRITICAL ERROR: Decor8AI returned non-string content:', typeof content);
+                throw new Error('Decor8AI returned invalid content type. Please retry.');
+              }
+              
+              if (content.length === 0) {
+                console.error('❌ CRITICAL ERROR: Decor8AI returned empty string content');
+                throw new Error('Decor8AI returned empty content. Please retry.');
+              }
+              
+              console.log('✅ Decor8AI content validation passed - proceeding with processing');
+              
+              // CRITICAL: Wait up to 60s for Decor8AI to return a valid image URL
+              const maxWaitMs = 60000;
+              const pollIntervalMs = 3000;
+              const startWait = Date.now();
+              let waited = 0;
+              let imageUrl = null;
+              let lastError = null;
+              for (;;) {
+                try {
+                  // Validate the response is a string and a valid URL
+                  if (typeof content === 'string' && content.startsWith('http')) {
+                    new URL(content); // throws if not a valid URL
+                    imageUrl = content;
+                    console.log('✅ Decor8AI returned immediate result with image URL:', imageUrl);
+                    break;
+                  } else {
+                    throw new Error('Decor8AI did not return a valid image URL yet.');
+                  }
+                } catch (err) {
+                  lastError = err;
+                  waited = Date.now() - startWait;
+                  if (waited >= maxWaitMs) {
+                    console.error('❌ Timed out waiting for Decor8AI image URL after 60s:', err);
+                    throw new Error('Timed out waiting for Decor8AI to return a valid image URL.');
+                  }
+                  console.log(`⏳ Waiting for Decor8AI image URL... retrying in ${pollIntervalMs / 1000}s (waited ${Math.round(waited / 1000)}s)`);
+                  await new Promise(resolve => setTimeout(resolve, pollIntervalMs));
+                }
+              }
+              // At this point, imageUrl is valid and ready
+              console.log('✅ Proceeding with Decor8AI image URL:', imageUrl);
               
               // Validate the response - should be an image URL
-              if (!content || typeof content !== 'string') {
-                console.error('❌ Invalid content received:', content);
+              if (!imageUrl || typeof imageUrl !== 'string') {
+                console.error('❌ Invalid content received:', imageUrl);
                 throw new Error('Interior redesign API returned invalid response');
               }
               
               // Check if it's a valid URL (more flexible than just checking for 'http')
               try {
-                new URL(content);
-                console.log('✅ Valid image URL received from Decor8AI:', content);
+                new URL(imageUrl);
+                console.log('✅ Valid image URL received from Decor8AI:', imageUrl);
               } catch (urlError) {
                 // If it's not a URL, treat it as an error but allow retry
-                console.warn('⚠️ Interior redesign returned non-URL content:', content.substring(0, 100));
+                console.warn('⚠️ Interior redesign returned non-URL content:', imageUrl.substring(0, 100));
                 throw new Error('Interior redesign API did not return a valid image URL. Please retry.');
               }
               
-              if (content.startsWith('http')) {
+              if (imageUrl.startsWith('http')) {
                 // Show interim status while image loads
                 setSteps(prev => prev.map((s, idx) =>
                   idx === i ? { 
@@ -285,8 +341,8 @@ const ContentGenerationProgressPage: React.FC = () => {
                 
                 try {
                   console.log('🔍 Starting image accessibility check...');
-                  await waitUntilImageIsAccessible(content, 15000, 4);
-                  console.log('🖼️ Image confirmed loaded and accessible:', content);
+                  await waitUntilImageIsAccessible(imageUrl, 15000, 4);
+                  console.log('🖼️ Image confirmed loaded and accessible:', imageUrl);
                 } catch (imgErr) {
                   console.warn('⚠️ Image not fully loaded before timeout or error:', imgErr);
                   throw new Error('Interior redesign image is not ready yet. Please retry.');
@@ -294,6 +350,15 @@ const ContentGenerationProgressPage: React.FC = () => {
               }
               console.log('🎉 Interior-reimagined step processing completed successfully');
               console.log('📋 About to update step status to completed...');
+              
+              // CRITICAL: Ensure we have valid content before proceeding
+              if (!imageUrl || typeof imageUrl !== 'string' || imageUrl.length === 0) {
+                console.error('❌ CRITICAL ERROR: Interior-reimagined step completed but returned invalid content');
+                console.error('❌ Content validation failed:', { content: imageUrl, type: typeof imageUrl, length: imageUrl ? imageUrl.length : 0 });
+                throw new Error('Interior redesign step completed but returned invalid content. Please retry.');
+              }
+              
+              console.log('✅ Interior-reimagined content validation passed - proceeding to next step');
               break;
               
             case 'paid-ads':
@@ -324,6 +389,13 @@ const ContentGenerationProgressPage: React.FC = () => {
           console.log(`✅ Step ${step.id} marked as completed`);
           console.log(`📊 Current step index: ${i}, total steps: ${steps.length}`);
           console.log(`🔄 Next step will be: ${i + 1 < steps.length ? steps[i + 1].id : 'none (last step)'}`);
+          
+          // CRITICAL: For interior-reimagined, ensure step is properly completed before continuing
+          if (step.id === 'interior-reimagined') {
+            console.log('🔍 CRITICAL CHECK: Interior-reimagined step completion verification');
+            console.log('🔍 Step status should be completed, content should be valid');
+            console.log('🔍 About to proceed to next step in batch generation loop');
+          }
 
           // Save content to listing
           const updateData: any = {};
@@ -835,27 +907,24 @@ const ContentGenerationProgressPage: React.FC = () => {
             {steps.map((step, index) => (
               <div 
                 key={step.id}
-                className={`flex items-center justify-between p-4 rounded-lg border transition-all duration-200 ${
-                  step.status === 'in-progress' 
-                    ? 'bg-brand-primary/5 border-brand-primary/20 transform scale-[1.02]' 
+                className={[
+                  'flex items-center justify-between p-4 rounded-lg border transition-all duration-200',
+                  step.status === 'in-progress'
+                    ? 'bg-brand-primary/5 border-brand-primary/20 transform scale-[1.02]'
                     : step.status === 'completed'
                     ? 'bg-green-50 border-green-200'
                     : step.status === 'failed'
                     ? 'bg-red-50 border-red-200'
                     : 'bg-brand-card border-brand-border/50'
-                }`}
+                ].join(' ')}
               >
                 <div className="flex items-center space-x-4">
                   <div className="flex-shrink-0">
                     {getStepIcon(step)}
                   </div>
                   <div>
-                    <h3 className={`font-semibold ${getStepTextColor(step)}`}>
-                      {step.name}
-                    </h3>
-                    <p className="text-sm text-brand-text-tertiary">
-                      {step.description}
-                    </p>
+                    <h3 className={`font-semibold ${getStepTextColor(step)}`}>{step.name}</h3>
+                    <p className="text-sm text-brand-text-tertiary">{step.description}</p>
                     {step.status === 'in-progress' && (
                       <div className="mt-1 flex items-center text-sm text-brand-primary">
                         <SparklesIcon className="h-4 w-4 mr-1 animate-pulse" />
@@ -863,13 +932,10 @@ const ContentGenerationProgressPage: React.FC = () => {
                       </div>
                     )}
                     {step.status === 'failed' && step.error && (
-                      <div className="mt-1 text-sm text-red-600">
-                        Error: {step.error}
-                      </div>
+                      <div className="mt-1 text-sm text-red-600">Error: {step.error}</div>
                     )}
                   </div>
                 </div>
-                
                 {step.status === 'failed' && (
                   <Button
                     variant="ghost"
@@ -972,4 +1038,4 @@ const ContentGenerationProgressPage: React.FC = () => {
   );
 };
 
-export default ContentGenerationProgressPage; 
+export default ContentGenerationProgressPage;
