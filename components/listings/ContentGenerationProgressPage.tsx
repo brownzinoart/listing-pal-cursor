@@ -415,6 +415,30 @@ const ContentGenerationProgressPage: React.FC = () => {
 
         } catch (stepError) {
           console.error(`Error generating ${step.name}:`, stepError);
+          
+          // For interior-reimagined, we MUST wait for it to complete successfully
+          // Don't continue to next step if this critical step fails
+          if (step.id === 'interior-reimagined') {
+            console.error('❌ Interior-reimagined step failed - this is a critical step that must complete');
+            console.error('🛑 Stopping batch generation - interior-reimagined must succeed before proceeding');
+            
+            setSteps(prev => prev.map((s, idx) => 
+              idx === i ? { 
+                ...s, 
+                status: 'failed',
+                error: stepError instanceof Error ? stepError.message : 'Generation failed',
+                endTime: Date.now()
+              } : s
+            ));
+            
+            // Set batch as complete but with errors so user can retry
+            setBatchEndTime(Date.now());
+            setIsComplete(true);
+            setIsGenerating(false);
+            return; // STOP HERE - don't continue to paid-ads
+          }
+          
+          // For other steps, continue with next step even if this one failed
           setSteps(prev => prev.map((s, idx) => 
             idx === i ? { 
               ...s, 
@@ -423,7 +447,6 @@ const ContentGenerationProgressPage: React.FC = () => {
               endTime: Date.now()
             } : s
           ));
-          // Continue with next step even if this one failed
         }
       }
 
