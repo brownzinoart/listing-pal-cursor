@@ -198,10 +198,19 @@ export class ContentGenerationService {
 
       const initialData = await initialResponse.json();
       console.log('🔍 Decor8AI initial response:', initialData);
+      console.log('🔍 Response structure check:', {
+        hasSuccess: !!initialData.success,
+        hasImageUrl: !!initialData.imageUrl,
+        hasJobId: !!initialData.jobId,
+        successValue: initialData.success,
+        imageUrlValue: initialData.imageUrl,
+        jobIdValue: initialData.jobId
+      });
 
       // Case 1: Immediate success with image URL
       if (initialData.success && initialData.imageUrl) {
         console.log('✅ Decor8AI returned immediate result with image URL.');
+        console.log('🎯 Image URL received:', initialData.imageUrl);
         
         // Validate the image URL
         try {
@@ -212,8 +221,10 @@ export class ContentGenerationService {
           console.log('⏳ Waiting for image processing to complete...');
           await new Promise(resolve => setTimeout(resolve, 2000));
           
+          console.log('🎉 Returning image URL from immediate result:', initialData.imageUrl);
           return initialData.imageUrl;
         } catch (urlError) {
+          console.error('❌ Invalid image URL format:', initialData.imageUrl);
           throw new Error('Decor8AI returned invalid image URL format');
         }
       }

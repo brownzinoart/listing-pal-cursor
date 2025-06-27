@@ -250,10 +250,13 @@ const ContentGenerationProgressPage: React.FC = () => {
               ));
               
               // Generate the room redesign - this will handle both immediate and async results
+              console.log('🚀 Starting interior-reimagined generation...');
               content = await contentGenerationService.generateContentStep(listingData, 'interior-reimagined', options);
+              console.log('✅ Interior-reimagined generation completed. Content:', content ? content.substring(0, 100) + '...' : 'null');
               
               // Validate the response - should be an image URL
               if (!content || typeof content !== 'string') {
+                console.error('❌ Invalid content received:', content);
                 throw new Error('Interior redesign API returned invalid response');
               }
               
@@ -278,6 +281,7 @@ const ContentGenerationProgressPage: React.FC = () => {
                 ));
                 
                 try {
+                  console.log('🔍 Starting image accessibility check...');
                   await waitUntilImageIsAccessible(content, 15000, 4);
                   console.log('🖼️ Image confirmed loaded and accessible:', content);
                 } catch (imgErr) {
@@ -285,6 +289,7 @@ const ContentGenerationProgressPage: React.FC = () => {
                   throw new Error('Interior redesign image is not ready yet. Please retry.');
                 }
               }
+              console.log('🎉 Interior-reimagined step processing completed successfully');
               break;
               
             case 'paid-ads':
