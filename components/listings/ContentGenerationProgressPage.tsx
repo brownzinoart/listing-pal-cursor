@@ -1,24 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
-import * as listingService from '../../services/listingService';
-import { contentGenerationService } from '../../services/contentGenerationService';
-import { Listing } from '../../types';
-import { 
-  CheckCircleIcon, 
-  SparklesIcon, 
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
+import * as listingService from "../../services/listingService";
+import { contentGenerationService } from "../../services/contentGenerationService";
+import { Listing } from "../../types";
+import {
+  CheckCircleIcon,
+  SparklesIcon,
   ClockIcon,
   ExclamationTriangleIcon,
   ArrowRightIcon,
-  ArrowPathIcon
-} from '@heroicons/react/24/outline';
-import Button from '../shared/Button';
+  ArrowPathIcon,
+} from "@heroicons/react/24/outline";
+import Button from "../shared/Button";
 
 interface BatchGenerationStep {
   id: string;
   name: string;
   description: string;
-  status: 'pending' | 'in-progress' | 'completed' | 'failed';
+  status: "pending" | "in-progress" | "completed" | "failed";
   result?: string;
   error?: string;
   startTime?: number;
@@ -34,47 +34,47 @@ const ContentGenerationProgressPage: React.FC = () => {
   const [batchSelections, setBatchSelections] = useState<any>(null);
   const [steps, setSteps] = useState<BatchGenerationStep[]>([
     {
-      id: 'description',
-      name: 'Property Description',
-      description: 'Professional MLS property description',
-      status: 'pending'
+      id: "description",
+      name: "Property Description",
+      description: "Professional MLS property description",
+      status: "pending",
     },
     {
-      id: 'email',
-      name: 'Email Campaign',
-      description: 'Professional email marketing content',
-      status: 'pending'
+      id: "email",
+      name: "Email Campaign",
+      description: "Professional email marketing content",
+      status: "pending",
     },
     {
-      id: 'facebook-post',
-      name: 'Facebook Post',
-      description: 'Engaging social media post for Facebook',
-      status: 'pending'
+      id: "facebook-post",
+      name: "Facebook Post",
+      description: "Engaging social media post for Facebook",
+      status: "pending",
     },
     {
-      id: 'instagram-post',
-      name: 'Instagram Post',
-      description: 'Visual-focused caption for Instagram',
-      status: 'pending'
+      id: "instagram-post",
+      name: "Instagram Post",
+      description: "Visual-focused caption for Instagram",
+      status: "pending",
     },
     {
-      id: 'x-post',
-      name: 'X (Twitter) Post',
-      description: 'Concise post for X/Twitter',
-      status: 'pending'
+      id: "x-post",
+      name: "X (Twitter) Post",
+      description: "Concise post for X/Twitter",
+      status: "pending",
     },
     {
-      id: 'interior-reimagined',
-      name: 'AI Room Redesign',
-      description: 'Interior design concepts and styling',
-      status: 'pending'
+      id: "interior-reimagined",
+      name: "AI Room Redesign",
+      description: "Interior design concepts and styling",
+      status: "pending",
     },
     {
-      id: 'paid-ads',
-      name: 'Paid Ad Campaigns',
-      description: 'Multi-platform advertising copy',
-      status: 'pending'
-    }
+      id: "paid-ads",
+      name: "Paid Ad Campaigns",
+      description: "Multi-platform advertising copy",
+      status: "pending",
+    },
   ]);
 
   const [isGenerating, setIsGenerating] = useState(false);
@@ -83,36 +83,46 @@ const ContentGenerationProgressPage: React.FC = () => {
   const [isComplete, setIsComplete] = useState(false);
   const [batchStartTime, setBatchStartTime] = useState<number | null>(null);
   const [batchEndTime, setBatchEndTime] = useState<number | null>(null);
-  const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null);
+  const [redirectCountdown, setRedirectCountdown] = useState<number | null>(
+    null,
+  );
 
-  const waitUntilImageIsAccessible = async (url: string, timeout = 15000, retries = 4): Promise<void> => {
+  const waitUntilImageIsAccessible = async (
+    url: string,
+    timeout = 15000,
+    retries = 4,
+  ): Promise<void> => {
     let attempts = 0;
 
     const tryCheck = async (): Promise<void> => {
       try {
         // Try HEAD request (no-cors removed for better control)
-        const res = await fetch(url, { method: 'HEAD' });
-        if (!res.ok) throw new Error(`HEAD request failed with status ${res.status}`);
+        const res = await fetch(url, { method: "HEAD" });
+        if (!res.ok)
+          throw new Error(`HEAD request failed with status ${res.status}`);
       } catch (err) {
-        console.warn(`⚠️ HEAD request failed, falling back to image load check:`, err);
+        console.warn(
+          `⚠️ HEAD request failed, falling back to image load check:`,
+          err,
+        );
       }
 
       return new Promise((resolve, reject) => {
         const img = new Image();
         const timer = setTimeout(() => {
-          img.src = ''; // cancel load
-          reject(new Error('⏳ Timeout loading image'));
+          img.src = ""; // cancel load
+          reject(new Error("⏳ Timeout loading image"));
         }, timeout);
 
         img.onload = () => {
           clearTimeout(timer);
-          console.log('✅ Image verified via <img>.onload:', url);
+          console.log("✅ Image verified via <img>.onload:", url);
           resolve();
         };
 
         img.onerror = (e) => {
           clearTimeout(timer);
-          reject(new Error('❌ Image load failed via <img>.onerror'));
+          reject(new Error("❌ Image load failed via <img>.onerror"));
         };
 
         img.src = `${url}?cacheBust=${Date.now()}`;
@@ -126,11 +136,11 @@ const ContentGenerationProgressPage: React.FC = () => {
       } catch (e) {
         attempts++;
         console.warn(`Retry ${attempts}/${retries}:`, e);
-        await new Promise(res => setTimeout(res, 1000));
+        await new Promise((res) => setTimeout(res, 1000));
       }
     }
 
-    throw new Error('Image not accessible after multiple retries');
+    throw new Error("Image not accessible after multiple retries");
   };
 
   useEffect(() => {
@@ -140,40 +150,53 @@ const ContentGenerationProgressPage: React.FC = () => {
     }
 
     // Check for batch selections from sessionStorage
-    const storedSelections = sessionStorage.getItem('batchSelections');
+    const storedSelections = sessionStorage.getItem("batchSelections");
     if (storedSelections) {
       setBatchSelections(JSON.parse(storedSelections));
-      sessionStorage.removeItem('batchSelections');
+      sessionStorage.removeItem("batchSelections");
     }
 
     // Fetch listing data
-    listingService.getListingById(listingId)
-      .then(data => {
+    listingService
+      .getListingById(listingId)
+      .then((data) => {
         if (data && data.userId === user?.id) {
           setListing(data);
           // Auto-start batch generation
-          startBatchGeneration(data, storedSelections ? JSON.parse(storedSelections) : null);
+          startBatchGeneration(
+            data,
+            storedSelections ? JSON.parse(storedSelections) : null,
+          );
         } else {
           setError(data ? "Permission denied" : "Listing not found");
         }
       })
-      .catch(() => setError('Failed to fetch listing details'));
+      .catch(() => setError("Failed to fetch listing details"));
   }, [listingId, user]);
 
   // Auto-redirect countdown effect
   useEffect(() => {
-    console.log('🔄 Checking redirect conditions:', { isComplete, redirectCountdown, listingId });
+    console.log("🔄 Checking redirect conditions:", {
+      isComplete,
+      redirectCountdown,
+      listingId,
+    });
     if (isComplete && !redirectCountdown && listingId) {
-      console.log('✅ Batch generation complete, starting redirect countdown');
-      console.log('🎯 Target URL will be:', `/listings/${listingId}`);
+      console.log("✅ Batch generation complete, starting redirect countdown");
+      console.log("🎯 Target URL will be:", `/listings/${listingId}`);
       setRedirectCountdown(10); // 10 second countdown
     }
   }, [isComplete, listingId]);
 
   useEffect(() => {
-    console.log('⏱️ Redirect countdown effect triggered:', { redirectCountdown, listingId });
+    console.log("⏱️ Redirect countdown effect triggered:", {
+      redirectCountdown,
+      listingId,
+    });
     if (redirectCountdown !== null && redirectCountdown > 0) {
-      console.log(`Redirecting in ${redirectCountdown} seconds to /listings/${listingId}...`);
+      console.log(
+        `Redirecting in ${redirectCountdown} seconds to /listings/${listingId}...`,
+      );
       const timer = setTimeout(() => {
         setRedirectCountdown(redirectCountdown - 1);
       }, 1000);
@@ -185,616 +208,988 @@ const ContentGenerationProgressPage: React.FC = () => {
     }
   }, [redirectCountdown, listingId]);
 
-  const startBatchGeneration = async (listingData: Listing, selections: any) => {
+  const startBatchGeneration = async (
+    listingData: Listing,
+    selections: any,
+  ) => {
     setIsGenerating(true);
     setError(null);
     setBatchStartTime(Date.now());
-    
+
     try {
       for (let i = 0; i < steps.length; i++) {
         const step = steps[i];
         setCurrentStepIndex(i);
 
         // Update step to in-progress
-        setSteps(prev => prev.map((s, idx) => 
-          idx === i ? { ...s, status: 'in-progress', startTime: Date.now() } : s
-        ));
+        setSteps((prev) =>
+          prev.map((s, idx) =>
+            idx === i
+              ? { ...s, status: "in-progress", startTime: Date.now() }
+              : s,
+          ),
+        );
 
         try {
-          let content = '';
+          let content = "";
           let options: any = {};
 
           // Prepare options based on selections and step type
           switch (step.id) {
-            case 'description':
+            case "description":
               if (selections?.description?.style) {
                 options.style = selections.description.style;
               }
-              content = await contentGenerationService.generateContentStep(listingData, 'mls-description', options);
+              content = await contentGenerationService.generateContentStep(
+                listingData,
+                "mls-description",
+                options,
+              );
               break;
-              
-            case 'email':
+
+            case "email":
               if (selections?.email?.theme) {
                 options.theme = selections.email.theme;
               }
-              content = await contentGenerationService.generateContentStep(listingData, 'email', options);
+              content = await contentGenerationService.generateContentStep(
+                listingData,
+                "email",
+                options,
+              );
               break;
-              
-            case 'interior-reimagined':
+
+            case "interior-reimagined":
               if (selections?.roomRedesign) {
                 if (selections.roomRedesign.uploadedImage) {
                   options.selectedImage = selections.roomRedesign.uploadedImage;
-                  console.log('🖼️ Using uploaded image for room redesign:', selections.roomRedesign.uploadedImage.substring(0, 50) + '...');
-                } else if (selections.roomRedesign.selectedImageIndex !== null && listingData.images) {
-                  options.selectedImage = listingData.images[selections.roomRedesign.selectedImageIndex]?.url;
-                  console.log('🖼️ Using listing image for room redesign:', options.selectedImage);
+                  console.log(
+                    "🖼️ Using uploaded image for room redesign:",
+                    selections.roomRedesign.uploadedImage.substring(0, 50) +
+                      "...",
+                  );
+                } else if (
+                  selections.roomRedesign.selectedImageIndex !== null &&
+                  listingData.images
+                ) {
+                  options.selectedImage =
+                    listingData.images[
+                      selections.roomRedesign.selectedImageIndex
+                    ]?.url;
+                  console.log(
+                    "🖼️ Using listing image for room redesign:",
+                    options.selectedImage,
+                  );
                 }
                 options.roomType = selections.roomRedesign.roomType;
                 options.designStyle = selections.roomRedesign.designStyle;
-                console.log('🎨 Room redesign options:', { 
-                  roomType: options.roomType, 
+                console.log("🎨 Room redesign options:", {
+                  roomType: options.roomType,
                   designStyle: options.designStyle,
-                  hasImage: !!options.selectedImage 
+                  hasImage: !!options.selectedImage,
                 });
               } else {
-                console.warn('⚠️ No room redesign selections found');
+                console.warn("⚠️ No room redesign selections found");
               }
-              
+
               // Update step description to show Decor8AI processing
-              setSteps(prev => prev.map((s, idx) =>
-                idx === i ? { 
-                  ...s, 
-                  description: 'Working on some magic...',
-                  status: 'in-progress'
-                } : s
-              ));
-              
+              setSteps((prev) =>
+                prev.map((s, idx) =>
+                  idx === i
+                    ? {
+                        ...s,
+                        description: "Working on some magic...",
+                        status: "in-progress",
+                      }
+                    : s,
+                ),
+              );
+
               // Generate the room redesign - this will handle both immediate and async results
-              console.log('🚀 Starting interior-reimagined generation...');
-              console.log('⏳ Waiting for Decor8AI response...');
-              content = await contentGenerationService.generateContentStep(listingData, 'interior-reimagined', options);
-              console.log('✅ Decor8AI response received!');
-              console.log('✅ Interior-reimagined generation completed. Content:', content ? content.substring(0, 100) + '...' : 'null');
-              console.log('🔍 Content type:', typeof content);
-              console.log('🔍 Content length:', content ? content.length : 0);
-              console.log('🔍 Content starts with http:', content ? content.startsWith('http') : 'N/A');
-              console.log('🔍 Full content received from Decor8AI:', content);
-              console.log('🔍 Content validation - is string?', typeof content === 'string');
-              console.log('🔍 Content validation - is truthy?', !!content);
-              console.log('🔍 Content validation - length > 0?', content ? content.length > 0 : false);
-              
+              console.log("🚀 Starting interior-reimagined generation...");
+              console.log("⏳ Waiting for Decor8AI response...");
+              content = await contentGenerationService.generateContentStep(
+                listingData,
+                "interior-reimagined",
+                options,
+              );
+              console.log("✅ Decor8AI response received!");
+              console.log(
+                "✅ Interior-reimagined generation completed. Content:",
+                content ? content.substring(0, 100) + "..." : "null",
+              );
+              console.log("🔍 Content type:", typeof content);
+              console.log("🔍 Content length:", content ? content.length : 0);
+              console.log(
+                "🔍 Content starts with http:",
+                content ? content.startsWith("http") : "N/A",
+              );
+              console.log("🔍 Full content received from Decor8AI:", content);
+              console.log(
+                "🔍 Content validation - is string?",
+                typeof content === "string",
+              );
+              console.log("🔍 Content validation - is truthy?", !!content);
+              console.log(
+                "🔍 Content validation - length > 0?",
+                content ? content.length > 0 : false,
+              );
+
               // CRITICAL: Ensure we have a valid response before proceeding
               if (!content) {
-                console.error('❌ CRITICAL ERROR: Decor8AI returned null/undefined content');
-                throw new Error('Decor8AI returned no content. Please retry.');
+                console.error(
+                  "❌ CRITICAL ERROR: Decor8AI returned null/undefined content",
+                );
+                throw new Error("Decor8AI returned no content. Please retry.");
               }
-              
-              if (typeof content !== 'string') {
-                console.error('❌ CRITICAL ERROR: Decor8AI returned non-string content:', typeof content);
-                throw new Error('Decor8AI returned invalid content type. Please retry.');
+
+              if (typeof content !== "string") {
+                console.error(
+                  "❌ CRITICAL ERROR: Decor8AI returned non-string content:",
+                  typeof content,
+                );
+                throw new Error(
+                  "Decor8AI returned invalid content type. Please retry.",
+                );
               }
-              
+
               if (content.length === 0) {
-                console.error('❌ CRITICAL ERROR: Decor8AI returned empty string content');
-                throw new Error('Decor8AI returned empty content. Please retry.');
+                console.error(
+                  "❌ CRITICAL ERROR: Decor8AI returned empty string content",
+                );
+                throw new Error(
+                  "Decor8AI returned empty content. Please retry.",
+                );
               }
-              
-              console.log('✅ Decor8AI content validation passed - proceeding with processing');
-              
+
+              console.log(
+                "✅ Decor8AI content validation passed - proceeding with processing",
+              );
+
               // Simplify: content is already the final response from Decor8AI
               let imageUrl = content;
-              
+
               // Validate the response - should be an image URL
-              if (!imageUrl || typeof imageUrl !== 'string') {
-                console.error('❌ Invalid content received:', imageUrl);
-                throw new Error('Interior redesign API returned invalid response');
+              if (!imageUrl || typeof imageUrl !== "string") {
+                console.error("❌ Invalid content received:", imageUrl);
+                throw new Error(
+                  "Interior redesign API returned invalid response",
+                );
               }
-              
+
               // Check if it's a valid URL
               try {
                 new URL(imageUrl);
-                console.log('✅ Valid image URL received from Decor8AI:', imageUrl);
+                console.log(
+                  "✅ Valid image URL received from Decor8AI:",
+                  imageUrl,
+                );
               } catch (urlError) {
                 // If it's not a URL, treat it as an error but allow retry
-                console.warn('⚠️ Interior redesign returned non-URL content:', imageUrl.substring(0, 100));
-                throw new Error('Interior redesign API did not return a valid image URL. Please retry.');
+                console.warn(
+                  "⚠️ Interior redesign returned non-URL content:",
+                  imageUrl.substring(0, 100),
+                );
+                throw new Error(
+                  "Interior redesign API did not return a valid image URL. Please retry.",
+                );
               }
-              
-              if (imageUrl.startsWith('http')) {
+
+              if (imageUrl.startsWith("http")) {
                 // Show interim status while image loads
-                setSteps(prev => prev.map((s, idx) =>
-                  idx === i ? { 
-                    ...s, 
-                    description: 'Finalizing image processing...',
-                    status: 'in-progress'
-                  } : s
-                ));
-                
+                setSteps((prev) =>
+                  prev.map((s, idx) =>
+                    idx === i
+                      ? {
+                          ...s,
+                          description: "Finalizing image processing...",
+                          status: "in-progress",
+                        }
+                      : s,
+                  ),
+                );
+
                 try {
-                  console.log('🔍 Starting image accessibility check...');
+                  console.log("🔍 Starting image accessibility check...");
                   await waitUntilImageIsAccessible(imageUrl, 5000, 2); // Reduced timeout for demo
-                  console.log('🖼️ Image confirmed loaded and accessible:', imageUrl);
+                  console.log(
+                    "🖼️ Image confirmed loaded and accessible:",
+                    imageUrl,
+                  );
                 } catch (imgErr) {
-                  console.warn('⚠️ Image not fully loaded before timeout, but proceeding:', imgErr);
+                  console.warn(
+                    "⚠️ Image not fully loaded before timeout, but proceeding:",
+                    imgErr,
+                  );
                   // Continue anyway for demo purposes
                 }
               }
-              console.log('🎉 Interior-reimagined step processing completed successfully');
-              console.log('📋 About to update step status to completed...');
-              
+              console.log(
+                "🎉 Interior-reimagined step processing completed successfully",
+              );
+              console.log("📋 About to update step status to completed...");
+
               // CRITICAL: Ensure we have valid content before proceeding
-              if (!imageUrl || typeof imageUrl !== 'string' || imageUrl.length === 0) {
-                console.error('❌ CRITICAL ERROR: Interior-reimagined step completed but returned invalid content');
-                console.error('❌ Content validation failed:', { content: imageUrl, type: typeof imageUrl, length: imageUrl ? imageUrl.length : 0 });
-                throw new Error('Interior redesign step completed but returned invalid content. Please retry.');
+              if (
+                !imageUrl ||
+                typeof imageUrl !== "string" ||
+                imageUrl.length === 0
+              ) {
+                console.error(
+                  "❌ CRITICAL ERROR: Interior-reimagined step completed but returned invalid content",
+                );
+                console.error("❌ Content validation failed:", {
+                  content: imageUrl,
+                  type: typeof imageUrl,
+                  length: imageUrl ? imageUrl.length : 0,
+                });
+                throw new Error(
+                  "Interior redesign step completed but returned invalid content. Please retry.",
+                );
               }
-              
-              console.log('✅ Interior-reimagined content validation passed - proceeding to next step');
+
+              console.log(
+                "✅ Interior-reimagined content validation passed - proceeding to next step",
+              );
               break;
-              
-            case 'paid-ads':
+
+            case "paid-ads":
               if (selections?.paidAds) {
                 options.objectives = selections.paidAds;
               }
-              content = await contentGenerationService.generateContentStep(listingData, 'paid-ads', options);
+              content = await contentGenerationService.generateContentStep(
+                listingData,
+                "paid-ads",
+                options,
+              );
               break;
-              
+
             default:
               // For facebook-post, instagram-post, x-post - no special options needed
-              content = await contentGenerationService.generateContentStep(listingData, step.id, options);
+              content = await contentGenerationService.generateContentStep(
+                listingData,
+                step.id,
+                options,
+              );
               break;
           }
 
           // Update step to completed
-          console.log(`🎯 Updating step ${step.id} (${step.name}) to completed status`);
-          console.log(`📊 Step content length: ${content ? content.length : 0}`);
-          console.log(`📊 Step content preview: ${content ? content.substring(0, 50) + '...' : 'null'}`);
-          setSteps(prev => prev.map((s, idx) => 
-            idx === i ? { 
-              ...s, 
-              status: 'completed', 
-              result: content,
-              endTime: Date.now()
-            } : s
-          ));
+          console.log(
+            `🎯 Updating step ${step.id} (${step.name}) to completed status`,
+          );
+          console.log(
+            `📊 Step content length: ${content ? content.length : 0}`,
+          );
+          console.log(
+            `📊 Step content preview: ${content ? content.substring(0, 50) + "..." : "null"}`,
+          );
+          setSteps((prev) =>
+            prev.map((s, idx) =>
+              idx === i
+                ? {
+                    ...s,
+                    status: "completed",
+                    result: content,
+                    endTime: Date.now(),
+                  }
+                : s,
+            ),
+          );
           console.log(`✅ Step ${step.id} marked as completed`);
-          console.log(`📊 Current step index: ${i}, total steps: ${steps.length}`);
-          console.log(`🔄 Next step will be: ${i + 1 < steps.length ? steps[i + 1].id : 'none (last step)'}`);
-          
+          console.log(
+            `📊 Current step index: ${i}, total steps: ${steps.length}`,
+          );
+          console.log(
+            `🔄 Next step will be: ${i + 1 < steps.length ? steps[i + 1].id : "none (last step)"}`,
+          );
+
           // CRITICAL: For interior-reimagined, ensure step is properly completed before continuing
-          if (step.id === 'interior-reimagined') {
-            console.log('🔍 CRITICAL CHECK: Interior-reimagined step completion verification');
-            console.log('🔍 Step status should be completed, content should be valid');
-            console.log('🔍 About to proceed to next step in batch generation loop');
+          if (step.id === "interior-reimagined") {
+            console.log(
+              "🔍 CRITICAL CHECK: Interior-reimagined step completion verification",
+            );
+            console.log(
+              "🔍 Step status should be completed, content should be valid",
+            );
+            console.log(
+              "🔍 About to proceed to next step in batch generation loop",
+            );
           }
 
           // Save content to listing
           const updateData: any = {};
           switch (step.id) {
-            case 'description':
+            case "description":
               updateData.generatedDescription = content;
-              console.log('💾 Saving description content:', content.substring(0, 100) + '...');
+              console.log(
+                "💾 Saving description content:",
+                content.substring(0, 100) + "...",
+              );
               break;
-            case 'email':
+            case "email":
               updateData.generatedEmail = content;
-              console.log('💾 Saving email content:', content.substring(0, 100) + '...');
+              console.log(
+                "💾 Saving email content:",
+                content.substring(0, 100) + "...",
+              );
               break;
-            case 'facebook-post':
+            case "facebook-post":
               updateData.generatedFacebookPost = content;
-              console.log('💾 Saving Facebook post content:', content.substring(0, 100) + '...');
+              console.log(
+                "💾 Saving Facebook post content:",
+                content.substring(0, 100) + "...",
+              );
               break;
-            case 'instagram-post':
+            case "instagram-post":
               updateData.generatedInstagramCaption = content;
-              console.log('💾 Saving Instagram post content:', content.substring(0, 100) + '...');
+              console.log(
+                "💾 Saving Instagram post content:",
+                content.substring(0, 100) + "...",
+              );
               break;
-            case 'x-post':
+            case "x-post":
               updateData.generatedXPost = content;
-              console.log('💾 Saving X post content:', content.substring(0, 100) + '...');
+              console.log(
+                "💾 Saving X post content:",
+                content.substring(0, 100) + "...",
+              );
               break;
-            case 'interior-reimagined':
-              console.log('🔍 Processing interior-reimagined content:', content);
-              console.log('🎯 Content type check - starts with http?', content.startsWith('http'));
-              console.log('🎯 Content preview:', content.substring(0, 100));
-              
+            case "interior-reimagined":
+              console.log(
+                "🔍 Processing interior-reimagined content:",
+                content,
+              );
+              console.log(
+                "🎯 Content type check - starts with http?",
+                content.startsWith("http"),
+              );
+              console.log("🎯 Content preview:", content.substring(0, 100));
+
               // Check if content is an image URL (actual redesign) or text (concepts)
-              if (content.startsWith('http')) {
+              if (content.startsWith("http")) {
                 // It's an actual redesigned image URL - save it regardless of domain
-                const newRoomDesign = { 
+                const newRoomDesign = {
                   originalImageUrl: options.selectedImage,
                   styleId: options.designStyle,
                   redesignedImageUrl: content,
                   prompt: `${options.roomType} in ${options.designStyle} style`,
-                  createdAt: new Date().toISOString()
+                  createdAt: new Date().toISOString(),
                 };
-                
+
                 // IMPORTANT: Append to existing room designs, don't overwrite (matching individual workflow)
                 let existingRoomDesigns = [];
                 if (listingData.generatedRoomDesigns) {
                   if (Array.isArray(listingData.generatedRoomDesigns)) {
                     existingRoomDesigns = listingData.generatedRoomDesigns;
-                  } else if (typeof listingData.generatedRoomDesigns === 'string') {
+                  } else if (
+                    typeof listingData.generatedRoomDesigns === "string"
+                  ) {
                     try {
-                      const parsed = JSON.parse(listingData.generatedRoomDesigns);
+                      const parsed = JSON.parse(
+                        listingData.generatedRoomDesigns,
+                      );
                       if (Array.isArray(parsed)) {
                         existingRoomDesigns = parsed;
                       } else {
-                        console.warn('Parsed generatedRoomDesigns is not an array, starting fresh.', parsed);
+                        console.warn(
+                          "Parsed generatedRoomDesigns is not an array, starting fresh.",
+                          parsed,
+                        );
                         existingRoomDesigns = [];
                       }
                     } catch (e) {
-                      console.error('Failed to parse generatedRoomDesigns string, starting fresh.', e);
+                      console.error(
+                        "Failed to parse generatedRoomDesigns string, starting fresh.",
+                        e,
+                      );
                       existingRoomDesigns = [];
                     }
                   }
                 }
-                updateData.generatedRoomDesigns = [...existingRoomDesigns, newRoomDesign];
-                
-                console.log('💾 Saving room design URL:', content);
-                console.log('💾 Room design details:', newRoomDesign);
-                console.log('💾 Existing room designs count:', existingRoomDesigns.length);
-                console.log('💾 New total room designs count:', updateData.generatedRoomDesigns.length);
-                console.log('✅ Interior redesign will be saved to listing');
+                updateData.generatedRoomDesigns = [
+                  ...existingRoomDesigns,
+                  newRoomDesign,
+                ];
+
+                console.log("💾 Saving room design URL:", content);
+                console.log("💾 Room design details:", newRoomDesign);
+                console.log(
+                  "💾 Existing room designs count:",
+                  existingRoomDesigns.length,
+                );
+                console.log(
+                  "💾 New total room designs count:",
+                  updateData.generatedRoomDesigns.length,
+                );
+                console.log("✅ Interior redesign will be saved to listing");
               } else {
                 // It's text concepts - still save them for debugging but also flag the issue
-                console.log('🔍 Generated interior concepts (text):', content);
-                console.log('⚠️ Got text instead of image URL - this might indicate an API issue');
+                console.log("🔍 Generated interior concepts (text):", content);
+                console.log(
+                  "⚠️ Got text instead of image URL - this might indicate an API issue",
+                );
                 // For now, let's save it as a note so we can debug
                 updateData.generatedInteriorConcepts = content;
               }
               break;
-            case 'paid-ads':
+            case "paid-ads":
               updateData.generatedAdCopy = content;
-              console.log('💾 Saving paid ads content:', content.substring(0, 100) + '...');
+              console.log(
+                "💾 Saving paid ads content:",
+                content.substring(0, 100) + "...",
+              );
               break;
           }
 
-          console.log('📊 Update data for', step.id, ':', updateData);
-          
+          console.log("📊 Update data for", step.id, ":", updateData);
+
           // CRITICAL FIX: Get fresh listing data before update to avoid overwriting other content
-          const currentListing = await listingService.getListingById(listingId!);
+          const currentListing = await listingService.getListingById(
+            listingId!,
+          );
           if (!currentListing) {
-            throw new Error('Failed to refresh listing data before update');
+            throw new Error("Failed to refresh listing data before update");
           }
-          
+
           // Merge with existing content to preserve all generated content
           const preservedUpdateData = {
             ...updateData,
             // Explicitly preserve existing generated content from other steps
-            generatedDescription: updateData.generatedDescription || currentListing.generatedDescription,
-            generatedEmail: updateData.generatedEmail || currentListing.generatedEmail,
-            generatedFacebookPost: updateData.generatedFacebookPost || currentListing.generatedFacebookPost,
-            generatedInstagramCaption: updateData.generatedInstagramCaption || currentListing.generatedInstagramCaption,
-            generatedXPost: updateData.generatedXPost || currentListing.generatedXPost,
-            generatedRoomDesigns: updateData.generatedRoomDesigns || currentListing.generatedRoomDesigns,
-            generatedAdCopy: updateData.generatedAdCopy || currentListing.generatedAdCopy
+            generatedDescription:
+              updateData.generatedDescription ||
+              currentListing.generatedDescription,
+            generatedEmail:
+              updateData.generatedEmail || currentListing.generatedEmail,
+            generatedFacebookPost:
+              updateData.generatedFacebookPost ||
+              currentListing.generatedFacebookPost,
+            generatedInstagramCaption:
+              updateData.generatedInstagramCaption ||
+              currentListing.generatedInstagramCaption,
+            generatedXPost:
+              updateData.generatedXPost || currentListing.generatedXPost,
+            generatedRoomDesigns:
+              updateData.generatedRoomDesigns ||
+              currentListing.generatedRoomDesigns,
+            generatedAdCopy:
+              updateData.generatedAdCopy || currentListing.generatedAdCopy,
           };
-          
-          console.log('📊 Preserved update data for', step.id, ':', preservedUpdateData);
-          const saveResult = await listingService.updateListing(listingId!, preservedUpdateData);
-          console.log('✅ Save result for', step.id, ':', saveResult);
-          
+
+          console.log(
+            "📊 Preserved update data for",
+            step.id,
+            ":",
+            preservedUpdateData,
+          );
+          const saveResult = await listingService.updateListing(
+            listingId!,
+            preservedUpdateData,
+          );
+          console.log("✅ Save result for", step.id, ":", saveResult);
+
           // For interior redesign, let's log more details about what was actually saved
-          if (step.id === 'interior-reimagined' && saveResult) {
-            console.log('🔍 Saved listing room designs:', saveResult.generatedRoomDesigns);
-            console.log('🔍 Room designs count:', saveResult.generatedRoomDesigns?.length || 0);
+          if (step.id === "interior-reimagined" && saveResult) {
+            console.log(
+              "🔍 Saved listing room designs:",
+              saveResult.generatedRoomDesigns,
+            );
+            console.log(
+              "🔍 Room designs count:",
+              saveResult.generatedRoomDesigns?.length || 0,
+            );
           }
 
           // Small delay for UX
-          console.log(`⏳ Waiting 800ms before moving to next step (current step: ${step.id})`);
-          await new Promise(resolve => setTimeout(resolve, 800));
+          console.log(
+            `⏳ Waiting 800ms before moving to next step (current step: ${step.id})`,
+          );
+          await new Promise((resolve) => setTimeout(resolve, 800));
           console.log(`🚀 Moving to next step after ${step.id} completion`);
-
         } catch (stepError) {
           console.error(`Error generating ${step.name}:`, stepError);
-          
+
           // For interior-reimagined, we MUST wait for it to complete successfully
           // Don't continue to next step if this critical step fails
-          if (step.id === 'interior-reimagined') {
-            console.error('❌ Interior-reimagined step failed - this is a critical step that must complete');
-            console.error('🛑 Stopping batch generation - interior-reimagined must succeed before proceeding');
-            
-            setSteps(prev => prev.map((s, idx) => 
-              idx === i ? { 
-                ...s, 
-                status: 'failed',
-                error: stepError instanceof Error ? stepError.message : 'Generation failed',
-                endTime: Date.now()
-              } : s
-            ));
-            
+          if (step.id === "interior-reimagined") {
+            console.error(
+              "❌ Interior-reimagined step failed - this is a critical step that must complete",
+            );
+            console.error(
+              "🛑 Stopping batch generation - interior-reimagined must succeed before proceeding",
+            );
+
+            setSteps((prev) =>
+              prev.map((s, idx) =>
+                idx === i
+                  ? {
+                      ...s,
+                      status: "failed",
+                      error:
+                        stepError instanceof Error
+                          ? stepError.message
+                          : "Generation failed",
+                      endTime: Date.now(),
+                    }
+                  : s,
+              ),
+            );
+
             // Set batch as complete but with errors so user can retry
             setBatchEndTime(Date.now());
             setIsComplete(true);
             setIsGenerating(false);
             return; // STOP HERE - don't continue to paid-ads
           }
-          
+
           // For other steps, continue with next step even if this one failed
-          setSteps(prev => prev.map((s, idx) => 
-            idx === i ? { 
-              ...s, 
-              status: 'failed',
-              error: stepError instanceof Error ? stepError.message : 'Generation failed',
-              endTime: Date.now()
-            } : s
-          ));
+          setSteps((prev) =>
+            prev.map((s, idx) =>
+              idx === i
+                ? {
+                    ...s,
+                    status: "failed",
+                    error:
+                      stepError instanceof Error
+                        ? stepError.message
+                        : "Generation failed",
+                    endTime: Date.now(),
+                  }
+                : s,
+            ),
+          );
         }
       }
 
       setBatchEndTime(Date.now());
-      console.log('🏁 Batch generation loop completed, setting isComplete to true');
-      console.log('📊 Final step statuses:', steps.map(s => ({ name: s.name, status: s.status })));
-      console.log('🎯 About to set isComplete to true - current state:', { isComplete, isGenerating });
+      console.log(
+        "🏁 Batch generation loop completed, setting isComplete to true",
+      );
+      console.log(
+        "📊 Final step statuses:",
+        steps.map((s) => ({ name: s.name, status: s.status })),
+      );
+      console.log("🎯 About to set isComplete to true - current state:", {
+        isComplete,
+        isGenerating,
+      });
       setIsComplete(true);
-      console.log('✅ isComplete has been set to true');
-      
+      console.log("✅ isComplete has been set to true");
+
       // Force refresh the listing data to ensure fresh data is available
-      console.log('🔄 Refreshing listing data before redirect...');
+      console.log("🔄 Refreshing listing data before redirect...");
       try {
-        const refreshedListing = await listingService.getListingById(listingId!);
+        const refreshedListing = await listingService.getListingById(
+          listingId!,
+        );
         if (refreshedListing) {
-          console.log('📊 Refreshed listing data:', {
+          console.log("📊 Refreshed listing data:", {
             id: refreshedListing.id,
             hasDescription: !!refreshedListing.generatedDescription,
             hasEmail: !!refreshedListing.generatedEmail,
             hasFacebookPost: !!refreshedListing.generatedFacebookPost,
             hasInstagramCaption: !!refreshedListing.generatedInstagramCaption,
             hasXPost: !!refreshedListing.generatedXPost,
-            hasRoomDesigns: !!(refreshedListing.generatedRoomDesigns && refreshedListing.generatedRoomDesigns.length > 0),
-            hasAdCopy: !!refreshedListing.generatedAdCopy
+            hasRoomDesigns: !!(
+              refreshedListing.generatedRoomDesigns &&
+              refreshedListing.generatedRoomDesigns.length > 0
+            ),
+            hasAdCopy: !!refreshedListing.generatedAdCopy,
           });
         } else {
-          console.warn('⚠️ Refreshed listing data is null');
+          console.warn("⚠️ Refreshed listing data is null");
         }
       } catch (refreshError) {
-        console.error('⚠️ Error refreshing listing data:', refreshError);
+        console.error("⚠️ Error refreshing listing data:", refreshError);
       }
-      
+
       // Start countdown timer for auto-redirect (will be handled by useEffect)
-      console.log('🚀 Batch generation complete - starting auto-redirect countdown');
+      console.log(
+        "🚀 Batch generation complete - starting auto-redirect countdown",
+      );
     } catch (error) {
-      console.error('Batch generation error:', error);
-      setError('Failed to complete batch generation. Please try again.');
+      console.error("Batch generation error:", error);
+      setError("Failed to complete batch generation. Please try again.");
       // Still set completion to true even if some steps failed, so user can see results and navigate
       setBatchEndTime(Date.now());
-      console.log('❌ Batch generation failed, but setting isComplete to true for navigation');
-      console.log('🎯 About to set isComplete to true (error case) - current state:', { isComplete, isGenerating });
+      console.log(
+        "❌ Batch generation failed, but setting isComplete to true for navigation",
+      );
+      console.log(
+        "🎯 About to set isComplete to true (error case) - current state:",
+        { isComplete, isGenerating },
+      );
       setIsComplete(true);
-      console.log('✅ isComplete has been set to true (error case)');
-      
+      console.log("✅ isComplete has been set to true (error case)");
+
       // Start countdown timer for auto-redirect (will be handled by useEffect)
-      console.log('🚀 Batch generation failed but complete - starting auto-redirect countdown');
+      console.log(
+        "🚀 Batch generation failed but complete - starting auto-redirect countdown",
+      );
     } finally {
       setIsGenerating(false);
-      console.log('✅ setIsGenerating(false) called');
+      console.log("✅ setIsGenerating(false) called");
     }
   };
 
   const retryStep = async (stepIndex: number) => {
     if (!listing) return;
-    
+
     const step = steps[stepIndex];
-    setSteps(prev => prev.map((s, idx) => 
-      idx === stepIndex ? { ...s, status: 'in-progress', error: undefined, startTime: Date.now() } : s
-    ));
+    setSteps((prev) =>
+      prev.map((s, idx) =>
+        idx === stepIndex
+          ? {
+              ...s,
+              status: "in-progress",
+              error: undefined,
+              startTime: Date.now(),
+            }
+          : s,
+      ),
+    );
 
     try {
-      let content = '';
+      let content = "";
       let options: any = {};
 
       // Prepare options based on selections and step type (same logic as above)
       switch (step.id) {
-        case 'description':
+        case "description":
           if (batchSelections?.description?.style) {
             options.style = batchSelections.description.style;
           }
-          content = await contentGenerationService.generateContentStep(listing, 'mls-description', options);
+          content = await contentGenerationService.generateContentStep(
+            listing,
+            "mls-description",
+            options,
+          );
           break;
-        case 'email':
+        case "email":
           if (batchSelections?.email?.theme) {
             options.theme = batchSelections.email.theme;
           }
-          content = await contentGenerationService.generateContentStep(listing, 'email', options);
+          content = await contentGenerationService.generateContentStep(
+            listing,
+            "email",
+            options,
+          );
           break;
-        case 'interior-reimagined':
+        case "interior-reimagined":
           if (batchSelections?.roomRedesign) {
             if (batchSelections.roomRedesign.uploadedImage) {
-              options.selectedImage = batchSelections.roomRedesign.uploadedImage;
-            } else if (batchSelections.roomRedesign.selectedImageIndex !== null && listing.images) {
-              options.selectedImage = listing.images[batchSelections.roomRedesign.selectedImageIndex]?.url;
+              options.selectedImage =
+                batchSelections.roomRedesign.uploadedImage;
+            } else if (
+              batchSelections.roomRedesign.selectedImageIndex !== null &&
+              listing.images
+            ) {
+              options.selectedImage =
+                listing.images[
+                  batchSelections.roomRedesign.selectedImageIndex
+                ]?.url;
             }
             options.roomType = batchSelections.roomRedesign.roomType;
             options.designStyle = batchSelections.roomRedesign.designStyle;
           }
-          
+
           // Update step description to show Decor8AI processing
-          setSteps(prev => prev.map((s, idx) =>
-            idx === stepIndex ? { 
-              ...s, 
-              description: 'Processing with Decor8AI...',
-              status: 'in-progress'
-            } : s
-          ));
-          
-          content = await contentGenerationService.generateContentStep(listing, 'interior-reimagined', options);
-          
+          setSteps((prev) =>
+            prev.map((s, idx) =>
+              idx === stepIndex
+                ? {
+                    ...s,
+                    description: "Processing with Decor8AI...",
+                    status: "in-progress",
+                  }
+                : s,
+            ),
+          );
+
+          content = await contentGenerationService.generateContentStep(
+            listing,
+            "interior-reimagined",
+            options,
+          );
+
           // Validate the response - should be an image URL (matching main generation logic)
-          if (!content || typeof content !== 'string') {
-            throw new Error('Interior redesign API returned invalid response');
+          if (!content || typeof content !== "string") {
+            throw new Error("Interior redesign API returned invalid response");
           }
-          
+
           // Check if it's a valid URL (more flexible than just checking for 'http')
           try {
             new URL(content);
-            console.log('✅ Retry - Valid image URL received from Decor8AI:', content);
+            console.log(
+              "✅ Retry - Valid image URL received from Decor8AI:",
+              content,
+            );
           } catch (urlError) {
             // If it's not a URL, treat it as an error but allow retry
-            console.warn('⚠️ Retry - Interior redesign returned non-URL content:', content.substring(0, 100));
-            throw new Error('Interior redesign API did not return a valid image URL. Please retry.');
+            console.warn(
+              "⚠️ Retry - Interior redesign returned non-URL content:",
+              content.substring(0, 100),
+            );
+            throw new Error(
+              "Interior redesign API did not return a valid image URL. Please retry.",
+            );
           }
-          
-          if (content.startsWith('http')) {
+
+          if (content.startsWith("http")) {
             // Show interim status while image loads
-            setSteps(prev => prev.map((s, idx) =>
-              idx === stepIndex ? { 
-                ...s, 
-                description: 'Finalizing image processing...',
-                status: 'in-progress'
-              } : s
-            ));
-            
+            setSteps((prev) =>
+              prev.map((s, idx) =>
+                idx === stepIndex
+                  ? {
+                      ...s,
+                      description: "Finalizing image processing...",
+                      status: "in-progress",
+                    }
+                  : s,
+              ),
+            );
+
             try {
               await waitUntilImageIsAccessible(content, 15000, 4);
-              console.log('🖼️ Retry - Image confirmed loaded and accessible:', content);
+              console.log(
+                "🖼️ Retry - Image confirmed loaded and accessible:",
+                content,
+              );
             } catch (imgErr) {
-              console.warn('⚠️ Retry - Image not fully loaded before timeout or error:', imgErr);
-              throw new Error('Interior redesign image is not ready yet. Please retry.');
+              console.warn(
+                "⚠️ Retry - Image not fully loaded before timeout or error:",
+                imgErr,
+              );
+              throw new Error(
+                "Interior redesign image is not ready yet. Please retry.",
+              );
             }
           }
           break;
-        case 'paid-ads':
+        case "paid-ads":
           if (batchSelections?.paidAds) {
             options.objectives = batchSelections.paidAds;
           }
-          content = await contentGenerationService.generateContentStep(listing, 'paid-ads', options);
+          content = await contentGenerationService.generateContentStep(
+            listing,
+            "paid-ads",
+            options,
+          );
           break;
         default:
-          content = await contentGenerationService.generateContentStep(listing, step.id, options);
+          content = await contentGenerationService.generateContentStep(
+            listing,
+            step.id,
+            options,
+          );
           break;
       }
 
-      setSteps(prev => prev.map((s, idx) => 
-        idx === stepIndex ? { 
-          ...s, 
-          status: 'completed', 
-          result: content,
-          endTime: Date.now()
-        } : s
-      ));
+      setSteps((prev) =>
+        prev.map((s, idx) =>
+          idx === stepIndex
+            ? {
+                ...s,
+                status: "completed",
+                result: content,
+                endTime: Date.now(),
+              }
+            : s,
+        ),
+      );
 
       // Save content to listing
       const updateData: any = {};
       switch (step.id) {
-        case 'description':
+        case "description":
           updateData.generatedDescription = content;
-          console.log('💾 Saving description content:', content.substring(0, 100) + '...');
+          console.log(
+            "💾 Saving description content:",
+            content.substring(0, 100) + "...",
+          );
           break;
-        case 'email':
+        case "email":
           updateData.generatedEmail = content;
-          console.log('💾 Saving email content:', content.substring(0, 100) + '...');
+          console.log(
+            "💾 Saving email content:",
+            content.substring(0, 100) + "...",
+          );
           break;
-        case 'facebook-post':
+        case "facebook-post":
           updateData.generatedFacebookPost = content;
-          console.log('💾 Saving Facebook post content:', content.substring(0, 100) + '...');
+          console.log(
+            "💾 Saving Facebook post content:",
+            content.substring(0, 100) + "...",
+          );
           break;
-        case 'instagram-post':
+        case "instagram-post":
           updateData.generatedInstagramCaption = content;
-          console.log('💾 Saving Instagram post content:', content.substring(0, 100) + '...');
+          console.log(
+            "💾 Saving Instagram post content:",
+            content.substring(0, 100) + "...",
+          );
           break;
-        case 'x-post':
+        case "x-post":
           updateData.generatedXPost = content;
-          console.log('💾 Saving X post content:', content.substring(0, 100) + '...');
+          console.log(
+            "💾 Saving X post content:",
+            content.substring(0, 100) + "...",
+          );
           break;
-        case 'interior-reimagined':
-          console.log('🔍 Retry - Processing interior-reimagined content:', content);
-          console.log('🎯 Retry - Content type check - starts with http?', content.startsWith('http'));
-          
+        case "interior-reimagined":
+          console.log(
+            "🔍 Retry - Processing interior-reimagined content:",
+            content,
+          );
+          console.log(
+            "🎯 Retry - Content type check - starts with http?",
+            content.startsWith("http"),
+          );
+
           // Check if content is an image URL (actual redesign) or text (concepts)
-          if (content.startsWith('http')) {
+          if (content.startsWith("http")) {
             // It's an actual redesigned image URL - save it regardless of domain
-            const newRoomDesign = { 
+            const newRoomDesign = {
               originalImageUrl: options.selectedImage,
               styleId: options.designStyle,
               redesignedImageUrl: content,
               prompt: `${options.roomType} in ${options.designStyle} style`,
-              createdAt: new Date().toISOString()
+              createdAt: new Date().toISOString(),
             };
-            
+
             // IMPORTANT: Append to existing room designs, don't overwrite (matching individual workflow)
             let existingRoomDesigns = [];
             if (listing.generatedRoomDesigns) {
-                if (Array.isArray(listing.generatedRoomDesigns)) {
-                    existingRoomDesigns = listing.generatedRoomDesigns;
-                } else if (typeof listing.generatedRoomDesigns === 'string') {
-                    try {
-                        const parsed = JSON.parse(listing.generatedRoomDesigns);
-                        if (Array.isArray(parsed)) {
-                            existingRoomDesigns = parsed;
-                        } else {
-                            console.warn('Parsed generatedRoomDesigns is not an array on retry, starting fresh.', parsed);
-                            existingRoomDesigns = [];
-                        }
-                    } catch (e) {
-                        console.error('Failed to parse generatedRoomDesigns string on retry, starting fresh.', e);
-                        existingRoomDesigns = [];
-                    }
+              if (Array.isArray(listing.generatedRoomDesigns)) {
+                existingRoomDesigns = listing.generatedRoomDesigns;
+              } else if (typeof listing.generatedRoomDesigns === "string") {
+                try {
+                  const parsed = JSON.parse(listing.generatedRoomDesigns);
+                  if (Array.isArray(parsed)) {
+                    existingRoomDesigns = parsed;
+                  } else {
+                    console.warn(
+                      "Parsed generatedRoomDesigns is not an array on retry, starting fresh.",
+                      parsed,
+                    );
+                    existingRoomDesigns = [];
+                  }
+                } catch (e) {
+                  console.error(
+                    "Failed to parse generatedRoomDesigns string on retry, starting fresh.",
+                    e,
+                  );
+                  existingRoomDesigns = [];
                 }
+              }
             }
-            updateData.generatedRoomDesigns = [...existingRoomDesigns, newRoomDesign];
-            
-            console.log('💾 Retry - Saving room design URL:', content);
-            console.log('💾 Retry - Room design details:', newRoomDesign);
-            console.log('💾 Retry - Existing room designs count:', existingRoomDesigns.length);
-            console.log('💾 Retry - New total room designs count:', updateData.generatedRoomDesigns.length);
-            console.log('✅ Retry - Interior redesign will be saved to listing');
+            updateData.generatedRoomDesigns = [
+              ...existingRoomDesigns,
+              newRoomDesign,
+            ];
+
+            console.log("💾 Retry - Saving room design URL:", content);
+            console.log("💾 Retry - Room design details:", newRoomDesign);
+            console.log(
+              "💾 Retry - Existing room designs count:",
+              existingRoomDesigns.length,
+            );
+            console.log(
+              "💾 Retry - New total room designs count:",
+              updateData.generatedRoomDesigns.length,
+            );
+            console.log(
+              "✅ Retry - Interior redesign will be saved to listing",
+            );
           } else {
             // It's text concepts - still save them for debugging
-            console.log('🔍 Retry - Generated interior concepts (text):', content);
-            console.log('⚠️ Retry - Got text instead of image URL - this might indicate an API issue');
+            console.log(
+              "🔍 Retry - Generated interior concepts (text):",
+              content,
+            );
+            console.log(
+              "⚠️ Retry - Got text instead of image URL - this might indicate an API issue",
+            );
             updateData.generatedInteriorConcepts = content;
           }
           break;
-        case 'paid-ads':
+        case "paid-ads":
           updateData.generatedAdCopy = content;
-          console.log('💾 Saving paid ads content:', content.substring(0, 100) + '...');
+          console.log(
+            "💾 Saving paid ads content:",
+            content.substring(0, 100) + "...",
+          );
           break;
       }
 
-      console.log('📊 Update data for retry', step.id, ':', updateData);
-      
+      console.log("📊 Update data for retry", step.id, ":", updateData);
+
       // CRITICAL FIX: Get fresh listing data before retry update to avoid overwriting other content
       const currentListing = await listingService.getListingById(listingId!);
       if (!currentListing) {
-        throw new Error('Failed to refresh listing data before retry update');
+        throw new Error("Failed to refresh listing data before retry update");
       }
-      
+
       // Merge with existing content to preserve all generated content
       const preservedUpdateData = {
         ...updateData,
         // Explicitly preserve existing generated content from other steps
-        generatedDescription: updateData.generatedDescription || currentListing.generatedDescription,
-        generatedEmail: updateData.generatedEmail || currentListing.generatedEmail,
-        generatedFacebookPost: updateData.generatedFacebookPost || currentListing.generatedFacebookPost,
-        generatedInstagramCaption: updateData.generatedInstagramCaption || currentListing.generatedInstagramCaption,
-        generatedXPost: updateData.generatedXPost || currentListing.generatedXPost,
-        generatedRoomDesigns: updateData.generatedRoomDesigns || currentListing.generatedRoomDesigns,
-        generatedAdCopy: updateData.generatedAdCopy || currentListing.generatedAdCopy
+        generatedDescription:
+          updateData.generatedDescription ||
+          currentListing.generatedDescription,
+        generatedEmail:
+          updateData.generatedEmail || currentListing.generatedEmail,
+        generatedFacebookPost:
+          updateData.generatedFacebookPost ||
+          currentListing.generatedFacebookPost,
+        generatedInstagramCaption:
+          updateData.generatedInstagramCaption ||
+          currentListing.generatedInstagramCaption,
+        generatedXPost:
+          updateData.generatedXPost || currentListing.generatedXPost,
+        generatedRoomDesigns:
+          updateData.generatedRoomDesigns ||
+          currentListing.generatedRoomDesigns,
+        generatedAdCopy:
+          updateData.generatedAdCopy || currentListing.generatedAdCopy,
       };
-      
-      console.log('📊 Preserved retry update data for', step.id, ':', preservedUpdateData);
-      const saveResult = await listingService.updateListing(listingId!, preservedUpdateData);
-      console.log('✅ Retry save result for', step.id, ':', saveResult);
 
+      console.log(
+        "📊 Preserved retry update data for",
+        step.id,
+        ":",
+        preservedUpdateData,
+      );
+      const saveResult = await listingService.updateListing(
+        listingId!,
+        preservedUpdateData,
+      );
+      console.log("✅ Retry save result for", step.id, ":", saveResult);
     } catch (error) {
       console.error(`Retry error for ${step.name}:`, error);
-      setSteps(prev => prev.map((s, idx) => 
-        idx === stepIndex ? { 
-          ...s, 
-          status: 'failed',
-          error: error instanceof Error ? error.message : 'Retry failed',
-          endTime: Date.now()
-        } : s
-      ));
+      setSteps((prev) =>
+        prev.map((s, idx) =>
+          idx === stepIndex
+            ? {
+                ...s,
+                status: "failed",
+                error: error instanceof Error ? error.message : "Retry failed",
+                endTime: Date.now(),
+              }
+            : s,
+        ),
+      );
     }
   };
 
   const getStepIcon = (step: BatchGenerationStep) => {
     switch (step.status) {
-      case 'completed':
+      case "completed":
         return <CheckCircleIcon className="h-6 w-6 text-green-500" />;
-      case 'in-progress':
-        return <SparklesIcon className="h-6 w-6 text-brand-primary animate-pulse" />;
-      case 'failed':
+      case "in-progress":
+        return (
+          <SparklesIcon className="h-6 w-6 text-brand-primary animate-pulse" />
+        );
+      case "failed":
         return <ExclamationTriangleIcon className="h-6 w-6 text-red-500" />;
       default:
         return <ClockIcon className="h-6 w-6 text-brand-text-tertiary" />;
@@ -803,14 +1198,14 @@ const ContentGenerationProgressPage: React.FC = () => {
 
   const getStepTextColor = (step: BatchGenerationStep) => {
     switch (step.status) {
-      case 'completed':
-        return 'text-green-600';
-      case 'in-progress':
-        return 'text-brand-primary font-semibold';
-      case 'failed':
-        return 'text-red-600';
+      case "completed":
+        return "text-green-600";
+      case "in-progress":
+        return "text-brand-primary font-semibold";
+      case "failed":
+        return "text-red-600";
       default:
-        return 'text-brand-text-secondary';
+        return "text-brand-text-secondary";
     }
   };
 
@@ -820,7 +1215,7 @@ const ContentGenerationProgressPage: React.FC = () => {
     const seconds = Math.floor(ms / 1000);
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
-    
+
     if (minutes > 0) {
       return `${minutes}m ${remainingSeconds}s`;
     }
@@ -834,7 +1229,7 @@ const ContentGenerationProgressPage: React.FC = () => {
     if (batchStartTime && isGenerating) {
       return formatTime(Date.now() - batchStartTime);
     }
-    return '0s';
+    return "0s";
   };
 
   if (error) {
@@ -843,7 +1238,9 @@ const ContentGenerationProgressPage: React.FC = () => {
         <div className="text-center">
           <ExclamationTriangleIcon className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <p className="text-brand-danger mb-4">{error}</p>
-          <Button onClick={() => navigate('/dashboard')}>Back to Dashboard</Button>
+          <Button onClick={() => navigate("/dashboard")}>
+            Back to Dashboard
+          </Button>
         </div>
       </div>
     );
@@ -882,16 +1279,19 @@ const ContentGenerationProgressPage: React.FC = () => {
           {/* Progress Overview */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-brand-text-secondary">Progress</span>
+              <span className="text-sm font-medium text-brand-text-secondary">
+                Progress
+              </span>
               <span className="text-sm text-brand-text-secondary">
-                {steps.filter(s => s.status === 'completed').length} of {steps.length} completed
+                {steps.filter((s) => s.status === "completed").length} of{" "}
+                {steps.length} completed
               </span>
             </div>
             <div className="w-full bg-brand-border rounded-full h-3">
-              <div 
+              <div
                 className="bg-gradient-to-r from-brand-primary to-brand-secondary h-3 rounded-full transition-all duration-500"
-                style={{ 
-                  width: `${(steps.filter(s => s.status === 'completed').length / steps.length) * 100}%` 
+                style={{
+                  width: `${(steps.filter((s) => s.status === "completed").length / steps.length) * 100}%`,
                 }}
               ></div>
             </div>
@@ -900,38 +1300,42 @@ const ContentGenerationProgressPage: React.FC = () => {
           {/* Steps List */}
           <div className="space-y-3">
             {steps.map((step, index) => (
-              <div 
+              <div
                 key={step.id}
                 className={[
-                  'flex items-center justify-between p-4 rounded-lg border transition-all duration-200',
-                  step.status === 'in-progress'
-                    ? 'bg-brand-primary/5 border-brand-primary/20 transform scale-[1.02]'
-                    : step.status === 'completed'
-                    ? 'bg-green-50 border-green-200'
-                    : step.status === 'failed'
-                    ? 'bg-red-50 border-red-200'
-                    : 'bg-brand-card border-brand-border/50'
-                ].join(' ')}
+                  "flex items-center justify-between p-4 rounded-lg border transition-all duration-200",
+                  step.status === "in-progress"
+                    ? "bg-brand-primary/5 border-brand-primary/20 transform scale-[1.02]"
+                    : step.status === "completed"
+                      ? "bg-green-50 border-green-200"
+                      : step.status === "failed"
+                        ? "bg-red-50 border-red-200"
+                        : "bg-brand-card border-brand-border/50",
+                ].join(" ")}
               >
                 <div className="flex items-center space-x-4">
-                  <div className="flex-shrink-0">
-                    {getStepIcon(step)}
-                  </div>
+                  <div className="flex-shrink-0">{getStepIcon(step)}</div>
                   <div>
-                    <h3 className={`font-semibold ${getStepTextColor(step)}`}>{step.name}</h3>
-                    <p className="text-sm text-brand-text-tertiary">{step.description}</p>
-                    {step.status === 'in-progress' && (
+                    <h3 className={`font-semibold ${getStepTextColor(step)}`}>
+                      {step.name}
+                    </h3>
+                    <p className="text-sm text-brand-text-tertiary">
+                      {step.description}
+                    </p>
+                    {step.status === "in-progress" && (
                       <div className="mt-1 flex items-center text-sm text-brand-primary">
                         <SparklesIcon className="h-4 w-4 mr-1 animate-pulse" />
                         Generating...
                       </div>
                     )}
-                    {step.status === 'failed' && step.error && (
-                      <div className="mt-1 text-sm text-red-600">Error: {step.error}</div>
+                    {step.status === "failed" && step.error && (
+                      <div className="mt-1 text-sm text-red-600">
+                        Error: {step.error}
+                      </div>
                     )}
                   </div>
                 </div>
-                {step.status === 'failed' && (
+                {step.status === "failed" && (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -955,12 +1359,20 @@ const ContentGenerationProgressPage: React.FC = () => {
                 </h2>
                 <div className="mb-6">
                   <p className="text-lg text-brand-text-secondary mb-2">
-                    Successfully generated {steps.filter(s => s.status === 'completed').length} out of {steps.length} content pieces
+                    Successfully generated{" "}
+                    {steps.filter((s) => s.status === "completed").length} out
+                    of {steps.length} content pieces
                   </p>
                   <div className="flex justify-center space-x-4 text-sm mb-4">
-                    <span className="text-green-600">✅ {steps.filter(s => s.status === 'completed').length} Completed</span>
-                    {steps.filter(s => s.status === 'failed').length > 0 && (
-                      <span className="text-red-600">❌ {steps.filter(s => s.status === 'failed').length} Failed</span>
+                    <span className="text-green-600">
+                      ✅ {steps.filter((s) => s.status === "completed").length}{" "}
+                      Completed
+                    </span>
+                    {steps.filter((s) => s.status === "failed").length > 0 && (
+                      <span className="text-red-600">
+                        ❌ {steps.filter((s) => s.status === "failed").length}{" "}
+                        Failed
+                      </span>
                     )}
                   </div>
                   {batchStartTime && batchEndTime && (
@@ -969,16 +1381,17 @@ const ContentGenerationProgressPage: React.FC = () => {
                     </p>
                   )}
                 </div>
-                
+
                 {redirectCountdown !== null && redirectCountdown > 0 ? (
                   <div className="space-y-4">
                     <p className="text-brand-text-secondary mb-4">
-                      Auto-redirecting to your listing in {redirectCountdown} seconds...
+                      Auto-redirecting to your listing in {redirectCountdown}{" "}
+                      seconds...
                     </p>
                     <div className="flex gap-3 justify-center">
                       <Button
                         onClick={() => {
-                          console.log('🔄 Manual redirect button clicked');
+                          console.log("🔄 Manual redirect button clicked");
                           window.location.href = `/#/listings/${listingId}?refresh=${Date.now()}`;
                         }}
                         className="bg-gradient-to-r from-brand-primary to-brand-secondary text-white font-semibold"
@@ -989,7 +1402,7 @@ const ContentGenerationProgressPage: React.FC = () => {
                       <Button
                         variant="ghost"
                         onClick={() => {
-                          console.log('❌ Auto-redirect cancelled by user');
+                          console.log("❌ Auto-redirect cancelled by user");
                           setRedirectCountdown(null);
                         }}
                         className="text-brand-text-secondary"
@@ -1002,7 +1415,7 @@ const ContentGenerationProgressPage: React.FC = () => {
                   <div className="space-y-4">
                     <Button
                       onClick={() => {
-                        console.log('🔄 View listing button clicked');
+                        console.log("🔄 View listing button clicked");
                         window.location.href = `/#/listings/${listingId}?refresh=${Date.now()}`;
                       }}
                       className="bg-gradient-to-r from-brand-primary to-brand-secondary text-white font-semibold"
@@ -1012,7 +1425,7 @@ const ContentGenerationProgressPage: React.FC = () => {
                     </Button>
                     <Button
                       variant="ghost"
-                      onClick={() => navigate('/dashboard')}
+                      onClick={() => navigate("/dashboard")}
                       className="ml-3"
                     >
                       Back to Dashboard
