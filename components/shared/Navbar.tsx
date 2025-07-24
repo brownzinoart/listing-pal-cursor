@@ -1,9 +1,13 @@
-import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
-import { APP_NAME } from '../../constants';
-import { BuildingStorefrontIcon, ArrowRightOnRectangleIcon, PlusIcon } from '@heroicons/react/24/solid';
-import Button from './Button';
+import React from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
+import { APP_NAME } from "../../constants";
+import {
+  BuildingStorefrontIcon,
+  ArrowRightOnRectangleIcon,
+  PlusIcon,
+} from "@heroicons/react/24/solid";
+import Button from "./Button";
 
 const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
@@ -11,14 +15,17 @@ const Navbar: React.FC = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate("/login");
   };
 
   return (
     <nav className="bg-brand-panel shadow-lg border-b border-brand-border">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <Link to={user ? "/dashboard" : "/"} className="flex items-center h-full">
+          <Link
+            to={user ? "/dashboard" : "/"}
+            className="flex items-center h-full"
+          >
             <div className="h-12 w-auto flex items-center">
               <img
                 src="/logo.png"
@@ -47,10 +54,10 @@ const Navbar: React.FC = () => {
                 >
                   Login
                 </Link>
-                <Button 
-                  variant="primary" 
-                  size="sm" 
-                  onClick={() => navigate('/signup')}
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => navigate("/signup")}
                 >
                   Sign Up
                 </Button>
