@@ -1,4 +1,4 @@
-import React, { useState, useEffect, ChangeEvent } from 'react';
+import React, { useState, useEffect, useLayoutEffect, ChangeEvent } from 'react';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
 import * as listingService from '../../../services/listingService';
@@ -130,6 +130,11 @@ const PreselectBatchPage: React.FC = () => {
       }));
     }
   }, []); // Run only once on mount
+
+  // Scroll to top before render (no visible scroll)
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   // Debug log for selections
   useEffect(() => {
@@ -532,40 +537,6 @@ const PreselectBatchPage: React.FC = () => {
                   </div>
                 );
               })}
-            </div>
-          </Card>
-
-          {/* Selection Summary for Debugging */}
-          <Card variant="gradient" padding="lg">
-            <h3 className="text-lg font-semibold text-brand-text-primary mb-4">Current Selections Summary</h3>
-            <div className="space-y-2 text-sm">
-              <div>
-                <span className="font-medium">Description Style:</span> {selections.description.style}
-              </div>
-              <div>
-                <span className="font-medium">Email Theme:</span> {selections.email.theme}
-              </div>
-              <div>
-                <span className="font-medium">Room Image:</span> {
-                  selections.roomRedesign.uploadedImage ? 'Custom uploaded image' :
-                  selections.roomRedesign.selectedImageIndex !== null ? `Image ${selections.roomRedesign.selectedImageIndex + 1}` :
-                  'None selected'
-                }
-              </div>
-              <div>
-                <span className="font-medium">Room Type:</span> {selections.roomRedesign.roomType}
-              </div>
-              <div>
-                <span className="font-medium">Design Style:</span> {selections.roomRedesign.designStyle}
-              </div>
-              <div>
-                <span className="font-medium">Paid Ads:</span> {
-                  Object.entries(selections.paidAds)
-                    .filter(([_, value]) => value !== null)
-                    .map(([platform, objective]) => `${platform}: ${objective}`)
-                    .join(', ') || 'None selected'
-                }
-              </div>
             </div>
           </Card>
 

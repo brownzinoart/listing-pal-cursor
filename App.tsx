@@ -44,7 +44,14 @@ const AppRoutes = () => {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           
-          <Route path="/dashboard" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
+          <Route path="/dashboard" element={<PrivateRoute><DashboardPage section="dashboard" /></PrivateRoute>} />
+          <Route path="/dashboard/ads" element={<PrivateRoute><DashboardPage section="ads" /></PrivateRoute>} />
+          <Route path="/dashboard/social" element={<PrivateRoute><DashboardPage section="social" /></PrivateRoute>} />
+          <Route path="/dashboard/interior" element={<PrivateRoute><DashboardPage section="interior" /></PrivateRoute>} />
+          <Route path="/dashboard/descriptions" element={<PrivateRoute><DashboardPage section="descriptions" /></PrivateRoute>} />
+          <Route path="/dashboard/email" element={<PrivateRoute><DashboardPage section="email" /></PrivateRoute>} />
+          <Route path="/dashboard/print" element={<PrivateRoute><DashboardPage section="print" /></PrivateRoute>} />
+          <Route path="/dashboard/resources" element={<PrivateRoute><DashboardPage section="resources" /></PrivateRoute>} />
           <Route path="/listings/new" element={<PrivateRoute><ListingFormPage /></PrivateRoute>} />
           <Route path="/listings/:id/edit" element={<PrivateRoute><ListingFormPage /></PrivateRoute>} />
           <Route path="/listings/:id" element={<PrivateRoute><ListingDetailPage /></PrivateRoute>} />

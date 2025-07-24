@@ -18,12 +18,14 @@ const Navbar: React.FC = () => {
     <nav className="bg-brand-panel shadow-lg border-b border-brand-border">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <Link 
-            to={user ? "/dashboard" : "/"} 
-            className="flex items-center text-2xl font-bold text-brand-text-primary hover:bg-gradient-to-r hover:from-brand-primary hover:to-brand-accent hover:bg-clip-text hover:text-transparent transition-all duration-300"
-          >
-            <BuildingStorefrontIcon className="h-7 w-7 mr-2 text-brand-primary hover:bg-gradient-to-r hover:from-brand-primary hover:to-brand-accent hover:bg-clip-text hover:text-transparent transition-all duration-300" />
-            {APP_NAME}
+          <Link to={user ? "/dashboard" : "/"} className="flex items-center h-full">
+            <div className="h-12 w-auto flex items-center">
+              <img
+                src="/logo.png"
+                alt="ListingPal Logo"
+                className="object-contain max-h-full max-w-[120px]"
+              />
+            </div>
           </Link>
           <div className="flex items-center space-x-3">
             {user ? (

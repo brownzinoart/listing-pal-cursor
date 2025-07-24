@@ -233,7 +233,7 @@ export class ContentGenerationService {
       if (initialData.jobId) {
         console.log(`⏳ Received job ID: ${initialData.jobId}. Starting to poll for Decor8AI results...`);
 
-        const pollUntilComplete = async (retries = 30, delay = 5000): Promise<string> => {
+        const pollUntilComplete = async (retries = 300, delay = 5000): Promise<string> => {
           for (let i = 0; i < retries; i++) {
             try {
               await new Promise(resolve => setTimeout(resolve, delay));
@@ -325,34 +325,25 @@ export class ContentGenerationService {
 
   async generatePaidAdCopy(listing: Listing, style: string = 'professional'): Promise<string> {
     try {
-      const objectives = style; // In batch mode, 'style' carries the objectives object
-      // Generate structured ad campaigns and format as string for now
-      const campaigns = [
-        {
-          platform: 'Facebook',
-          objective: 'WEBSITE_TRAFFIC',
-          headline: this.generateAdHeadline(listing, 'facebook', style),
-          body: this.generateAdBody(listing, 'facebook', style),
-          cta: 'View Listing'
+      const objectives = Array.isArray(style) ? style : [style]; // In batch mode, 'style' might carry the objectives
+      
+      const response = await fetch('/api/listings/generate-paid-ads', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        {
-          platform: 'LinkedIn',
-          objective: 'WEBSITE_TRAFFIC', 
-          headline: this.generateAdHeadline(listing, 'linkedin', style),
-          body: this.generateAdBody(listing, 'linkedin', style),
-          cta: 'View Property Profile'
-        },
-        {
-          platform: 'Google',
-          objective: 'WEBSITE_TRAFFIC',
-          headline: this.generateAdHeadline(listing, 'google', style),
-          body: this.generateAdBody(listing, 'google', style),
-          cta: 'Schedule a Tour'
-        }
-      ];
+        body: JSON.stringify({
+          propertyData: listing,
+          objectives: objectives
+        }),
+      });
 
-      // Format as string for compatibility with existing system
-      return JSON.stringify(campaigns);
+      if (!response.ok) {
+        throw new Error(`Failed to generate paid ads: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data.content || '';
     } catch (error) {
       console.error('Error generating paid ad campaigns:', error);
       throw error;

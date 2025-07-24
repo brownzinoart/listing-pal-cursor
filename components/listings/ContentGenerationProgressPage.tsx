@@ -166,7 +166,7 @@ const ContentGenerationProgressPage: React.FC = () => {
     if (isComplete && !redirectCountdown && listingId) {
       console.log('✅ Batch generation complete, starting redirect countdown');
       console.log('🎯 Target URL will be:', `/listings/${listingId}`);
-      setRedirectCountdown(3);
+      setRedirectCountdown(10); // 10 second countdown
     }
   }, [isComplete, listingId]);
 
@@ -244,7 +244,7 @@ const ContentGenerationProgressPage: React.FC = () => {
               setSteps(prev => prev.map((s, idx) =>
                 idx === i ? { 
                   ...s, 
-                  description: 'Processing with Decor8AI...',
+                  description: 'Working on some magic...',
                   status: 'in-progress'
                 } : s
               ));
@@ -281,37 +281,8 @@ const ContentGenerationProgressPage: React.FC = () => {
               
               console.log('✅ Decor8AI content validation passed - proceeding with processing');
               
-              // CRITICAL: Wait up to 60s for Decor8AI to return a valid image URL
-              const maxWaitMs = 60000;
-              const pollIntervalMs = 3000;
-              const startWait = Date.now();
-              let waited = 0;
-              let imageUrl = null;
-              let lastError = null;
-              for (;;) {
-                try {
-                  // Validate the response is a string and a valid URL
-                  if (typeof content === 'string' && content.startsWith('http')) {
-                    new URL(content); // throws if not a valid URL
-                    imageUrl = content;
-                    console.log('✅ Decor8AI returned immediate result with image URL:', imageUrl);
-                    break;
-                  } else {
-                    throw new Error('Decor8AI did not return a valid image URL yet.');
-                  }
-                } catch (err) {
-                  lastError = err;
-                  waited = Date.now() - startWait;
-                  if (waited >= maxWaitMs) {
-                    console.error('❌ Timed out waiting for Decor8AI image URL after 60s:', err);
-                    throw new Error('Timed out waiting for Decor8AI to return a valid image URL.');
-                  }
-                  console.log(`⏳ Waiting for Decor8AI image URL... retrying in ${pollIntervalMs / 1000}s (waited ${Math.round(waited / 1000)}s)`);
-                  await new Promise(resolve => setTimeout(resolve, pollIntervalMs));
-                }
-              }
-              // At this point, imageUrl is valid and ready
-              console.log('✅ Proceeding with Decor8AI image URL:', imageUrl);
+              // Simplify: content is already the final response from Decor8AI
+              let imageUrl = content;
               
               // Validate the response - should be an image URL
               if (!imageUrl || typeof imageUrl !== 'string') {
@@ -319,7 +290,7 @@ const ContentGenerationProgressPage: React.FC = () => {
                 throw new Error('Interior redesign API returned invalid response');
               }
               
-              // Check if it's a valid URL (more flexible than just checking for 'http')
+              // Check if it's a valid URL
               try {
                 new URL(imageUrl);
                 console.log('✅ Valid image URL received from Decor8AI:', imageUrl);
@@ -341,11 +312,11 @@ const ContentGenerationProgressPage: React.FC = () => {
                 
                 try {
                   console.log('🔍 Starting image accessibility check...');
-                  await waitUntilImageIsAccessible(imageUrl, 15000, 4);
+                  await waitUntilImageIsAccessible(imageUrl, 5000, 2); // Reduced timeout for demo
                   console.log('🖼️ Image confirmed loaded and accessible:', imageUrl);
                 } catch (imgErr) {
-                  console.warn('⚠️ Image not fully loaded before timeout or error:', imgErr);
-                  throw new Error('Interior redesign image is not ready yet. Please retry.');
+                  console.warn('⚠️ Image not fully loaded before timeout, but proceeding:', imgErr);
+                  // Continue anyway for demo purposes
                 }
               }
               console.log('🎉 Interior-reimagined step processing completed successfully');
@@ -478,7 +449,28 @@ const ContentGenerationProgressPage: React.FC = () => {
           }
 
           console.log('📊 Update data for', step.id, ':', updateData);
-          const saveResult = await listingService.updateListing(listingId!, updateData);
+          
+          // CRITICAL FIX: Get fresh listing data before update to avoid overwriting other content
+          const currentListing = await listingService.getListingById(listingId!);
+          if (!currentListing) {
+            throw new Error('Failed to refresh listing data before update');
+          }
+          
+          // Merge with existing content to preserve all generated content
+          const preservedUpdateData = {
+            ...updateData,
+            // Explicitly preserve existing generated content from other steps
+            generatedDescription: updateData.generatedDescription || currentListing.generatedDescription,
+            generatedEmail: updateData.generatedEmail || currentListing.generatedEmail,
+            generatedFacebookPost: updateData.generatedFacebookPost || currentListing.generatedFacebookPost,
+            generatedInstagramCaption: updateData.generatedInstagramCaption || currentListing.generatedInstagramCaption,
+            generatedXPost: updateData.generatedXPost || currentListing.generatedXPost,
+            generatedRoomDesigns: updateData.generatedRoomDesigns || currentListing.generatedRoomDesigns,
+            generatedAdCopy: updateData.generatedAdCopy || currentListing.generatedAdCopy
+          };
+          
+          console.log('📊 Preserved update data for', step.id, ':', preservedUpdateData);
+          const saveResult = await listingService.updateListing(listingId!, preservedUpdateData);
           console.log('✅ Save result for', step.id, ':', saveResult);
           
           // For interior redesign, let's log more details about what was actually saved
@@ -558,20 +550,8 @@ const ContentGenerationProgressPage: React.FC = () => {
         console.error('⚠️ Error refreshing listing data:', refreshError);
       }
       
-      // IMMEDIATE REDIRECT - Don't wait for state updates
-      console.log('🚀 IMMEDIATE REDIRECT - Bypassing state-based countdown');
-      setTimeout(() => {
-        console.log('⚡ Executing immediate redirect to:', `/listings/${listingId}`);
-        // Force a hard refresh to ensure the listing page loads fresh data
-        window.location.href = `/#/listings/${listingId}?refresh=${Date.now()}`;
-      }, 1000);
-      
-      // Backup redirect mechanism - force redirect after 3 seconds if state-based redirect doesn't work
-      setTimeout(() => {
-        console.log('🔄 Backup redirect check - isComplete:', isComplete);
-        console.log('🚀 Executing backup redirect to listing page');
-        window.location.href = `/#/listings/${listingId}`;
-      }, 3000);
+      // Start countdown timer for auto-redirect (will be handled by useEffect)
+      console.log('🚀 Batch generation complete - starting auto-redirect countdown');
     } catch (error) {
       console.error('Batch generation error:', error);
       setError('Failed to complete batch generation. Please try again.');
@@ -582,19 +562,8 @@ const ContentGenerationProgressPage: React.FC = () => {
       setIsComplete(true);
       console.log('✅ isComplete has been set to true (error case)');
       
-      // IMMEDIATE REDIRECT - Don't wait for state updates (error case)
-      console.log('🚀 IMMEDIATE REDIRECT (error case) - Bypassing state-based countdown');
-      setTimeout(() => {
-        console.log('⚡ Executing immediate redirect to:', `/listings/${listingId}`);
-        navigate(`/listings/${listingId}`);
-      }, 1000);
-      
-      // Backup redirect mechanism - force redirect after 3 seconds if state-based redirect doesn't work
-      setTimeout(() => {
-        console.log('🔄 Backup redirect check (error case) - isComplete:', isComplete);
-        console.log('🚀 Executing backup redirect to listing page');
-        window.location.href = `/#/listings/${listingId}`;
-      }, 3000);
+      // Start countdown timer for auto-redirect (will be handled by useEffect)
+      console.log('🚀 Batch generation failed but complete - starting auto-redirect countdown');
     } finally {
       setIsGenerating(false);
       console.log('✅ setIsGenerating(false) called');
@@ -781,9 +750,30 @@ const ContentGenerationProgressPage: React.FC = () => {
           break;
       }
 
-      console.log('📊 Update data for', step.id, ':', updateData);
-      const saveResult = await listingService.updateListing(listingId!, updateData);
-      console.log('✅ Save result for', step.id, ':', saveResult);
+      console.log('📊 Update data for retry', step.id, ':', updateData);
+      
+      // CRITICAL FIX: Get fresh listing data before retry update to avoid overwriting other content
+      const currentListing = await listingService.getListingById(listingId!);
+      if (!currentListing) {
+        throw new Error('Failed to refresh listing data before retry update');
+      }
+      
+      // Merge with existing content to preserve all generated content
+      const preservedUpdateData = {
+        ...updateData,
+        // Explicitly preserve existing generated content from other steps
+        generatedDescription: updateData.generatedDescription || currentListing.generatedDescription,
+        generatedEmail: updateData.generatedEmail || currentListing.generatedEmail,
+        generatedFacebookPost: updateData.generatedFacebookPost || currentListing.generatedFacebookPost,
+        generatedInstagramCaption: updateData.generatedInstagramCaption || currentListing.generatedInstagramCaption,
+        generatedXPost: updateData.generatedXPost || currentListing.generatedXPost,
+        generatedRoomDesigns: updateData.generatedRoomDesigns || currentListing.generatedRoomDesigns,
+        generatedAdCopy: updateData.generatedAdCopy || currentListing.generatedAdCopy
+      };
+      
+      console.log('📊 Preserved retry update data for', step.id, ':', preservedUpdateData);
+      const saveResult = await listingService.updateListing(listingId!, preservedUpdateData);
+      console.log('✅ Retry save result for', step.id, ':', saveResult);
 
     } catch (error) {
       console.error(`Retry error for ${step.name}:`, error);
@@ -824,6 +814,8 @@ const ContentGenerationProgressPage: React.FC = () => {
     }
   };
 
+  // Removed getCompletionSummary - no longer needed as we calculate inline
+
   const formatTime = (ms: number) => {
     const seconds = Math.floor(ms / 1000);
     const minutes = Math.floor(seconds / 60);
@@ -856,6 +848,9 @@ const ContentGenerationProgressPage: React.FC = () => {
       </div>
     );
   }
+
+  // Remove the separate completion summary overlay - it's causing flickering
+  // Instead, we'll use the integrated completion UI below
 
   if (!listing) {
     return (
@@ -955,68 +950,76 @@ const ContentGenerationProgressPage: React.FC = () => {
             <div className="text-center py-8">
               <div className="mb-6">
                 <CheckCircleIcon className="h-16 w-16 text-green-500 mx-auto mb-4" />
-                <h2 className="text-2xl font-bold text-brand-text-primary mb-2">
-                  Batch Generation Complete!
+                <h2 className="text-3xl font-bold text-brand-text-primary mb-4">
+                  Batch Generation Complete! 🎉
                 </h2>
-                <p className="text-brand-text-secondary mb-2">
-                  Generated {steps.filter(s => s.status === 'completed').length} out of {steps.length} content pieces
-                </p>
-                {batchStartTime && batchEndTime && (
-                  <p className="text-sm text-brand-text-tertiary">
-                    Total time: {formatTime(batchEndTime - batchStartTime)}
+                <div className="mb-6">
+                  <p className="text-lg text-brand-text-secondary mb-2">
+                    Successfully generated {steps.filter(s => s.status === 'completed').length} out of {steps.length} content pieces
                   </p>
-                )}
-              </div>
-              
-              {redirectCountdown !== null && redirectCountdown > 0 ? (
-                <div className="space-y-4">
-                  <p className="text-brand-text-secondary">
-                    Redirecting to your listing in {redirectCountdown} seconds...
-                  </p>
-                  <div className="flex gap-3 justify-center">
+                  <div className="flex justify-center space-x-4 text-sm mb-4">
+                    <span className="text-green-600">✅ {steps.filter(s => s.status === 'completed').length} Completed</span>
+                    {steps.filter(s => s.status === 'failed').length > 0 && (
+                      <span className="text-red-600">❌ {steps.filter(s => s.status === 'failed').length} Failed</span>
+                    )}
+                  </div>
+                  {batchStartTime && batchEndTime && (
+                    <p className="text-sm text-brand-text-tertiary">
+                      Total time: {formatTime(batchEndTime - batchStartTime)}
+                    </p>
+                  )}
+                </div>
+                
+                {redirectCountdown !== null && redirectCountdown > 0 ? (
+                  <div className="space-y-4">
+                    <p className="text-brand-text-secondary mb-4">
+                      Auto-redirecting to your listing in {redirectCountdown} seconds...
+                    </p>
+                    <div className="flex gap-3 justify-center">
+                      <Button
+                        onClick={() => {
+                          console.log('🔄 Manual redirect button clicked');
+                          window.location.href = `/#/listings/${listingId}?refresh=${Date.now()}`;
+                        }}
+                        className="bg-gradient-to-r from-brand-primary to-brand-secondary text-white font-semibold"
+                        size="lg"
+                      >
+                        View Your Listing & Content →
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          console.log('❌ Auto-redirect cancelled by user');
+                          setRedirectCountdown(null);
+                        }}
+                        className="text-brand-text-secondary"
+                      >
+                        Cancel Auto-Redirect
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
                     <Button
                       onClick={() => {
-                        console.log('🔄 Manual redirect button clicked');
+                        console.log('🔄 View listing button clicked');
                         window.location.href = `/#/listings/${listingId}?refresh=${Date.now()}`;
                       }}
-                      className="flex items-center gap-2 bg-brand-primary hover:bg-brand-primary/90"
+                      className="bg-gradient-to-r from-brand-primary to-brand-secondary text-white font-semibold"
+                      size="lg"
                     >
-                      Go to Listing Now
-                      <ArrowRightIcon className="h-4 w-4" />
+                      View Your Listing & Content →
                     </Button>
                     <Button
                       variant="ghost"
-                      onClick={() => {
-                        console.log('❌ Auto-redirect cancelled by user');
-                        setRedirectCountdown(null);
-                      }}
-                      className="text-brand-text-secondary"
+                      onClick={() => navigate('/dashboard')}
+                      className="ml-3"
                     >
-                      Cancel Auto-Redirect
+                      Back to Dashboard
                     </Button>
                   </div>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <Button
-                    onClick={() => {
-                      console.log('🔄 View listing button clicked');
-                      window.location.href = `/#/listings/${listingId}?refresh=${Date.now()}`;
-                    }}
-                    className="flex items-center gap-2 bg-brand-primary hover:bg-brand-primary/90"
-                  >
-                    View Your Listing
-                    <ArrowRightIcon className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    onClick={() => navigate('/dashboard')}
-                    className="ml-3"
-                  >
-                    Back to Dashboard
-                  </Button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           )}
 

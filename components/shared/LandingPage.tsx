@@ -10,13 +10,20 @@ const LandingPage: React.FC = () => {
 
   return (
     <div className="flex flex-col items-center justify-center text-center py-12">
-      <HomeModernIcon className="w-24 h-24 text-brand-primary mb-6" />
+      <div className="mb-6 mx-auto h-32 w-64 sm:h-40 sm:w-80 md:h-56 md:w-[28rem] flex flex-col items-center justify-center">
+        <img
+          src="/logoLP.png"
+          alt="ListingPal Logo"
+          className="object-contain w-full h-full"
+        />
+      </div>
       <h1 className="text-5xl font-extrabold mb-4 text-brand-text-primary">
         Welcome to <span className="text-brand-primary">{APP_NAME}</span>
       </h1>
       <p className="text-xl text-brand-text-secondary max-w-2xl mb-8">
-        The ultimate tool for real estate agents. Streamline your marketing, generate compelling content, and close more deals.
-        This is Phase 1: Core Listing Management and Authentication.
+        Give Us an Address. Get Back a Mini-Ad Agency.
+        <br />
+        Because Agents Should Close Deals, Not Tabs.
       </p>
       <div className="flex flex-col sm:flex-row gap-4">
         <Button 
