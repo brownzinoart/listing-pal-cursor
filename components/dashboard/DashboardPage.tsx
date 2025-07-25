@@ -9,6 +9,8 @@ import Button from '../shared/Button';
 import { PlusIcon, SquaresPlusIcon } from '@heroicons/react/24/solid';
 import { Cog6ToothIcon } from '@heroicons/react/24/outline';
 import { Dialog } from '@headlessui/react';
+import PaidAdsDashboard from './PaidAdsDashboard';
+import SocialPostsDashboard from './SocialPostsDashboard';
 
 const NAV_LINKS = [
   { key: 'dashboard', label: 'Home', path: '/dashboard' },
@@ -143,10 +145,10 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ section }) => {
           <Link
             key={link.key}
             to={link.path}
-            className={`block px-4 py-2 rounded-md font-medium transition-colors
+            className={`block px-4 py-2 rounded-md font-medium transition-all duration-200
               ${location.pathname === link.path
-                ? 'text-brand-text-primary font-semibold'
-                : 'text-brand-text-secondary hover:text-brand-text-primary'}`}
+                ? 'bg-brand-primary text-white font-semibold shadow-md'
+                : 'text-brand-text-secondary hover:text-brand-text-primary hover:bg-brand-panel'}`}
             onClick={() => setSidebarOpen(false)}
           >
             {link.label}
@@ -254,7 +256,13 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ section }) => {
             )}
           </>
         )}
-        {section && section !== 'dashboard' && section !== 'resources' && (
+        {section === 'ads' && (
+          <PaidAdsDashboard />
+        )}
+        {section === 'social' && (
+          <SocialPostsDashboard />
+        )}
+        {section && section !== 'dashboard' && section !== 'resources' && section !== 'ads' && section !== 'social' && (
           <div className="flex flex-col items-center justify-center h-full p-12">
             <h2 className="text-2xl font-bold text-brand-text-primary mb-2 capitalize">{NAV_LINKS.find(l => l.path.endsWith(section))?.label || section}</h2>
             <p className="text-brand-text-secondary text-lg">This section will show actionable analytics and insights for <span className="font-semibold">{NAV_LINKS.find(l => l.path.endsWith(section))?.label || section}</span>.</p>
