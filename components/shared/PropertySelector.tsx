@@ -1,6 +1,11 @@
-import React, { useState, useMemo } from 'react';
-import { ChevronDownIcon, HomeIcon, MagnifyingGlassIcon, CheckIcon } from '@heroicons/react/24/outline';
-import { Listing } from '../../types';
+import React, { useState, useMemo } from "react";
+import {
+  ChevronDownIcon,
+  HomeIcon,
+  MagnifyingGlassIcon,
+  CheckIcon,
+} from "@heroicons/react/24/outline";
+import { Listing } from "../../types";
 
 export interface PropertySelectorProps {
   listings: Listing[];
@@ -11,7 +16,7 @@ export interface PropertySelectorProps {
   maxDisplayItems?: number;
   showAllOption?: boolean;
   className?: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: "sm" | "md" | "lg";
 }
 
 const PropertySelector: React.FC<PropertySelectorProps> = ({
@@ -22,34 +27,34 @@ const PropertySelector: React.FC<PropertySelectorProps> = ({
   multiSelect = true,
   maxDisplayItems = 50,
   showAllOption = true,
-  className = '',
-  size = 'md',
+  className = "",
+  size = "md",
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
 
   const getSizeClasses = () => {
     switch (size) {
-      case 'sm':
+      case "sm":
         return {
-          trigger: 'px-3 py-1.5 text-sm',
-          dropdown: 'text-sm',
-          option: 'px-3 py-2',
-          search: 'px-3 py-2 text-sm',
+          trigger: "px-3 py-1.5 text-sm",
+          dropdown: "text-sm",
+          option: "px-3 py-2",
+          search: "px-3 py-2 text-sm",
         };
-      case 'lg':
+      case "lg":
         return {
-          trigger: 'px-4 py-3 text-base',
-          dropdown: 'text-base',
-          option: 'px-4 py-3',
-          search: 'px-4 py-3 text-base',
+          trigger: "px-4 py-3 text-base",
+          dropdown: "text-base",
+          option: "px-4 py-3",
+          search: "px-4 py-3 text-base",
         };
       default:
         return {
-          trigger: 'px-3 py-2 text-sm',
-          dropdown: 'text-sm',
-          option: 'px-3 py-2.5',
-          search: 'px-3 py-2 text-sm',
+          trigger: "px-3 py-2 text-sm",
+          dropdown: "text-sm",
+          option: "px-3 py-2.5",
+          search: "px-3 py-2 text-sm",
         };
     }
   };
@@ -59,12 +64,13 @@ const PropertySelector: React.FC<PropertySelectorProps> = ({
   // Filter listings based on search term
   const filteredListings = useMemo(() => {
     if (!searchTerm) return listings.slice(0, maxDisplayItems);
-    
+
     return listings
-      .filter(listing => 
-        listing.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        listing.city?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        listing.state?.toLowerCase().includes(searchTerm.toLowerCase())
+      .filter(
+        (listing) =>
+          listing.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          listing.city?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          listing.state?.toLowerCase().includes(searchTerm.toLowerCase()),
       )
       .slice(0, maxDisplayItems);
   }, [listings, searchTerm, maxDisplayItems]);
@@ -74,16 +80,16 @@ const PropertySelector: React.FC<PropertySelectorProps> = ({
     if (selectedListings.length === 0) {
       return placeholder;
     }
-    
+
     if (showAllOption && selectedListings.length === listings.length) {
-      return 'All Properties';
+      return "All Properties";
     }
-    
+
     if (selectedListings.length === 1) {
-      const listing = listings.find(l => l.id === selectedListings[0]);
-      return listing?.address || 'Unknown Property';
+      const listing = listings.find((l) => l.id === selectedListings[0]);
+      return listing?.address || "Unknown Property";
     }
-    
+
     return `${selectedListings.length} Properties Selected`;
   };
 
@@ -95,7 +101,7 @@ const PropertySelector: React.FC<PropertySelectorProps> = ({
     }
 
     if (selectedListings.includes(listingId)) {
-      onSelectionChange(selectedListings.filter(id => id !== listingId));
+      onSelectionChange(selectedListings.filter((id) => id !== listingId));
     } else {
       onSelectionChange([...selectedListings, listingId]);
     }
@@ -105,12 +111,14 @@ const PropertySelector: React.FC<PropertySelectorProps> = ({
     if (selectedListings.length === listings.length) {
       onSelectionChange([]);
     } else {
-      onSelectionChange(listings.map(l => l.id));
+      onSelectionChange(listings.map((l) => l.id));
     }
   };
 
-  const isSelected = (listingId: string) => selectedListings.includes(listingId);
-  const isAllSelected = selectedListings.length === listings.length && listings.length > 0;
+  const isSelected = (listingId: string) =>
+    selectedListings.includes(listingId);
+  const isAllSelected =
+    selectedListings.length === listings.length && listings.length > 0;
 
   return (
     <div className={`relative ${className}`}>
@@ -142,14 +150,12 @@ const PropertySelector: React.FC<PropertySelectorProps> = ({
       >
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <HomeIcon className="h-4 w-4 text-brand-text-tertiary flex-shrink-0" />
-          <span className="truncate">
-            {getDisplayText()}
-          </span>
+          <span className="truncate">{getDisplayText()}</span>
         </div>
-        <ChevronDownIcon 
+        <ChevronDownIcon
           className={`h-4 w-4 text-brand-text-tertiary transition-transform duration-200 flex-shrink-0 ${
-            isOpen ? 'rotate-180' : ''
-          }`} 
+            isOpen ? "rotate-180" : ""
+          }`}
         />
       </button>
 
@@ -157,11 +163,11 @@ const PropertySelector: React.FC<PropertySelectorProps> = ({
       {isOpen && (
         <>
           {/* Backdrop */}
-          <div 
-            className="fixed inset-0 z-10" 
+          <div
+            className="fixed inset-0 z-10"
             onClick={() => setIsOpen(false)}
           />
-          
+
           {/* Dropdown Content */}
           <div className="absolute z-20 w-full mt-1 bg-brand-panel border border-brand-border rounded-lg shadow-xl max-h-80 overflow-hidden">
             {/* Search */}
@@ -213,17 +219,21 @@ const PropertySelector: React.FC<PropertySelectorProps> = ({
                     border-brand-border
                   `}
                 >
-                  <div className={`
+                  <div
+                    className={`
                     w-4 h-4 rounded border border-brand-border flex items-center justify-center
-                    ${isAllSelected ? 'bg-brand-primary border-brand-primary' : 'bg-brand-background'}
-                  `}>
+                    ${isAllSelected ? "bg-brand-primary border-brand-primary" : "bg-brand-background"}
+                  `}
+                  >
                     {isAllSelected && (
                       <CheckIcon className="h-3 w-3 text-white" />
                     )}
                   </div>
                   <div className="flex items-center gap-2">
                     <HomeIcon className="h-4 w-4 text-brand-text-tertiary" />
-                    <span className="font-medium text-brand-text-primary">All Properties</span>
+                    <span className="font-medium text-brand-text-primary">
+                      All Properties
+                    </span>
                   </div>
                 </button>
               )}
@@ -247,16 +257,18 @@ const PropertySelector: React.FC<PropertySelectorProps> = ({
                   `}
                 >
                   {multiSelect && (
-                    <div className={`
+                    <div
+                      className={`
                       w-4 h-4 rounded border border-brand-border flex items-center justify-center
-                      ${isSelected(listing.id) ? 'bg-brand-primary border-brand-primary' : 'bg-brand-background'}
-                    `}>
+                      ${isSelected(listing.id) ? "bg-brand-primary border-brand-primary" : "bg-brand-background"}
+                    `}
+                    >
                       {isSelected(listing.id) && (
                         <CheckIcon className="h-3 w-3 text-white" />
                       )}
                     </div>
                   )}
-                  
+
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <HomeIcon className="h-4 w-4 text-brand-text-tertiary flex-shrink-0" />
@@ -266,7 +278,9 @@ const PropertySelector: React.FC<PropertySelectorProps> = ({
                     </div>
                     {(listing.city || listing.state) && (
                       <div className="text-xs text-brand-text-secondary mt-1">
-                        {[listing.city, listing.state].filter(Boolean).join(', ')}
+                        {[listing.city, listing.state]
+                          .filter(Boolean)
+                          .join(", ")}
                       </div>
                     )}
                   </div>
@@ -274,8 +288,12 @@ const PropertySelector: React.FC<PropertySelectorProps> = ({
               ))}
 
               {filteredListings.length === 0 && (
-                <div className={`${sizeClasses.option} text-brand-text-tertiary text-center`}>
-                  {searchTerm ? 'No properties found' : 'No properties available'}
+                <div
+                  className={`${sizeClasses.option} text-brand-text-tertiary text-center`}
+                >
+                  {searchTerm
+                    ? "No properties found"
+                    : "No properties available"}
                 </div>
               )}
             </div>

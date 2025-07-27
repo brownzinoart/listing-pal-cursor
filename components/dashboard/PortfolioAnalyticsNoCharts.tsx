@@ -1,8 +1,8 @@
-import React, { useState, useMemo } from 'react';
-import { 
-  CurrencyDollarIcon, 
-  ChartBarIcon, 
-  EyeIcon, 
+import React, { useState, useMemo } from "react";
+import {
+  CurrencyDollarIcon,
+  ChartBarIcon,
+  EyeIcon,
   UserGroupIcon,
   HomeIcon,
   ArrowTrendingUpIcon,
@@ -10,19 +10,21 @@ import {
   CalendarIcon,
   ExclamationTriangleIcon,
   InformationCircleIcon,
-  CheckCircleIcon
-} from '@heroicons/react/24/solid';
-import { PlusIcon, FunnelIcon, MapIcon } from '@heroicons/react/24/outline';
-import DashboardWrapper from '../shared/DashboardWrapper';
-import DashboardSection from '../shared/DashboardSection';
-import MetricCard from '../shared/MetricCard';
-import TimePeriodSelector, { useTimePeriod } from '../shared/TimePeriodSelector';
-import PropertySelector from '../shared/PropertySelector';
-import AdvancedFilters, { FilterOptions } from '../shared/AdvancedFilters';
-import PortfolioSummary from '../shared/PortfolioSummary';
-import PortfolioErrorBoundary from '../shared/PortfolioErrorBoundary';
-import Button from '../shared/Button';
-import { Listing } from '../../types';
+  CheckCircleIcon,
+} from "@heroicons/react/24/solid";
+import { PlusIcon, FunnelIcon, MapIcon } from "@heroicons/react/24/outline";
+import DashboardWrapper from "../shared/DashboardWrapper";
+import DashboardSection from "../shared/DashboardSection";
+import MetricCard from "../shared/MetricCard";
+import TimePeriodSelector, {
+  useTimePeriod,
+} from "../shared/TimePeriodSelector";
+import PropertySelector from "../shared/PropertySelector";
+import AdvancedFilters, { FilterOptions } from "../shared/AdvancedFilters";
+import PortfolioSummary from "../shared/PortfolioSummary";
+import PortfolioErrorBoundary from "../shared/PortfolioErrorBoundary";
+import Button from "../shared/Button";
+import { Listing } from "../../types";
 import {
   mockListings,
   generateTimeSeriesData,
@@ -31,8 +33,8 @@ import {
   getGeographicData,
   generateAIInsights,
   generateLeadQualityData,
-  getMarketingChannelData
-} from '../../data/mockPortfolioData';
+  getMarketingChannelData,
+} from "../../data/mockPortfolioData";
 
 // Enhanced data from centralized mock data
 const timeSeriesData = generateTimeSeriesData();
@@ -45,17 +47,27 @@ const marketingChannelData = getMarketingChannelData();
 
 // Calculate portfolio metrics from comprehensive data
 const calculatePortfolioMetrics = (selectedListings: string[]) => {
-  const selectedProperties = mockListings.filter(l => selectedListings.includes(l.id));
+  const selectedProperties = mockListings.filter((l) =>
+    selectedListings.includes(l.id),
+  );
   const totalValue = selectedProperties.reduce((sum, l) => sum + l.price, 0);
-  const activeCount = selectedProperties.filter(l => l.status === 'active').length;
-  const soldCount = selectedProperties.filter(l => l.status === 'sold').length;
-  const pendingCount = selectedProperties.filter(l => l.status === 'pending').length;
-  
+  const activeCount = selectedProperties.filter(
+    (l) => l.status === "active",
+  ).length;
+  const soldCount = selectedProperties.filter(
+    (l) => l.status === "sold",
+  ).length;
+  const pendingCount = selectedProperties.filter(
+    (l) => l.status === "pending",
+  ).length;
+
   // Calculate performance metrics from time series and property data
   const totalViews = timeSeriesData.reduce((sum, d) => sum + d.views, 0);
   const totalLeads = timeSeriesData.reduce((sum, d) => sum + d.leads, 0);
-  const avgDaysOnMarket = timeSeriesData.reduce((sum, d) => sum + d.avgDaysOnMarket, 0) / timeSeriesData.length;
-  
+  const avgDaysOnMarket =
+    timeSeriesData.reduce((sum, d) => sum + d.avgDaysOnMarket, 0) /
+    timeSeriesData.length;
+
   return {
     totalRevenue: totalValue,
     totalViews,
@@ -66,19 +78,29 @@ const calculatePortfolioMetrics = (selectedListings: string[]) => {
     soldListings: soldCount,
     pendingListings: pendingCount,
     totalListings: selectedProperties.length,
-    avgPricePerSqFt: Math.round(selectedProperties.reduce((sum, l) => sum + (l.price / l.squareFootage), 0) / selectedProperties.length),
-    totalSquareFootage: selectedProperties.reduce((sum, l) => sum + l.squareFootage, 0)
+    avgPricePerSqFt: Math.round(
+      selectedProperties.reduce(
+        (sum, l) => sum + l.price / l.squareFootage,
+        0,
+      ) / selectedProperties.length,
+    ),
+    totalSquareFootage: selectedProperties.reduce(
+      (sum, l) => sum + l.squareFootage,
+      0,
+    ),
   };
 };
 
 const PortfolioAnalyticsNoCharts: React.FC = () => {
-  console.log('🔍 Portfolio Analytics (No Charts) rendering...');
-  
-  const { selectedPeriod, setSelectedPeriod } = useTimePeriod('30D');
-  const [selectedListings, setSelectedListings] = useState<string[]>(mockListings.map(l => l.id));
+  console.log("🔍 Portfolio Analytics (No Charts) rendering...");
+
+  const { selectedPeriod, setSelectedPeriod } = useTimePeriod("30D");
+  const [selectedListings, setSelectedListings] = useState<string[]>(
+    mockListings.map((l) => l.id),
+  );
   const [showFilters, setShowFilters] = useState(false);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  
+
   // Advanced filter state
   const [advancedFilters, setAdvancedFilters] = useState<FilterOptions>({
     priceRange: { min: null, max: null },
@@ -86,57 +108,86 @@ const PortfolioAnalyticsNoCharts: React.FC = () => {
     statuses: [],
     locations: [],
     marketSegments: [],
-    dateRange: { start: null, end: null }
+    dateRange: { start: null, end: null },
   });
 
   // Get available filter options from data with defensive programming
-  const availablePropertyTypes = Array.from(new Set(mockListings.map(l => l.propertyType).filter(Boolean)));
-  const availableStatuses = Array.from(new Set(mockListings.map(l => l.status).filter(Boolean)));
-  const availableLocations = Array.from(new Set(
-    mockListings
-      .filter(l => l.city && l.state)
-      .map(l => `${l.city}, ${l.state}`)
-  ));
+  const availablePropertyTypes = Array.from(
+    new Set(mockListings.map((l) => l.propertyType).filter(Boolean)),
+  );
+  const availableStatuses = Array.from(
+    new Set(mockListings.map((l) => l.status).filter(Boolean)),
+  );
+  const availableLocations = Array.from(
+    new Set(
+      mockListings
+        .filter((l) => l.city && l.state)
+        .map((l) => `${l.city}, ${l.state}`),
+    ),
+  );
 
   // Apply advanced filters to listings
   const filteredListings = useMemo(() => {
-    return mockListings.filter(listing => {
+    return mockListings.filter((listing) => {
       // Price range filter
-      if (advancedFilters.priceRange.min && listing.price < advancedFilters.priceRange.min) return false;
-      if (advancedFilters.priceRange.max && listing.price > advancedFilters.priceRange.max) return false;
-      
+      if (
+        advancedFilters.priceRange.min &&
+        listing.price < advancedFilters.priceRange.min
+      )
+        return false;
+      if (
+        advancedFilters.priceRange.max &&
+        listing.price > advancedFilters.priceRange.max
+      )
+        return false;
+
       // Property type filter
-      if (advancedFilters.propertyTypes.length > 0 && !advancedFilters.propertyTypes.includes(listing.propertyType || '')) return false;
-      
+      if (
+        advancedFilters.propertyTypes.length > 0 &&
+        !advancedFilters.propertyTypes.includes(listing.propertyType || "")
+      )
+        return false;
+
       // Status filter with defensive programming
-      if (advancedFilters.statuses.length > 0 && listing.status && !advancedFilters.statuses.includes(listing.status)) return false;
-      
+      if (
+        advancedFilters.statuses.length > 0 &&
+        listing.status &&
+        !advancedFilters.statuses.includes(listing.status)
+      )
+        return false;
+
       // Location filter with defensive programming
       if (advancedFilters.locations.length > 0) {
         if (!listing.city || !listing.state) return false;
         const location = `${listing.city}, ${listing.state}`;
         if (!advancedFilters.locations.includes(location)) return false;
       }
-      
+
       // Market segment filter
       if (advancedFilters.marketSegments.length > 0) {
         const price = listing.price;
         const segments = [];
-        if (price >= 2000000) segments.push('Luxury ($2M+)');
-        if (price >= 500000 && price < 2000000) segments.push('Mid-Market ($500K-$2M)');
-        if (price < 500000) segments.push('Entry-Level (<$500K)');
-        
-        if (!segments.some(segment => advancedFilters.marketSegments.includes(segment))) return false;
+        if (price >= 2000000) segments.push("Luxury ($2M+)");
+        if (price >= 500000 && price < 2000000)
+          segments.push("Mid-Market ($500K-$2M)");
+        if (price < 500000) segments.push("Entry-Level (<$500K)");
+
+        if (
+          !segments.some((segment) =>
+            advancedFilters.marketSegments.includes(segment),
+          )
+        )
+          return false;
       }
-      
+
       return true;
     });
   }, [advancedFilters]);
 
   // Update selected listings when filters change
   const finalSelectedListings = useMemo(() => {
-    const filteredIds = filteredListings.map(l => l.id);
-    return selectedListings.filter(id => filteredIds.includes(id));
+    const filteredIds = filteredListings.map((l) => l.id);
+    return selectedListings.filter((id) => filteredIds.includes(id));
   }, [selectedListings, filteredListings]);
 
   const clearAllFilters = () => {
@@ -146,9 +197,9 @@ const PortfolioAnalyticsNoCharts: React.FC = () => {
       statuses: [],
       locations: [],
       marketSegments: [],
-      dateRange: { start: null, end: null }
+      dateRange: { start: null, end: null },
     });
-    setSelectedListings(mockListings.map(l => l.id));
+    setSelectedListings(mockListings.map((l) => l.id));
   };
 
   // Enhanced filtered metrics with comprehensive calculations
@@ -159,23 +210,35 @@ const PortfolioAnalyticsNoCharts: React.FC = () => {
   // Helper functions for status display
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-green-100 text-green-800 border-green-300';
-      case 'sold': return 'bg-blue-100 text-blue-800 border-blue-300';
-      case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-300';
-      case 'withdrawn': return 'bg-red-100 text-red-800 border-red-300';
-      case 'coming_soon': return 'bg-purple-100 text-purple-800 border-purple-300';
-      default: return 'bg-gray-100 text-gray-800 border-gray-300';
+      case "active":
+        return "bg-green-100 text-green-800 border-green-300";
+      case "sold":
+        return "bg-blue-100 text-blue-800 border-blue-300";
+      case "pending":
+        return "bg-yellow-100 text-yellow-800 border-yellow-300";
+      case "withdrawn":
+        return "bg-red-100 text-red-800 border-red-300";
+      case "coming_soon":
+        return "bg-purple-100 text-purple-800 border-purple-300";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-300";
     }
   };
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case 'active': return 'Active';
-      case 'sold': return 'Sold';
-      case 'pending': return 'Pending';
-      case 'withdrawn': return 'Withdrawn';
-      case 'coming_soon': return 'Coming Soon';
-      default: return 'Unknown';
+      case "active":
+        return "Active";
+      case "sold":
+        return "Sold";
+      case "pending":
+        return "Pending";
+      case "withdrawn":
+        return "Withdrawn";
+      case "coming_soon":
+        return "Coming Soon";
+      default:
+        return "Unknown";
     }
   };
 
@@ -187,74 +250,91 @@ const PortfolioAnalyticsNoCharts: React.FC = () => {
         showFilters={true}
         showExport={true}
         onFilterToggle={() => setShowFilters(!showFilters)}
-        onExport={() => alert('Export portfolio report functionality would be implemented here')}
+        onExport={() =>
+          alert(
+            "Export portfolio report functionality would be implemented here",
+          )
+        }
         actions={
           <Button variant="primary" leftIcon={<PlusIcon className="h-4 w-4" />}>
             Add Property
           </Button>
         }
-        filters={showFilters ? (
-          <div className="space-y-4">
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-brand-text-secondary">Time Period:</label>
-                <TimePeriodSelector
-                  selectedPeriod={selectedPeriod}
-                  onPeriodChange={setSelectedPeriod}
-                  variant="pills"
-                  size="sm"
-                />
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-brand-text-secondary">Properties:</label>
-                <div className="min-w-[300px]">
-                  <PropertySelector
-                    listings={filteredListings}
-                    selectedListings={selectedListings}
-                    onSelectionChange={setSelectedListings}
+        filters={
+          showFilters ? (
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <label className="text-sm font-medium text-brand-text-secondary">
+                    Time Period:
+                  </label>
+                  <TimePeriodSelector
+                    selectedPeriod={selectedPeriod}
+                    onPeriodChange={setSelectedPeriod}
+                    variant="pills"
                     size="sm"
                   />
                 </div>
+
+                <div className="flex items-center gap-2">
+                  <label className="text-sm font-medium text-brand-text-secondary">
+                    Properties:
+                  </label>
+                  <div className="min-w-[300px]">
+                    <PropertySelector
+                      listings={filteredListings}
+                      selectedListings={selectedListings}
+                      onSelectionChange={setSelectedListings}
+                      size="sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant={showAdvancedFilters ? "primary" : "secondary"}
+                    size="sm"
+                    leftIcon={<FunnelIcon className="h-4 w-4" />}
+                    onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                  >
+                    Advanced Filters
+                  </Button>
+                </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <Button
-                  variant={showAdvancedFilters ? "primary" : "secondary"}
-                  size="sm"
-                  leftIcon={<FunnelIcon className="h-4 w-4" />}
-                  onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-                >
-                  Advanced Filters
-                </Button>
-              </div>
+              {/* Advanced Filters */}
+              {showAdvancedFilters && (
+                <div className="mt-4">
+                  <AdvancedFilters
+                    filters={advancedFilters}
+                    onFiltersChange={setAdvancedFilters}
+                    availablePropertyTypes={availablePropertyTypes}
+                    availableStatuses={availableStatuses}
+                    availableLocations={availableLocations}
+                    onClearAll={clearAllFilters}
+                  />
+                </div>
+              )}
+
+              {/* Filter Summary */}
+              {(finalSelectedListings.length !== mockListings.length ||
+                Object.values(advancedFilters).some((v) =>
+                  Array.isArray(v) ? v.length > 0 : v !== null,
+                )) && (
+                <div className="text-sm text-brand-text-secondary mt-2">
+                  Showing data for {finalSelectedListings.length} of{" "}
+                  {mockListings.length} properties
+                  {filteredListings.length !== mockListings.length && (
+                    <span>
+                      {" "}
+                      • {filteredListings.length} match current filters
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
-
-            {/* Advanced Filters */}
-            {showAdvancedFilters && (
-              <div className="mt-4">
-                <AdvancedFilters
-                  filters={advancedFilters}
-                  onFiltersChange={setAdvancedFilters}
-                  availablePropertyTypes={availablePropertyTypes}
-                  availableStatuses={availableStatuses}
-                  availableLocations={availableLocations}
-                  onClearAll={clearAllFilters}
-                />
-              </div>
-            )}
-
-            {/* Filter Summary */}
-            {(finalSelectedListings.length !== mockListings.length || Object.values(advancedFilters).some(v => Array.isArray(v) ? v.length > 0 : v !== null)) && (
-              <div className="text-sm text-brand-text-secondary mt-2">
-                Showing data for {finalSelectedListings.length} of {mockListings.length} properties
-                {filteredListings.length !== mockListings.length && (
-                  <span> • {filteredListings.length} match current filters</span>
-                )}
-              </div>
-            )}
-          </div>
-        ) : undefined}
+          ) : undefined
+        }
       >
         {/* Portfolio Summary */}
         <PortfolioSummary
@@ -265,18 +345,27 @@ const PortfolioAnalyticsNoCharts: React.FC = () => {
             propertyTypes: advancedFilters.propertyTypes,
             statuses: advancedFilters.statuses,
             locations: advancedFilters.locations,
-            marketSegments: advancedFilters.marketSegments
+            marketSegments: advancedFilters.marketSegments,
           }}
           performanceStats={{
             totalViews: filteredMetrics.totalViews,
             totalLeads: filteredMetrics.totalLeads,
             avgConversionRate: filteredMetrics.conversionRate,
-            avgDaysOnMarket: filteredMetrics.avgDaysOnMarket
+            avgDaysOnMarket: filteredMetrics.avgDaysOnMarket,
           }}
           marketSegmentBreakdown={{
-            luxury: mockListings.filter(l => finalSelectedListings.includes(l.id) && l.price >= 2000000).length,
-            midMarket: mockListings.filter(l => finalSelectedListings.includes(l.id) && l.price >= 500000 && l.price < 2000000).length,
-            entryLevel: mockListings.filter(l => finalSelectedListings.includes(l.id) && l.price < 500000).length
+            luxury: mockListings.filter(
+              (l) => finalSelectedListings.includes(l.id) && l.price >= 2000000,
+            ).length,
+            midMarket: mockListings.filter(
+              (l) =>
+                finalSelectedListings.includes(l.id) &&
+                l.price >= 500000 &&
+                l.price < 2000000,
+            ).length,
+            entryLevel: mockListings.filter(
+              (l) => finalSelectedListings.includes(l.id) && l.price < 500000,
+            ).length,
           }}
         />
 
@@ -293,7 +382,7 @@ const PortfolioAnalyticsNoCharts: React.FC = () => {
               formatValue={(value) => (value as number).toLocaleString()}
               variant="elevated"
             />
-            
+
             <MetricCard
               title="Active Properties"
               value={filteredMetrics.activeListings}
@@ -302,7 +391,7 @@ const PortfolioAnalyticsNoCharts: React.FC = () => {
               variant="elevated"
               suffix={` of ${filteredMetrics.totalListings}`}
             />
-            
+
             <MetricCard
               title="Total Page Views"
               value={filteredMetrics.totalViews}
@@ -312,7 +401,7 @@ const PortfolioAnalyticsNoCharts: React.FC = () => {
               formatValue={(value) => (value as number).toLocaleString()}
               variant="elevated"
             />
-            
+
             <MetricCard
               title="Lead Conversion"
               value={filteredMetrics.conversionRate}
@@ -325,16 +414,25 @@ const PortfolioAnalyticsNoCharts: React.FC = () => {
         </DashboardSection>
 
         {/* Charts would normally go here - testing without charts first */}
-        <DashboardSection title="🚧 Chart Section (Disabled for Testing)" className="mb-6">
+        <DashboardSection
+          title="🚧 Chart Section (Disabled for Testing)"
+          className="mb-6"
+        >
           <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded">
-            <p>Chart components temporarily disabled to test if they're causing the rendering issues.</p>
-            <p className="mt-2">If this section loads successfully, the issue is likely with the chart components.</p>
+            <p>
+              Chart components temporarily disabled to test if they're causing
+              the rendering issues.
+            </p>
+            <p className="mt-2">
+              If this section loads successfully, the issue is likely with the
+              chart components.
+            </p>
           </div>
         </DashboardSection>
 
         {/* Property Details Table */}
-        <DashboardSection 
-          title="Property Performance Details" 
+        <DashboardSection
+          title="Property Performance Details"
           subtitle={`${finalSelectedListings.length} properties selected`}
           actions={
             <Button variant="secondary" size="sm">
@@ -368,27 +466,38 @@ const PortfolioAnalyticsNoCharts: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-brand-border">
                 {mockListings
-                  .filter(listing => finalSelectedListings.includes(listing.id))
+                  .filter((listing) =>
+                    finalSelectedListings.includes(listing.id),
+                  )
                   .map((listing) => {
-                    const performance = propertyPerformanceData.find(p => p.listingId === listing.id);
-                    
+                    const performance = propertyPerformanceData.find(
+                      (p) => p.listingId === listing.id,
+                    );
+
                     return (
-                      <tr key={listing.id} className="hover:bg-brand-background/50 transition-colors">
+                      <tr
+                        key={listing.id}
+                        className="hover:bg-brand-background/50 transition-colors"
+                      >
                         <td className="px-4 py-3">
                           <div>
                             <p className="text-sm font-medium text-brand-text-primary">
-                              {listing.address?.split(',')[0]}
+                              {listing.address?.split(",")[0]}
                             </p>
                             <p className="text-xs text-brand-text-secondary">
-                              {listing.city && listing.state ? `${listing.city}, ${listing.state}` : 'Location not specified'}
+                              {listing.city && listing.state
+                                ? `${listing.city}, ${listing.state}`
+                                : "Location not specified"}
                             </p>
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full border ${
-                            getStatusColor(listing.status || 'unknown')
-                          }`}>
-                            {getStatusLabel(listing.status || 'unknown')}
+                          <span
+                            className={`inline-flex px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(
+                              listing.status || "unknown",
+                            )}`}
+                          >
+                            {getStatusLabel(listing.status || "unknown")}
                           </span>
                           {performance && performance.daysOnMarket > 0 && (
                             <div className="text-xs text-brand-text-tertiary mt-1">
@@ -401,12 +510,17 @@ const PortfolioAnalyticsNoCharts: React.FC = () => {
                             ${listing.price?.toLocaleString()}
                           </div>
                           <div className="text-xs text-brand-text-secondary">
-                            ${Math.round((listing.price || 0) / (listing.squareFootage || 1)).toLocaleString()}/sq ft
+                            $
+                            {Math.round(
+                              (listing.price || 0) /
+                                (listing.squareFootage || 1),
+                            ).toLocaleString()}
+                            /sq ft
                           </div>
                         </td>
                         <td className="px-4 py-3">
                           <div className="text-sm text-brand-text-primary">
-                            {performance?.views.toLocaleString() || '0'}
+                            {performance?.views.toLocaleString() || "0"}
                           </div>
                           {performance && performance.virtualTourViews > 0 && (
                             <div className="text-xs text-brand-text-secondary">

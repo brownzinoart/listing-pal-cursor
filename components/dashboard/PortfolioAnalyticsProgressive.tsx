@@ -1,41 +1,46 @@
-import React, { useState, useMemo } from 'react';
-import { PlusIcon } from '@heroicons/react/24/outline';
-import { CurrencyDollarIcon, HomeIcon, EyeIcon, ChartBarIcon } from '@heroicons/react/24/solid';
-import PortfolioErrorBoundary from '../shared/PortfolioErrorBoundary';
-import DashboardWrapper from '../shared/DashboardWrapper';
-import DashboardSection from '../shared/DashboardSection';
-import MetricCard from '../shared/MetricCard';
-import Button from '../shared/Button';
+import React, { useState, useMemo } from "react";
+import { PlusIcon } from "@heroicons/react/24/outline";
+import {
+  CurrencyDollarIcon,
+  HomeIcon,
+  EyeIcon,
+  ChartBarIcon,
+} from "@heroicons/react/24/solid";
+import PortfolioErrorBoundary from "../shared/PortfolioErrorBoundary";
+import DashboardWrapper from "../shared/DashboardWrapper";
+import DashboardSection from "../shared/DashboardSection";
+import MetricCard from "../shared/MetricCard";
+import Button from "../shared/Button";
 
 // Import mock data with ES6 imports
-import { 
+import {
   mockListings,
   generateTimeSeriesData,
-  generatePropertyPerformanceData
-} from '../../data/mockPortfolioData';
+  generatePropertyPerformanceData,
+} from "../../data/mockPortfolioData";
 
 // Generate data with error handling
 let timeSeriesData: any[] = [];
 let propertyPerformanceData: any[] = [];
 
 try {
-  console.log('🔍 Testing mock data imports...');
+  console.log("🔍 Testing mock data imports...");
   timeSeriesData = generateTimeSeriesData();
   propertyPerformanceData = generatePropertyPerformanceData();
-  console.log('✅ Mock data loaded successfully:', {
+  console.log("✅ Mock data loaded successfully:", {
     mockListings: mockListings.length,
     timeSeriesData: timeSeriesData.length,
-    propertyPerformanceData: propertyPerformanceData.length
+    propertyPerformanceData: propertyPerformanceData.length,
   });
 } catch (error) {
-  console.error('🚨 Error generating mock data:', error);
+  console.error("🚨 Error generating mock data:", error);
   timeSeriesData = [];
   propertyPerformanceData = [];
 }
 
 const PortfolioAnalyticsProgressive: React.FC = () => {
-  console.log('🔍 Progressive component rendering...');
-  
+  console.log("🔍 Progressive component rendering...");
+
   const [testStep, setTestStep] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
 
@@ -49,15 +54,29 @@ const PortfolioAnalyticsProgressive: React.FC = () => {
           activeListings: 0,
           totalViews: 0,
           totalLeads: 0,
-          conversionRate: 0
+          conversionRate: 0,
         };
       }
 
-      const totalRevenue = mockListings.reduce((sum, l) => sum + (l.price || 0), 0);
-      const activeListings = mockListings.filter(l => l.status === 'active').length;
-      const totalViews = timeSeriesData.reduce((sum, d) => sum + (d.views || 0), 0);
-      const totalLeads = timeSeriesData.reduce((sum, d) => sum + (d.leads || 0), 0);
-      const conversionRate = totalViews > 0 ? Number(((totalLeads / totalViews) * 100).toFixed(1)) : 0;
+      const totalRevenue = mockListings.reduce(
+        (sum, l) => sum + (l.price || 0),
+        0,
+      );
+      const activeListings = mockListings.filter(
+        (l) => l.status === "active",
+      ).length;
+      const totalViews = timeSeriesData.reduce(
+        (sum, d) => sum + (d.views || 0),
+        0,
+      );
+      const totalLeads = timeSeriesData.reduce(
+        (sum, d) => sum + (d.leads || 0),
+        0,
+      );
+      const conversionRate =
+        totalViews > 0
+          ? Number(((totalLeads / totalViews) * 100).toFixed(1))
+          : 0;
 
       return {
         totalRevenue,
@@ -65,17 +84,17 @@ const PortfolioAnalyticsProgressive: React.FC = () => {
         activeListings,
         totalViews,
         totalLeads,
-        conversionRate
+        conversionRate,
       };
     } catch (error) {
-      console.error('🚨 Error calculating metrics:', error);
+      console.error("🚨 Error calculating metrics:", error);
       return {
         totalRevenue: 0,
         totalListings: 0,
         activeListings: 0,
         totalViews: 0,
         totalLeads: 0,
-        conversionRate: 0
+        conversionRate: 0,
       };
     }
   }, []);
@@ -85,16 +104,23 @@ const PortfolioAnalyticsProgressive: React.FC = () => {
       case 1:
         return (
           <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
-            <h2 className="text-xl font-bold mb-2">✅ Step 1: Basic Component Structure</h2>
+            <h2 className="text-xl font-bold mb-2">
+              ✅ Step 1: Basic Component Structure
+            </h2>
             <p>DashboardWrapper and basic structure is working!</p>
-            <p className="mt-2">Data loaded: {mockListings.length} properties</p>
+            <p className="mt-2">
+              Data loaded: {mockListings.length} properties
+            </p>
           </div>
         );
 
       case 2:
         return (
           <PortfolioErrorBoundary>
-            <DashboardSection title="Step 2: Metric Cards Test" className="mb-6">
+            <DashboardSection
+              title="Step 2: Metric Cards Test"
+              className="mb-6"
+            >
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <MetricCard
                   title="Total Portfolio Value"
@@ -104,7 +130,7 @@ const PortfolioAnalyticsProgressive: React.FC = () => {
                   formatValue={(value) => (value as number).toLocaleString()}
                   variant="elevated"
                 />
-                
+
                 <MetricCard
                   title="Active Properties"
                   value={basicMetrics.activeListings}
@@ -112,7 +138,7 @@ const PortfolioAnalyticsProgressive: React.FC = () => {
                   variant="elevated"
                   suffix={` of ${basicMetrics.totalListings}`}
                 />
-                
+
                 <MetricCard
                   title="Total Page Views"
                   value={basicMetrics.totalViews}
@@ -120,7 +146,7 @@ const PortfolioAnalyticsProgressive: React.FC = () => {
                   formatValue={(value) => (value as number).toLocaleString()}
                   variant="elevated"
                 />
-                
+
                 <MetricCard
                   title="Lead Conversion"
                   value={basicMetrics.conversionRate}
@@ -155,20 +181,25 @@ const PortfolioAnalyticsProgressive: React.FC = () => {
                     </thead>
                     <tbody className="divide-y divide-brand-border">
                       {mockListings.slice(0, 5).map((listing) => (
-                        <tr key={listing.id} className="hover:bg-brand-background/50 transition-colors">
+                        <tr
+                          key={listing.id}
+                          className="hover:bg-brand-background/50 transition-colors"
+                        >
                           <td className="px-4 py-3">
                             <div>
                               <p className="text-sm font-medium text-brand-text-primary">
-                                {listing.address?.split(',')[0] || 'Unknown'}
+                                {listing.address?.split(",")[0] || "Unknown"}
                               </p>
                               <p className="text-xs text-brand-text-secondary">
-                                {listing.city && listing.state ? `${listing.city}, ${listing.state}` : 'Location not specified'}
+                                {listing.city && listing.state
+                                  ? `${listing.city}, ${listing.state}`
+                                  : "Location not specified"}
                               </p>
                             </div>
                           </td>
                           <td className="px-4 py-3">
                             <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800 border border-green-300">
-                              {listing.status || 'Unknown'}
+                              {listing.status || "Unknown"}
                             </span>
                           </td>
                           <td className="px-4 py-3 text-sm font-medium text-brand-text-primary">
@@ -187,7 +218,9 @@ const PortfolioAnalyticsProgressive: React.FC = () => {
       default:
         return (
           <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded">
-            <h2 className="text-xl font-bold mb-2">🎉 All Basic Tests Passed!</h2>
+            <h2 className="text-xl font-bold mb-2">
+              🎉 All Basic Tests Passed!
+            </h2>
             <p>Ready to test full Portfolio Analytics Dashboard.</p>
           </div>
         );
@@ -202,7 +235,7 @@ const PortfolioAnalyticsProgressive: React.FC = () => {
         showFilters={false}
         showExport={false}
         onFilterToggle={() => setShowFilters(!showFilters)}
-        onExport={() => alert('Export test')}
+        onExport={() => alert("Export test")}
         actions={
           <div className="flex gap-2">
             <Button
@@ -228,9 +261,8 @@ const PortfolioAnalyticsProgressive: React.FC = () => {
           <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-4">
             <h2 className="font-semibold">🧪 Progressive Testing Mode</h2>
             <p className="text-sm">
-              Testing Portfolio Analytics components step by step. 
-              Current step: {testStep}/3. 
-              Check console for detailed logs.
+              Testing Portfolio Analytics components step by step. Current step:{" "}
+              {testStep}/3. Check console for detailed logs.
             </p>
           </div>
         </div>
@@ -243,7 +275,10 @@ const PortfolioAnalyticsProgressive: React.FC = () => {
             <li>Properties loaded: {mockListings.length}</li>
             <li>Time series data points: {timeSeriesData.length}</li>
             <li>Performance data entries: {propertyPerformanceData.length}</li>
-            <li>Total portfolio value: ${basicMetrics.totalRevenue.toLocaleString()}</li>
+            <li>
+              Total portfolio value: $
+              {basicMetrics.totalRevenue.toLocaleString()}
+            </li>
           </ul>
         </div>
       </DashboardWrapper>

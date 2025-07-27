@@ -1,6 +1,6 @@
-import React, { ReactNode } from 'react';
-import { FunnelIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
-import Button from './Button';
+import React, { ReactNode } from "react";
+import { FunnelIcon, ArrowDownTrayIcon } from "@heroicons/react/24/outline";
+import Button from "./Button";
 
 interface DashboardWrapperProps {
   children: ReactNode;
@@ -23,7 +23,7 @@ const DashboardWrapper: React.FC<DashboardWrapperProps> = ({
   actions,
   filters,
   headerContent,
-  className = '',
+  className = "",
   showFilters = false,
   showExport = false,
   onFilterToggle,
@@ -36,12 +36,14 @@ const DashboardWrapper: React.FC<DashboardWrapperProps> = ({
         {/* Title and Actions Row */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-brand-text-primary">{title}</h1>
+            <h1 className="text-2xl font-bold text-brand-text-primary">
+              {title}
+            </h1>
             {subtitle && (
               <p className="text-brand-text-secondary mt-1">{subtitle}</p>
             )}
           </div>
-          
+
           {/* Actions Row */}
           <div className="flex items-center gap-3 w-full sm:w-auto">
             {showFilters && (
@@ -54,7 +56,7 @@ const DashboardWrapper: React.FC<DashboardWrapperProps> = ({
                 Filters
               </Button>
             )}
-            
+
             {showExport && (
               <Button
                 variant="secondary"
@@ -65,7 +67,7 @@ const DashboardWrapper: React.FC<DashboardWrapperProps> = ({
                 Export
               </Button>
             )}
-            
+
             {actions}
           </div>
         </div>
@@ -78,15 +80,11 @@ const DashboardWrapper: React.FC<DashboardWrapperProps> = ({
         )}
 
         {/* Additional Header Content */}
-        {headerContent && (
-          <div>{headerContent}</div>
-        )}
+        {headerContent && <div>{headerContent}</div>}
       </div>
 
       {/* Main Content */}
-      <div className="space-y-6">
-        {children}
-      </div>
+      <div className="space-y-6">{children}</div>
     </div>
   );
 };

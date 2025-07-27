@@ -1,6 +1,14 @@
-import React from 'react';
+import React from "react";
 
-export type TimePeriod = '1D' | '7D' | '1M' | '3M' | '6M' | '1Y' | 'ALL' | 'custom';
+export type TimePeriod =
+  | "1D"
+  | "7D"
+  | "1M"
+  | "3M"
+  | "6M"
+  | "1Y"
+  | "ALL"
+  | "custom";
 
 interface TimePeriodOption {
   value: TimePeriod;
@@ -12,8 +20,8 @@ interface TimePeriodSelectorProps {
   selectedPeriod: TimePeriod;
   onPeriodChange: (period: TimePeriod) => void;
   options?: TimePeriodOption[];
-  size?: 'sm' | 'md' | 'lg';
-  variant?: 'pills' | 'buttons' | 'dropdown';
+  size?: "sm" | "md" | "lg";
+  variant?: "pills" | "buttons" | "dropdown";
   className?: string;
   disabled?: boolean;
   showCustom?: boolean;
@@ -21,42 +29,42 @@ interface TimePeriodSelectorProps {
 }
 
 const defaultOptions: TimePeriodOption[] = [
-  { value: '1D', label: '1D', days: 1 },
-  { value: '7D', label: '7D', days: 7 },
-  { value: '1M', label: '1M', days: 30 },
-  { value: '3M', label: '3M', days: 90 },
-  { value: '6M', label: '6M', days: 180 },
-  { value: '1Y', label: '1Y', days: 365 },
-  { value: 'ALL', label: 'All', days: undefined },
+  { value: "1D", label: "1D", days: 1 },
+  { value: "7D", label: "7D", days: 7 },
+  { value: "1M", label: "1M", days: 30 },
+  { value: "3M", label: "3M", days: 90 },
+  { value: "6M", label: "6M", days: 180 },
+  { value: "1Y", label: "1Y", days: 365 },
+  { value: "ALL", label: "All", days: undefined },
 ];
 
 const TimePeriodSelector: React.FC<TimePeriodSelectorProps> = ({
   selectedPeriod,
   onPeriodChange,
   options = defaultOptions,
-  size = 'md',
-  variant = 'pills',
-  className = '',
+  size = "md",
+  variant = "pills",
+  className = "",
   disabled = false,
   showCustom = false,
   onCustomRangeClick,
 }) => {
   const getSizeClasses = () => {
     switch (size) {
-      case 'sm':
+      case "sm":
         return {
-          button: 'px-2 py-1 text-xs',
-          container: 'gap-1',
+          button: "px-2 py-1 text-xs",
+          container: "gap-1",
         };
-      case 'lg':
+      case "lg":
         return {
-          button: 'px-4 py-3 text-base',
-          container: 'gap-2',
+          button: "px-4 py-3 text-base",
+          container: "gap-2",
         };
       default:
         return {
-          button: 'px-3 py-2 text-sm',
-          container: 'gap-1.5',
+          button: "px-3 py-2 text-sm",
+          container: "gap-1.5",
         };
     }
   };
@@ -78,22 +86,24 @@ const TimePeriodSelector: React.FC<TimePeriodSelectorProps> = ({
       disabled:cursor-not-allowed
     `;
 
-    if (variant === 'pills') {
+    if (variant === "pills") {
       const pillClasses = `
         rounded-full
-        ${isSelected 
-          ? 'bg-brand-primary text-white border-brand-primary shadow-md' 
-          : 'bg-brand-panel text-brand-text-secondary border-brand-border hover:bg-brand-card hover:text-brand-text-primary hover:border-brand-primary/30'
+        ${
+          isSelected
+            ? "bg-brand-primary text-white border-brand-primary shadow-md"
+            : "bg-brand-panel text-brand-text-secondary border-brand-border hover:bg-brand-card hover:text-brand-text-primary hover:border-brand-primary/30"
         }
       `;
       return `${baseClasses} ${pillClasses}`;
     }
 
-    if (variant === 'buttons') {
+    if (variant === "buttons") {
       const buttonClasses = `
-        ${isSelected 
-          ? 'bg-brand-primary text-white border-brand-primary shadow-md' 
-          : 'bg-brand-panel text-brand-text-secondary border-brand-border hover:bg-brand-card hover:text-brand-text-primary hover:border-brand-primary/30'
+        ${
+          isSelected
+            ? "bg-brand-primary text-white border-brand-primary shadow-md"
+            : "bg-brand-panel text-brand-text-secondary border-brand-border hover:bg-brand-card hover:text-brand-text-primary hover:border-brand-primary/30"
         }
         first:rounded-l-md
         last:rounded-r-md
@@ -106,7 +116,7 @@ const TimePeriodSelector: React.FC<TimePeriodSelectorProps> = ({
     return baseClasses;
   };
 
-  if (variant === 'dropdown') {
+  if (variant === "dropdown") {
     return (
       <div className={`relative ${className}`}>
         <select
@@ -151,18 +161,18 @@ const TimePeriodSelector: React.FC<TimePeriodSelectorProps> = ({
           {option.label}
         </button>
       ))}
-      
+
       {showCustom && (
         <button
           onClick={() => {
             if (onCustomRangeClick) {
               onCustomRangeClick();
             } else {
-              onPeriodChange('custom');
+              onPeriodChange("custom");
             }
           }}
           disabled={disabled}
-          className={getButtonClasses(selectedPeriod === 'custom', true)}
+          className={getButtonClasses(selectedPeriod === "custom", true)}
         >
           Custom
         </button>
@@ -172,8 +182,9 @@ const TimePeriodSelector: React.FC<TimePeriodSelectorProps> = ({
 };
 
 // Helper hook for managing time periods
-export const useTimePeriod = (initialPeriod: TimePeriod = '7D') => {
-  const [selectedPeriod, setSelectedPeriod] = React.useState<TimePeriod>(initialPeriod);
+export const useTimePeriod = (initialPeriod: TimePeriod = "7D") => {
+  const [selectedPeriod, setSelectedPeriod] =
+    React.useState<TimePeriod>(initialPeriod);
   const [customRange, setCustomRange] = React.useState<{
     startDate: Date | null;
     endDate: Date | null;
@@ -183,7 +194,7 @@ export const useTimePeriod = (initialPeriod: TimePeriod = '7D') => {
   });
 
   const getDateRange = () => {
-    if (selectedPeriod === 'custom') {
+    if (selectedPeriod === "custom") {
       return customRange;
     }
 
@@ -191,25 +202,25 @@ export const useTimePeriod = (initialPeriod: TimePeriod = '7D') => {
     let startDate = new Date();
 
     switch (selectedPeriod) {
-      case '1D':
+      case "1D":
         startDate.setDate(endDate.getDate() - 1);
         break;
-      case '7D':
+      case "7D":
         startDate.setDate(endDate.getDate() - 7);
         break;
-      case '1M':
+      case "1M":
         startDate.setMonth(endDate.getMonth() - 1);
         break;
-      case '3M':
+      case "3M":
         startDate.setMonth(endDate.getMonth() - 3);
         break;
-      case '6M':
+      case "6M":
         startDate.setMonth(endDate.getMonth() - 6);
         break;
-      case '1Y':
+      case "1Y":
         startDate.setFullYear(endDate.getFullYear() - 1);
         break;
-      case 'ALL':
+      case "ALL":
         return { startDate: null, endDate: null };
       default:
         startDate.setDate(endDate.getDate() - 7);

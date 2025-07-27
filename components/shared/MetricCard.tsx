@@ -1,6 +1,9 @@
-import React, { ReactNode } from 'react';
-import { ArrowTrendingUpIcon, ArrowTrendingDownIcon } from '@heroicons/react/24/solid';
-import Card from './Card';
+import React, { ReactNode } from "react";
+import {
+  ArrowTrendingUpIcon,
+  ArrowTrendingDownIcon,
+} from "@heroicons/react/24/solid";
+import Card from "./Card";
 
 interface MetricCardProps {
   title: string;
@@ -9,8 +12,8 @@ interface MetricCardProps {
   change?: number;
   changeLabel?: string;
   icon?: ReactNode;
-  variant?: 'default' | 'elevated' | 'gradient';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: "default" | "elevated" | "gradient";
+  size?: "sm" | "md" | "lg";
   loading?: boolean;
   className?: string;
   valueClassName?: string;
@@ -19,7 +22,7 @@ interface MetricCardProps {
   suffix?: string;
   formatValue?: (value: string | number) => string;
   showTrend?: boolean;
-  trendDirection?: 'up' | 'down' | 'neutral';
+  trendDirection?: "up" | "down" | "neutral";
   miniChart?: ReactNode;
 }
 
@@ -30,36 +33,47 @@ const MetricCard: React.FC<MetricCardProps> = ({
   change,
   changeLabel,
   icon,
-  variant = 'default',
-  size = 'md',
+  variant = "default",
+  size = "md",
   loading = false,
-  className = '',
-  valueClassName = '',
+  className = "",
+  valueClassName = "",
   onClick,
-  prefix = '',
-  suffix = '',
+  prefix = "",
+  suffix = "",
   formatValue,
   showTrend = true,
   trendDirection,
   miniChart,
 }) => {
   const formattedValue = formatValue ? formatValue(value) : value;
-  
+
   // Calculate trend if change is provided
-  const calculatedTrendDirection = trendDirection || (change !== undefined ? (change > 0 ? 'up' : change < 0 ? 'down' : 'neutral') : 'neutral');
-  
+  const calculatedTrendDirection =
+    trendDirection ||
+    (change !== undefined
+      ? change > 0
+        ? "up"
+        : change < 0
+          ? "down"
+          : "neutral"
+      : "neutral");
+
   const getTrendColor = () => {
     switch (calculatedTrendDirection) {
-      case 'up': return 'text-green-500';
-      case 'down': return 'text-red-500';
-      default: return 'text-brand-text-tertiary';
+      case "up":
+        return "text-green-500";
+      case "down":
+        return "text-red-500";
+      default:
+        return "text-brand-text-tertiary";
     }
   };
 
   const getTrendIcon = () => {
-    if (!showTrend || calculatedTrendDirection === 'neutral') return null;
-    
-    return calculatedTrendDirection === 'up' ? (
+    if (!showTrend || calculatedTrendDirection === "neutral") return null;
+
+    return calculatedTrendDirection === "up" ? (
       <ArrowTrendingUpIcon className="h-4 w-4" />
     ) : (
       <ArrowTrendingDownIcon className="h-4 w-4" />
@@ -68,29 +82,29 @@ const MetricCard: React.FC<MetricCardProps> = ({
 
   const getSizeClasses = () => {
     switch (size) {
-      case 'sm':
+      case "sm":
         return {
-          container: 'p-4',
-          value: 'text-xl',
-          title: 'text-xs',
-          icon: 'h-6 w-6',
-          change: 'text-xs'
+          container: "p-4",
+          value: "text-xl",
+          title: "text-xs",
+          icon: "h-6 w-6",
+          change: "text-xs",
         };
-      case 'lg':
+      case "lg":
         return {
-          container: 'p-8',
-          value: 'text-4xl',
-          title: 'text-base',
-          icon: 'h-10 w-10',
-          change: 'text-sm'
+          container: "p-8",
+          value: "text-4xl",
+          title: "text-base",
+          icon: "h-10 w-10",
+          change: "text-sm",
         };
       default:
         return {
-          container: 'p-6',
-          value: 'text-2xl',
-          title: 'text-sm',
-          icon: 'h-8 w-8',
-          change: 'text-sm'
+          container: "p-6",
+          value: "text-2xl",
+          title: "text-sm",
+          icon: "h-8 w-8",
+          change: "text-sm",
         };
     }
   };
@@ -99,7 +113,12 @@ const MetricCard: React.FC<MetricCardProps> = ({
 
   if (loading) {
     return (
-      <Card variant={variant} padding="none" className={`${className} animate-pulse`} onClick={onClick}>
+      <Card
+        variant={variant}
+        padding="none"
+        className={`${className} animate-pulse`}
+        onClick={onClick}
+      >
         <div className={sizeClasses.container}>
           <div className="flex items-center justify-between mb-4">
             <div className="h-4 bg-brand-panel rounded w-20"></div>
@@ -113,21 +132,25 @@ const MetricCard: React.FC<MetricCardProps> = ({
   }
 
   return (
-    <Card 
-      variant={variant} 
-      padding="none" 
-      className={`${className} ${onClick ? 'cursor-pointer' : ''}`}
+    <Card
+      variant={variant}
+      padding="none"
+      className={`${className} ${onClick ? "cursor-pointer" : ""}`}
       hover={!!onClick}
       onClick={onClick}
     >
       <div className={sizeClasses.container}>
         {/* Header with title and icon */}
         <div className="flex items-center justify-between mb-4">
-          <p className={`${sizeClasses.title} font-medium text-brand-text-secondary uppercase tracking-wider`}>
+          <p
+            className={`${sizeClasses.title} font-medium text-brand-text-secondary uppercase tracking-wider`}
+          >
             {title}
           </p>
           {icon && (
-            <div className={`${sizeClasses.icon} text-brand-primary opacity-70`}>
+            <div
+              className={`${sizeClasses.icon} text-brand-primary opacity-70`}
+            >
               {icon}
             </div>
           )}
@@ -135,8 +158,12 @@ const MetricCard: React.FC<MetricCardProps> = ({
 
         {/* Main value */}
         <div className="mb-2">
-          <p className={`${sizeClasses.value} font-bold text-brand-text-primary ${valueClassName}`}>
-            {prefix}{formattedValue}{suffix}
+          <p
+            className={`${sizeClasses.value} font-bold text-brand-text-primary ${valueClassName}`}
+          >
+            {prefix}
+            {formattedValue}
+            {suffix}
           </p>
         </div>
 
@@ -144,32 +171,35 @@ const MetricCard: React.FC<MetricCardProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             {(change !== undefined || trendDirection) && showTrend && (
-              <div className={`flex items-center gap-1 ${sizeClasses.change} ${getTrendColor()}`}>
+              <div
+                className={`flex items-center gap-1 ${sizeClasses.change} ${getTrendColor()}`}
+              >
                 {getTrendIcon()}
                 {change !== undefined && (
                   <span className="font-medium">
-                    {change > 0 ? '+' : ''}{change}%
+                    {change > 0 ? "+" : ""}
+                    {change}%
                   </span>
                 )}
                 {changeLabel && (
-                  <span className="text-brand-text-tertiary ml-1">{changeLabel}</span>
+                  <span className="text-brand-text-tertiary ml-1">
+                    {changeLabel}
+                  </span>
                 )}
               </div>
             )}
-            
+
             {previousValue && (
-              <span className={`${sizeClasses.change} text-brand-text-tertiary`}>
+              <span
+                className={`${sizeClasses.change} text-brand-text-tertiary`}
+              >
                 vs {formatValue ? formatValue(previousValue) : previousValue}
               </span>
             )}
           </div>
 
           {/* Mini chart */}
-          {miniChart && (
-            <div className="flex-shrink-0">
-              {miniChart}
-            </div>
-          )}
+          {miniChart && <div className="flex-shrink-0">{miniChart}</div>}
         </div>
       </div>
     </Card>

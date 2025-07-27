@@ -1,8 +1,15 @@
-import React, { useState, useMemo } from 'react';
-import { FaFacebook, FaInstagram, FaTwitter } from 'react-icons/fa';
-import { PencilIcon, TrashIcon, DocumentDuplicateIcon, EyeIcon, MagnifyingGlassIcon, FunnelIcon } from '@heroicons/react/24/outline';
-import { SocialPost } from './SocialPostsDashboard';
-import Button from '../shared/Button';
+import React, { useState, useMemo } from "react";
+import { FaFacebook, FaInstagram, FaTwitter } from "react-icons/fa";
+import {
+  PencilIcon,
+  TrashIcon,
+  DocumentDuplicateIcon,
+  EyeIcon,
+  MagnifyingGlassIcon,
+  FunnelIcon,
+} from "@heroicons/react/24/outline";
+import { SocialPost } from "./SocialPostsDashboard";
+import Button from "../shared/Button";
 
 interface SocialPostsTableProps {
   posts: SocialPost[];
@@ -10,76 +17,107 @@ interface SocialPostsTableProps {
   onCompose: () => void;
 }
 
-const SocialPostsTable: React.FC<SocialPostsTableProps> = ({ posts, onEdit, onCompose }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [platformFilter, setPlatformFilter] = useState<string>('all');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+const SocialPostsTable: React.FC<SocialPostsTableProps> = ({
+  posts,
+  onEdit,
+  onCompose,
+}) => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [platformFilter, setPlatformFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [showFilters, setShowFilters] = useState(false);
-  const [sortField, setSortField] = useState<'publishedDate' | 'engagementRate' | 'reach'>('publishedDate');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [sortField, setSortField] = useState<
+    "publishedDate" | "engagementRate" | "reach"
+  >("publishedDate");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
   const filteredPosts = useMemo(() => {
-    return posts.filter(post => {
-      const matchesSearch = post.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          post.listingAddress.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          post.hashtags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
-      const matchesPlatform = platformFilter === 'all' || post.platform === platformFilter;
-      const matchesStatus = statusFilter === 'all' || post.status === statusFilter;
-      
-      return matchesSearch && matchesPlatform && matchesStatus;
-    }).sort((a, b) => {
-      if (sortField === 'publishedDate') {
-        const dateA = new Date(a.publishedDate || a.scheduledDate || a.createdAt).getTime();
-        const dateB = new Date(b.publishedDate || b.scheduledDate || b.createdAt).getTime();
-        return sortDirection === 'asc' ? dateA - dateB : dateB - dateA;
-      } else {
-        const valueA = a.metrics[sortField];
-        const valueB = b.metrics[sortField];
-        return sortDirection === 'asc' ? valueA - valueB : valueB - valueA;
-      }
-    });
-  }, [posts, searchTerm, platformFilter, statusFilter, sortField, sortDirection]);
+    return posts
+      .filter((post) => {
+        const matchesSearch =
+          post.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          post.listingAddress
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+          post.hashtags.some((tag) =>
+            tag.toLowerCase().includes(searchTerm.toLowerCase()),
+          );
+        const matchesPlatform =
+          platformFilter === "all" || post.platform === platformFilter;
+        const matchesStatus =
+          statusFilter === "all" || post.status === statusFilter;
 
-  const getPlatformIcon = (platform: SocialPost['platform']) => {
+        return matchesSearch && matchesPlatform && matchesStatus;
+      })
+      .sort((a, b) => {
+        if (sortField === "publishedDate") {
+          const dateA = new Date(
+            a.publishedDate || a.scheduledDate || a.createdAt,
+          ).getTime();
+          const dateB = new Date(
+            b.publishedDate || b.scheduledDate || b.createdAt,
+          ).getTime();
+          return sortDirection === "asc" ? dateA - dateB : dateB - dateA;
+        } else {
+          const valueA = a.metrics[sortField];
+          const valueB = b.metrics[sortField];
+          return sortDirection === "asc" ? valueA - valueB : valueB - valueA;
+        }
+      });
+  }, [
+    posts,
+    searchTerm,
+    platformFilter,
+    statusFilter,
+    sortField,
+    sortDirection,
+  ]);
+
+  const getPlatformIcon = (platform: SocialPost["platform"]) => {
     switch (platform) {
-      case 'facebook': return <FaFacebook className="h-4 w-4 text-blue-600" />;
-      case 'instagram': return <FaInstagram className="h-4 w-4 text-pink-600" />;
-      case 'twitter': return <FaTwitter className="h-4 w-4 text-sky-500" />;
+      case "facebook":
+        return <FaFacebook className="h-4 w-4 text-blue-600" />;
+      case "instagram":
+        return <FaInstagram className="h-4 w-4 text-pink-600" />;
+      case "twitter":
+        return <FaTwitter className="h-4 w-4 text-sky-500" />;
     }
   };
 
-  const getStatusBadge = (status: SocialPost['status']) => {
+  const getStatusBadge = (status: SocialPost["status"]) => {
     const styles = {
-      draft: 'bg-gray-100 text-gray-800 border-gray-300',
-      scheduled: 'bg-blue-100 text-blue-800 border-blue-300',
-      published: 'bg-green-100 text-green-800 border-green-300',
-      archived: 'bg-yellow-100 text-yellow-800 border-yellow-300'
+      draft: "bg-gray-100 text-gray-800 border-gray-300",
+      scheduled: "bg-blue-100 text-blue-800 border-blue-300",
+      published: "bg-green-100 text-green-800 border-green-300",
+      archived: "bg-yellow-100 text-yellow-800 border-yellow-300",
     };
-    
+
     return (
-      <span className={`px-2 py-1 text-xs font-medium rounded-full border ${styles[status]}`}>
+      <span
+        className={`px-2 py-1 text-xs font-medium rounded-full border ${styles[status]}`}
+      >
         {status.charAt(0).toUpperCase() + status.slice(1)}
       </span>
     );
   };
 
   const formatDate = (dateString?: string) => {
-    if (!dateString) return '-';
+    if (!dateString) return "-";
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   const handleSort = (field: typeof sortField) => {
     if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
       setSortField(field);
-      setSortDirection('desc');
+      setSortDirection("desc");
     }
   };
 
@@ -111,7 +149,9 @@ const SocialPostsTable: React.FC<SocialPostsTableProps> = ({ posts, onEdit, onCo
       {showFilters && (
         <div className="flex flex-wrap gap-4 p-4 bg-brand-background rounded-lg border border-brand-border">
           <div>
-            <label className="text-sm text-brand-text-secondary mb-1 block">Platform</label>
+            <label className="text-sm text-brand-text-secondary mb-1 block">
+              Platform
+            </label>
             <select
               value={platformFilter}
               onChange={(e) => setPlatformFilter(e.target.value)}
@@ -124,7 +164,9 @@ const SocialPostsTable: React.FC<SocialPostsTableProps> = ({ posts, onEdit, onCo
             </select>
           </div>
           <div>
-            <label className="text-sm text-brand-text-secondary mb-1 block">Status</label>
+            <label className="text-sm text-brand-text-secondary mb-1 block">
+              Status
+            </label>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -157,16 +199,22 @@ const SocialPostsTable: React.FC<SocialPostsTableProps> = ({ posts, onEdit, onCo
               <th className="text-left px-4 py-3 text-xs font-medium text-brand-text-secondary uppercase tracking-wider">
                 Status
               </th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-brand-text-secondary uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('publishedDate')}>
+              <th
+                className="text-left px-4 py-3 text-xs font-medium text-brand-text-secondary uppercase tracking-wider cursor-pointer"
+                onClick={() => handleSort("publishedDate")}
+              >
                 Date
               </th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-brand-text-secondary uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('engagementRate')}>
+              <th
+                className="text-left px-4 py-3 text-xs font-medium text-brand-text-secondary uppercase tracking-wider cursor-pointer"
+                onClick={() => handleSort("engagementRate")}
+              >
                 Engagement
               </th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-brand-text-secondary uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('reach')}>
+              <th
+                className="text-left px-4 py-3 text-xs font-medium text-brand-text-secondary uppercase tracking-wider cursor-pointer"
+                onClick={() => handleSort("reach")}
+              >
                 Reach
               </th>
               <th className="text-right px-4 py-3 text-xs font-medium text-brand-text-secondary uppercase tracking-wider">
@@ -176,7 +224,10 @@ const SocialPostsTable: React.FC<SocialPostsTableProps> = ({ posts, onEdit, onCo
           </thead>
           <tbody className="bg-brand-panel divide-y divide-brand-border">
             {filteredPosts.map((post) => (
-              <tr key={post.id} className="hover:bg-brand-background/50 transition-colors">
+              <tr
+                key={post.id}
+                className="hover:bg-brand-background/50 transition-colors"
+              >
                 <td className="px-4 py-3">
                   <p className="text-sm font-medium text-brand-text-primary line-clamp-1">
                     {post.listingAddress}
@@ -185,29 +236,38 @@ const SocialPostsTable: React.FC<SocialPostsTableProps> = ({ posts, onEdit, onCo
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
                     {getPlatformIcon(post.platform)}
-                    <span className="text-sm text-brand-text-primary capitalize">{post.platform}</span>
+                    <span className="text-sm text-brand-text-primary capitalize">
+                      {post.platform}
+                    </span>
                   </div>
                 </td>
                 <td className="px-4 py-3 max-w-xs">
-                  <p className="text-sm text-brand-text-primary line-clamp-2">{post.content}</p>
+                  <p className="text-sm text-brand-text-primary line-clamp-2">
+                    {post.content}
+                  </p>
                   <div className="flex gap-2 mt-1">
                     {post.hashtags.slice(0, 3).map((tag, idx) => (
-                      <span key={idx} className="text-xs text-brand-primary">#{tag}</span>
+                      <span key={idx} className="text-xs text-brand-primary">
+                        #{tag}
+                      </span>
                     ))}
                   </div>
                 </td>
-                <td className="px-4 py-3">
-                  {getStatusBadge(post.status)}
-                </td>
+                <td className="px-4 py-3">{getStatusBadge(post.status)}</td>
                 <td className="px-4 py-3 text-sm text-brand-text-secondary">
                   {formatDate(post.publishedDate || post.scheduledDate)}
                 </td>
                 <td className="px-4 py-3">
-                  {post.status === 'published' ? (
+                  {post.status === "published" ? (
                     <div className="text-sm">
-                      <p className="font-medium text-brand-text-primary">{post.metrics.engagementRate}%</p>
+                      <p className="font-medium text-brand-text-primary">
+                        {post.metrics.engagementRate}%
+                      </p>
                       <p className="text-xs text-brand-text-secondary">
-                        {post.metrics.likes + post.metrics.shares + post.metrics.comments} interactions
+                        {post.metrics.likes +
+                          post.metrics.shares +
+                          post.metrics.comments}{" "}
+                        interactions
                       </p>
                     </div>
                   ) : (
@@ -215,7 +275,7 @@ const SocialPostsTable: React.FC<SocialPostsTableProps> = ({ posts, onEdit, onCo
                   )}
                 </td>
                 <td className="px-4 py-3">
-                  {post.status === 'published' ? (
+                  {post.status === "published" ? (
                     <p className="text-sm font-medium text-brand-text-primary">
                       {post.metrics.reach.toLocaleString()}
                     </p>
@@ -230,7 +290,11 @@ const SocialPostsTable: React.FC<SocialPostsTableProps> = ({ posts, onEdit, onCo
                       className="p-1.5 text-brand-text-secondary hover:text-brand-primary transition-colors"
                       title="Edit Post"
                     >
-                      {post.status === 'published' ? <EyeIcon className="h-4 w-4" /> : <PencilIcon className="h-4 w-4" />}
+                      {post.status === "published" ? (
+                        <EyeIcon className="h-4 w-4" />
+                      ) : (
+                        <PencilIcon className="h-4 w-4" />
+                      )}
                     </button>
                     <button
                       className="p-1.5 text-brand-text-secondary hover:text-brand-primary transition-colors"
@@ -238,7 +302,7 @@ const SocialPostsTable: React.FC<SocialPostsTableProps> = ({ posts, onEdit, onCo
                     >
                       <DocumentDuplicateIcon className="h-4 w-4" />
                     </button>
-                    {post.status === 'draft' && (
+                    {post.status === "draft" && (
                       <button
                         className="p-1.5 text-brand-text-secondary hover:text-red-600 transition-colors"
                         title="Delete Post"
@@ -257,7 +321,9 @@ const SocialPostsTable: React.FC<SocialPostsTableProps> = ({ posts, onEdit, onCo
       {/* Empty State */}
       {filteredPosts.length === 0 && (
         <div className="text-center py-12">
-          <p className="text-brand-text-secondary mb-4">No posts found matching your criteria.</p>
+          <p className="text-brand-text-secondary mb-4">
+            No posts found matching your criteria.
+          </p>
           <Button variant="primary" onClick={onCompose}>
             Create Your First Post
           </Button>
