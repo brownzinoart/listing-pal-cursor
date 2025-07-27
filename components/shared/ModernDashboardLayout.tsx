@@ -1,14 +1,14 @@
-import React, { ReactNode, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import CollapsibleSidebar from './CollapsibleSidebar';
-import { useLayout } from '../../contexts/LayoutContext';
-import { useAuth } from '../../contexts/AuthContext';
-import { 
-  UserCircleIcon, 
-  Cog6ToothIcon, 
+import React, { ReactNode, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import CollapsibleSidebar from "./CollapsibleSidebar";
+import { useLayout } from "../../contexts/LayoutContext";
+import { useAuth } from "../../contexts/AuthContext";
+import {
+  UserCircleIcon,
+  Cog6ToothIcon,
   ArrowRightOnRectangleIcon,
-  ChevronDownIcon 
-} from '@heroicons/react/24/outline';
+  ChevronDownIcon,
+} from "@heroicons/react/24/outline";
 
 interface ModernDashboardLayoutProps {
   children: ReactNode;
@@ -23,9 +23,10 @@ const ModernDashboardLayout: React.FC<ModernDashboardLayoutProps> = ({
   title,
   subtitle,
   actions,
-  breadcrumbs
+  breadcrumbs,
 }) => {
-  const { isSidebarCollapsed, toggleSidebar, getMainContentMargin } = useLayout();
+  const { isSidebarCollapsed, toggleSidebar, getMainContentMargin } =
+    useLayout();
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
@@ -33,8 +34,8 @@ const ModernDashboardLayout: React.FC<ModernDashboardLayoutProps> = ({
 
   // Auto-generate breadcrumbs if not provided
   const defaultBreadcrumbs = [
-    { label: 'Dashboard', href: '/dashboard' },
-    { label: getBreadcrumbFromPath(location.pathname) }
+    { label: "Dashboard", href: "/dashboard" },
+    { label: getBreadcrumbFromPath(location.pathname) },
   ];
 
   const finalBreadcrumbs = breadcrumbs || defaultBreadcrumbs;
@@ -48,22 +49,24 @@ const ModernDashboardLayout: React.FC<ModernDashboardLayoutProps> = ({
       />
 
       {/* Main Content */}
-      <div className={`transition-all duration-300 ${getMainContentMargin()} min-h-full`}>
+      <div
+        className={`transition-all duration-300 ${getMainContentMargin()} min-h-full`}
+      >
         {/* Top Header Bar with User Menu */}
         <div className="sticky top-0 z-30 bg-slate-900/80 backdrop-blur-lg border-b border-white/10">
           <div className="flex items-center justify-between px-6 py-4">
             {/* Left side - Can add additional header content here */}
             <div className="flex items-center space-x-4">
               {isSidebarCollapsed && (
-                <img 
-                  src="/logo.png" 
-                  alt="ListingPal" 
+                <img
+                  src="/logo.png"
+                  alt="ListingPal"
                   className="h-10 w-auto cursor-pointer"
-                  onClick={() => navigate('/dashboard')}
+                  onClick={() => navigate("/dashboard")}
                 />
               )}
             </div>
-            
+
             {/* Right side - User Menu */}
             <div className="relative">
               <button
@@ -73,22 +76,28 @@ const ModernDashboardLayout: React.FC<ModernDashboardLayoutProps> = ({
                 <UserCircleIcon className="h-8 w-8 text-slate-300" />
                 <div className="hidden sm:block text-left">
                   <p className="text-white font-medium text-sm">Pavano</p>
-                  <p className="text-slate-400 text-xs">{user?.email || 'user@example.com'}</p>
+                  <p className="text-slate-400 text-xs">
+                    {user?.email || "user@example.com"}
+                  </p>
                 </div>
-                <ChevronDownIcon className={`h-4 w-4 text-slate-400 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
+                <ChevronDownIcon
+                  className={`h-4 w-4 text-slate-400 transition-transform ${showUserMenu ? "rotate-180" : ""}`}
+                />
               </button>
-              
+
               {/* Dropdown Menu */}
               {showUserMenu && (
                 <div className="absolute right-0 mt-2 w-56 bg-slate-800 border border-white/20 rounded-xl shadow-xl overflow-hidden">
                   <div className="px-4 py-3 border-b border-white/10">
                     <p className="text-white font-medium">Pavano</p>
-                    <p className="text-slate-400 text-sm truncate">{user?.email || 'user@example.com'}</p>
+                    <p className="text-slate-400 text-sm truncate">
+                      {user?.email || "user@example.com"}
+                    </p>
                   </div>
                   <div className="py-2">
                     <button
                       onClick={() => {
-                        navigate('/dashboard/settings');
+                        navigate("/dashboard/settings");
                         setShowUserMenu(false);
                       }}
                       className="w-full flex items-center px-4 py-2 text-slate-300 hover:bg-white/10 hover:text-white transition-colors"
@@ -98,7 +107,7 @@ const ModernDashboardLayout: React.FC<ModernDashboardLayoutProps> = ({
                     </button>
                     <button
                       onClick={() => {
-                        navigate('/dashboard/settings');
+                        navigate("/dashboard/settings");
                         setShowUserMenu(false);
                       }}
                       className="w-full flex items-center px-4 py-2 text-slate-300 hover:bg-white/10 hover:text-white transition-colors"
@@ -111,7 +120,7 @@ const ModernDashboardLayout: React.FC<ModernDashboardLayoutProps> = ({
                     <button
                       onClick={() => {
                         logout();
-                        navigate('/login');
+                        navigate("/login");
                       }}
                       className="w-full flex items-center px-4 py-2 text-slate-300 hover:bg-white/10 hover:text-white transition-colors"
                     >
@@ -124,10 +133,9 @@ const ModernDashboardLayout: React.FC<ModernDashboardLayoutProps> = ({
             </div>
           </div>
         </div>
-        
+
         <div className="p-6">
           <div className="w-full space-y-8">
-            
             {/* Header with Breadcrumb */}
             {(title || finalBreadcrumbs) && (
               <div className="flex items-center justify-between mb-8">
@@ -137,11 +145,20 @@ const ModernDashboardLayout: React.FC<ModernDashboardLayoutProps> = ({
                       {finalBreadcrumbs.map((crumb, index) => (
                         <React.Fragment key={index}>
                           {crumb.href ? (
-                            <a href={crumb.href} className="hover:text-blue-400 transition-colors">
+                            <a
+                              href={crumb.href}
+                              className="hover:text-blue-400 transition-colors"
+                            >
                               {crumb.label}
                             </a>
                           ) : (
-                            <span className={index === finalBreadcrumbs.length - 1 ? 'text-blue-400' : ''}>
+                            <span
+                              className={
+                                index === finalBreadcrumbs.length - 1
+                                  ? "text-blue-400"
+                                  : ""
+                              }
+                            >
                               {crumb.label}
                             </span>
                           )}
@@ -161,11 +178,9 @@ const ModernDashboardLayout: React.FC<ModernDashboardLayoutProps> = ({
                     </div>
                   )}
                 </div>
-                
+
                 {actions && (
-                  <div className="flex items-center space-x-4">
-                    {actions}
-                  </div>
+                  <div className="flex items-center space-x-4">{actions}</div>
                 )}
               </div>
             )}
@@ -181,23 +196,26 @@ const ModernDashboardLayout: React.FC<ModernDashboardLayoutProps> = ({
 
 // Helper function to generate breadcrumb from path
 function getBreadcrumbFromPath(path: string): string {
-  const segments = path.split('/').filter(Boolean);
+  const segments = path.split("/").filter(Boolean);
   const lastSegment = segments[segments.length - 1];
-  
+
   const pathMap: { [key: string]: string } = {
-    'dashboard': 'Home',
-    'portfolio': 'Portfolio Analytics',
-    'descriptions': 'Descriptions',
-    'social': 'Social Posts',
-    'email': 'Email',
-    'ads': 'Paid Ads',
-    'interior': 'Interior Deco',
-    'print': 'Print Materials',
-    'resources': 'Resources',
-    'settings': 'Settings'
+    dashboard: "Home",
+    portfolio: "Portfolio Analytics",
+    descriptions: "Descriptions",
+    social: "Social Posts",
+    email: "Email",
+    ads: "Paid Ads",
+    interior: "Interior Deco",
+    print: "Print Materials",
+    resources: "Resources",
+    settings: "Settings",
   };
 
-  return pathMap[lastSegment] || lastSegment.charAt(0).toUpperCase() + lastSegment.slice(1);
+  return (
+    pathMap[lastSegment] ||
+    lastSegment.charAt(0).toUpperCase() + lastSegment.slice(1)
+  );
 }
 
 export default ModernDashboardLayout;
