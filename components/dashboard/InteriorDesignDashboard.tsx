@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Button from '../shared/Button';
 import { 
@@ -15,7 +15,9 @@ import {
   DocumentDuplicateIcon,
   SparklesIcon,
   HeartIcon as HeartOutlineIcon,
-  ShareIcon
+  ShareIcon,
+  Squares2X2Icon,
+  TableCellsIcon
 } from '@heroicons/react/24/outline';
 import { AI_DESIGN_STYLES, AiDesignStyleId } from '../../constants';
 
@@ -98,6 +100,8 @@ const mockListings = [
   { id: 'listing-003', address: '789 Maple Drive, Berkeley', price: 695000 },
 ];
 
+type DisplayMode = 'cards' | 'table';
+
 const InteriorDesignDashboard: React.FC = () => {
   const [viewMode, setViewMode] = useState<'content' | 'generate'>('content');
   const [selectedRoomType, setSelectedRoomType] = useState<string | 'all'>('all');
@@ -107,6 +111,24 @@ const InteriorDesignDashboard: React.FC = () => {
   const [selectedGenerateRoomType, setSelectedGenerateRoomType] = useState<string>('livingroom');
   const [selectedGenerateStyle, setSelectedGenerateStyle] = useState<AiDesignStyleId>('modern');
   const [copySuccessId, setCopySuccessId] = useState<string | null>(null);
+  const [displayMode, setDisplayMode] = useState<DisplayMode>(() => {
+    // Default to cards on mobile, allow saved preference on desktop
+    if (typeof window !== 'undefined') {
+      const isMobile = window.innerWidth < 768;
+      if (isMobile) return 'cards';
+      
+      const savedView = localStorage.getItem('interiorDisplayMode');
+      return (savedView as DisplayMode) || 'cards';
+    }
+    return 'cards';
+  });
+
+  // Save display preference to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('interiorDisplayMode', displayMode);
+    }
+  }, [displayMode]);
 
   // Filter content based on selections
   const filteredContent = useMemo(() => {
@@ -198,6 +220,250 @@ const InteriorDesignDashboard: React.FC = () => {
     return colorMap[styleId] || 'bg-slate-500/20 text-slate-400 border-slate-500/30';
   };
 
+  // Table rendering for room redesigns
+  const renderRoomTable = () => (
+    <div className="relative group">
+      <div className="absolute inset-0 bg-gradient-to-r from-slate-500/10 to-gray-500/10 rounded-3xl blur-xl"></div>
+      <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl overflow-hidden">
+        <div className="p-6 border-b border-white/10">
+          <h3 className="text-2xl font-bold text-white">My Room Redesigns</h3>
+        </div>
+        
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-white/5 border-b border-white/10">
+              <tr>
+                <th className="text-left px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Room & Property
+                </th>
+                <th className="text-center px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Style
+                </th>
+                <th className="text-center px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Images
+                </th>
+                <th className="text-center px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Created
+                </th>
+                <th className="text-center px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="text-right px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/10">
+              {filteredContent.map((redesign) => {
+                const roomInfo = getRoomTypeInfo(redesign.roomType);
+                const styleInfo = getDesignStyleInfo(redesign.designStyle);
+                
+                return (
+                  <tr key={redesign.id} className="hover:bg-white/5 transition-colors duration-200">
+                    <td className="px-6 py-4">
+                      <div>
+                        <p className="text-white font-semibold">{redesign.title}</p>
+                        <p className="text-slate-400 text-sm">{redesign.listingAddress}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-lg">{roomInfo.icon}</span>
+                          <span className="text-slate-300 text-xs">{roomInfo.name}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <span className={`px-2 py-1 rounded-lg text-xs font-medium border ${getStyleBadgeColor(redesign.designStyle)}`}>
+                        {styleInfo.name}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      {redesign.status === 'completed' ? (
+                        <div className="flex items-center justify-center gap-2">
+                          <div className="w-8 h-6 bg-slate-600 rounded border border-white/20"></div>
+                          <span className="text-slate-400 text-xs">→</span>
+                          <div className="w-8 h-6 bg-emerald-500/20 rounded border border-emerald-500/30"></div>
+                        </div>
+                      ) : (
+                        <div className="text-slate-500 text-xs">Processing...</div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-center text-slate-300 text-sm">
+                      {redesign.createdDate}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      {redesign.status === 'completed' ? (
+                        <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full text-xs font-medium">
+                          Complete
+                        </span>
+                      ) : (
+                        <span className="px-3 py-1 bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-full text-xs font-medium">
+                          Processing
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => handleToggleFavorite(redesign.id)}
+                          className="p-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-200"
+                          title={redesign.favorite ? "Remove from favorites" : "Add to favorites"}
+                        >
+                          {redesign.favorite ? (
+                            <HeartIcon className="h-4 w-4 text-rose-400" />
+                          ) : (
+                            <HeartOutlineIcon className="h-4 w-4 text-slate-400 hover:text-rose-400" />
+                          )}
+                        </button>
+                        {redesign.status === 'completed' && (
+                          <>
+                            <button
+                              onClick={() => handleCopyImage(redesign.redesignedImage, redesign.id)}
+                              className="p-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-200"
+                              title="Copy image URL"
+                            >
+                              {copySuccessId === redesign.id ? (
+                                <span className="text-emerald-400 text-xs px-1">✓</span>
+                              ) : (
+                                <ClipboardDocumentIcon className="h-4 w-4 text-white" />
+                              )}
+                            </button>
+                            <button className="p-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-200">
+                              <EyeIcon className="h-4 w-4 text-white" />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Card rendering for room redesigns
+  const renderRoomCards = () => (
+    <div className="relative group">
+      <div className="absolute inset-0 bg-gradient-to-r from-slate-500/10 to-gray-500/10 rounded-3xl blur-xl"></div>
+      <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8">
+        <h3 className="text-2xl font-bold text-white mb-6">My Room Redesigns</h3>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {filteredContent.map((redesign) => {
+            const roomInfo = getRoomTypeInfo(redesign.roomType);
+            const styleInfo = getDesignStyleInfo(redesign.designStyle);
+            
+            return (
+              <div
+                key={redesign.id}
+                className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 hover:bg-white/15 transition-all duration-200"
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-3">
+                    <h4 className="text-lg font-semibold text-white">{redesign.title}</h4>
+                    {redesign.favorite && (
+                      <HeartIcon className="h-5 w-5 text-rose-400" />
+                    )}
+                    {redesign.status === 'processing' && (
+                      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-blue-400"></div>
+                    )}
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => handleToggleFavorite(redesign.id)}
+                      className="p-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-200"
+                      title={redesign.favorite ? "Remove from favorites" : "Add to favorites"}
+                    >
+                      {redesign.favorite ? (
+                        <HeartIcon className="h-4 w-4 text-rose-400" />
+                      ) : (
+                        <HeartOutlineIcon className="h-4 w-4 text-slate-400 hover:text-rose-400" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Property and Style Info */}
+                <div className="flex items-center space-x-3 mb-4">
+                  <p className="text-slate-400 text-sm">{redesign.listingAddress}</p>
+                  <span className={`px-2 py-1 rounded-lg text-xs font-medium border ${getStyleBadgeColor(redesign.designStyle)}`}>
+                    {styleInfo.name}
+                  </span>
+                  <span className="px-2 py-1 rounded-lg text-xs font-medium bg-slate-500/20 text-slate-400 border border-slate-500/30">
+                    {roomInfo.icon} {roomInfo.name}
+                  </span>
+                </div>
+
+                {/* Before/After Images */}
+                {redesign.status === 'completed' ? (
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <p className="text-xs text-slate-400 mb-2">Before</p>
+                      <img
+                        src={redesign.originalImage}
+                        alt="Original room"
+                        className="w-full h-32 object-cover rounded-lg border border-white/20"
+                      />
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-400 mb-2">After</p>
+                      <img
+                        src={redesign.redesignedImage}
+                        alt="Redesigned room"
+                        className="w-full h-32 object-cover rounded-lg border border-white/20"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-white/5 rounded-lg p-6 mb-4 text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-400 mx-auto mb-3"></div>
+                    <p className="text-slate-300 text-sm">AI is processing your room redesign...</p>
+                    <p className="text-slate-400 text-xs">This usually takes 30-60 seconds</p>
+                  </div>
+                )}
+
+                {/* Actions and Info */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4 text-sm text-slate-400">
+                    <span>Created {redesign.createdDate}</span>
+                    {redesign.status === 'completed' && (
+                      <span>Processed in {redesign.processingTime}</span>
+                    )}
+                  </div>
+
+                  {redesign.status === 'completed' && (
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => handleCopyImage(redesign.redesignedImage, redesign.id)}
+                        className="p-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-200"
+                        title="Copy image URL"
+                      >
+                        {copySuccessId === redesign.id ? (
+                          <span className="text-emerald-400 text-xs px-2">Copied!</span>
+                        ) : (
+                          <ClipboardDocumentIcon className="h-4 w-4 text-slate-400 hover:text-white" />
+                        )}
+                      </button>
+                      <Button variant="ghost" size="sm" leftIcon={<EyeIcon className="h-4 w-4" />}>
+                        View Full
+                      </Button>
+                      <Button variant="ghost" size="sm" leftIcon={<ShareIcon className="h-4 w-4" />}>
+                        Share
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="space-y-8">
       {/* Header with Summary Metrics */}
@@ -277,7 +543,33 @@ const InteriorDesignDashboard: React.FC = () => {
 
             {/* Filters - Only for Content View */}
             {viewMode === 'content' && (
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center gap-4">
+                {/* Display Mode Toggle */}
+                <div className="flex items-center bg-white/10 rounded-xl p-1">
+                  <button
+                    onClick={() => setDisplayMode('cards')}
+                    className={`p-2 rounded-lg transition-all duration-200 ${
+                      displayMode === 'cards'
+                        ? 'bg-white/20 text-white shadow-lg'
+                        : 'text-slate-400 hover:text-white hover:bg-white/10'
+                    }`}
+                    title="Card View"
+                  >
+                    <Squares2X2Icon className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => setDisplayMode('table')}
+                    className={`p-2 rounded-lg transition-all duration-200 ${
+                      displayMode === 'table'
+                        ? 'bg-white/20 text-white shadow-lg'
+                        : 'text-slate-400 hover:text-white hover:bg-white/10'
+                    }`}
+                    title="Table View"
+                  >
+                    <TableCellsIcon className="h-4 w-4" />
+                  </button>
+                </div>
+
                 <select
                   value={selectedRoomType}
                   onChange={(e) => setSelectedRoomType(e.target.value as any)}
@@ -306,127 +598,20 @@ const InteriorDesignDashboard: React.FC = () => {
 
       {/* My Room Redesigns View */}
       {viewMode === 'content' && (
-        <div className="relative group">
-          <div className="absolute inset-0 bg-gradient-to-r from-slate-500/10 to-gray-500/10 rounded-3xl blur-xl"></div>
-          <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8">
-            <h3 className="text-2xl font-bold text-white mb-6">My Room Redesigns</h3>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {filteredContent.map((redesign) => {
-                const roomInfo = getRoomTypeInfo(redesign.roomType);
-                const styleInfo = getDesignStyleInfo(redesign.designStyle);
-                
-                return (
-                  <div
-                    key={redesign.id}
-                    className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 hover:bg-white/15 transition-all duration-200"
-                  >
-                    {/* Header */}
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center space-x-3">
-                        <h4 className="text-lg font-semibold text-white">{redesign.title}</h4>
-                        {redesign.favorite && (
-                          <HeartIcon className="h-5 w-5 text-rose-400" />
-                        )}
-                        {redesign.status === 'processing' && (
-                          <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-blue-400"></div>
-                        )}
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => handleToggleFavorite(redesign.id)}
-                          className="p-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-200"
-                          title={redesign.favorite ? "Remove from favorites" : "Add to favorites"}
-                        >
-                          {redesign.favorite ? (
-                            <HeartIcon className="h-4 w-4 text-rose-400" />
-                          ) : (
-                            <HeartOutlineIcon className="h-4 w-4 text-slate-400 hover:text-rose-400" />
-                          )}
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Property and Style Info */}
-                    <div className="flex items-center space-x-3 mb-4">
-                      <p className="text-slate-400 text-sm">{redesign.listingAddress}</p>
-                      <span className={`px-2 py-1 rounded-lg text-xs font-medium border ${getStyleBadgeColor(redesign.designStyle)}`}>
-                        {styleInfo.name}
-                      </span>
-                      <span className="px-2 py-1 rounded-lg text-xs font-medium bg-slate-500/20 text-slate-400 border border-slate-500/30">
-                        {roomInfo.icon} {roomInfo.name}
-                      </span>
-                    </div>
-
-                    {/* Before/After Images */}
-                    {redesign.status === 'completed' ? (
-                      <div className="grid grid-cols-2 gap-4 mb-4">
-                        <div>
-                          <p className="text-xs text-slate-400 mb-2">Before</p>
-                          <img
-                            src={redesign.originalImage}
-                            alt="Original room"
-                            className="w-full h-32 object-cover rounded-lg border border-white/20"
-                          />
-                        </div>
-                        <div>
-                          <p className="text-xs text-slate-400 mb-2">After</p>
-                          <img
-                            src={redesign.redesignedImage}
-                            alt="Redesigned room"
-                            className="w-full h-32 object-cover rounded-lg border border-white/20"
-                          />
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="bg-white/5 rounded-lg p-6 mb-4 text-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-400 mx-auto mb-3"></div>
-                        <p className="text-slate-300 text-sm">AI is processing your room redesign...</p>
-                        <p className="text-slate-400 text-xs">This usually takes 30-60 seconds</p>
-                      </div>
-                    )}
-
-                    {/* Actions and Info */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4 text-sm text-slate-400">
-                        <span>Created {redesign.createdDate}</span>
-                        {redesign.status === 'completed' && (
-                          <span>Processed in {redesign.processingTime}</span>
-                        )}
-                      </div>
-
-                      {redesign.status === 'completed' && (
-                        <div className="flex items-center space-x-2">
-                          <button
-                            onClick={() => handleCopyImage(redesign.redesignedImage, redesign.id)}
-                            className="p-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-200"
-                            title="Copy image URL"
-                          >
-                            {copySuccessId === redesign.id ? (
-                              <span className="text-emerald-400 text-xs px-2">Copied!</span>
-                            ) : (
-                              <ClipboardDocumentIcon className="h-4 w-4 text-slate-400 hover:text-white" />
-                            )}
-                          </button>
-                          <Button variant="ghost" size="sm" leftIcon={<EyeIcon className="h-4 w-4" />}>
-                            View Full
-                          </Button>
-                          <Button variant="ghost" size="sm" leftIcon={<ShareIcon className="h-4 w-4" />}>
-                            Share
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-              
-              {filteredContent.length === 0 && (
-                <div className="col-span-2 text-center py-12">
+        <>
+          {/* Content - Conditional Rendering */}
+          {displayMode === 'table' ? renderRoomTable() : renderRoomCards()}
+          
+          {/* Empty State */}
+          {filteredContent.length === 0 && (
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-slate-500/10 to-gray-500/10 rounded-3xl blur-xl"></div>
+              <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-12">
+                <div className="text-center">
                   <PhotoIcon className="h-16 w-16 text-slate-400 mx-auto mb-4" />
                   <p className="text-xl text-white mb-2">No room redesigns found</p>
                   <p className="text-slate-400 mb-6">
-                    {searchTerm || selectedRoomType !== 'all' || selectedDesignStyle !== 'all'
+                    {selectedRoomType !== 'all' || selectedDesignStyle !== 'all'
                       ? 'Try adjusting your filters or search terms.' 
                       : 'Start by generating your first room redesign.'}
                   </p>
@@ -438,10 +623,10 @@ const InteriorDesignDashboard: React.FC = () => {
                     Generate Room Redesign
                   </Button>
                 </div>
-              )}
+              </div>
             </div>
-          </div>
-        </div>
+          )}
+        </>
       )}
 
       {/* Quick Generate View */}

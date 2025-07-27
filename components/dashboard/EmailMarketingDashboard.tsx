@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Button from '../shared/Button';
 import { 
@@ -15,6 +15,7 @@ import {
   SparklesIcon,
   HeartIcon as HeartOutlineIcon
 } from '@heroicons/react/24/outline';
+import ViewToggle, { ViewMode } from '../shared/ViewToggle';
 
 // Email theme types from existing batch workflow
 type EmailTheme = 'OPEN_HOUSE' | 'PRICE_REDUCTION' | 'NEW_LISTING' | 'UNDER_CONTRACT' | 'MARKET_UPDATE' | 'EXCLUSIVE_SHOWING' | 'FOLLOW_UP' | 'COMING_SOON';
@@ -149,6 +150,8 @@ const mockListings = [
   { id: 'listing-003', address: '789 Maple Drive, Berkeley', price: 695000 },
 ];
 
+type DisplayMode = ViewMode;
+
 const EmailMarketingDashboard: React.FC = () => {
   const [viewMode, setViewMode] = useState<'content' | 'generate'>('content');
   const [selectedTheme, setSelectedTheme] = useState<EmailTheme | 'all'>('all');
@@ -156,6 +159,24 @@ const EmailMarketingDashboard: React.FC = () => {
   const [selectedListing, setSelectedListing] = useState<string>('');
   const [selectedGenerateTheme, setSelectedGenerateTheme] = useState<EmailTheme>('NEW_LISTING');
   const [copySuccessId, setCopySuccessId] = useState<string | null>(null);
+  const [displayMode, setDisplayMode] = useState<DisplayMode>(() => {
+    // Default to cards on mobile, allow saved preference on desktop
+    if (typeof window !== 'undefined') {
+      const isMobile = window.innerWidth < 768;
+      if (isMobile) return 'cards';
+      
+      const savedView = localStorage.getItem('emailDisplayMode');
+      return (savedView as DisplayMode) || 'cards';
+    }
+    return 'cards';
+  });
+
+  // Save display preference to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('emailDisplayMode', displayMode);
+    }
+  }, [displayMode]);
 
   // Filter content based on selections
   const filteredContent = useMemo(() => {
@@ -223,6 +244,178 @@ const EmailMarketingDashboard: React.FC = () => {
     return colorMap[color] || 'bg-slate-500/20 text-slate-400 border-slate-500/30';
   };
 
+  // Table rendering for email content
+  const renderEmailTable = () => (
+    <div className="relative group">
+      <div className="absolute inset-0 bg-gradient-to-r from-slate-500/10 to-gray-500/10 rounded-3xl blur-xl"></div>
+      <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl overflow-hidden">
+        <div className="p-6 border-b border-white/10">
+          <h3 className="text-2xl font-bold text-white">My Email Content</h3>
+        </div>
+        
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-white/5 border-b border-white/10">
+              <tr>
+                <th className="text-left px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Subject & Theme
+                </th>
+                <th className="text-left px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Property
+                </th>
+                <th className="text-center px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Words
+                </th>
+                <th className="text-center px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Created
+                </th>
+                <th className="text-center px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Last Used
+                </th>
+                <th className="text-right px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/10">
+              {filteredContent.map((content) => (
+                <tr key={content.id} className="hover:bg-white/5 transition-colors duration-200">
+                  <td className="px-6 py-4">
+                    <div>
+                      <p className="text-white font-semibold">{content.subject}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className={`px-2 py-1 rounded-lg text-xs font-medium border ${getThemeBadgeColor(content.theme)}`}>
+                          {getThemeIcon(content.theme)} {EMAIL_THEMES.find(t => t.id === content.theme)?.name}
+                        </span>
+                        {content.favorite && (
+                          <HeartIcon className="h-4 w-4 text-rose-400" />
+                        )}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <p className="text-slate-300 text-sm">{content.listingAddress}</p>
+                  </td>
+                  <td className="px-6 py-4 text-center text-white font-medium">
+                    {content.wordCount}
+                  </td>
+                  <td className="px-6 py-4 text-center text-slate-300 text-sm">
+                    {content.createdDate}
+                  </td>
+                  <td className="px-6 py-4 text-center text-slate-300 text-sm">
+                    {content.lastUsed}
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => handleToggleFavorite(content.id)}
+                        className="p-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-200"
+                        title={content.favorite ? "Remove from favorites" : "Add to favorites"}
+                      >
+                        {content.favorite ? (
+                          <HeartIcon className="h-4 w-4 text-rose-400" />
+                        ) : (
+                          <HeartOutlineIcon className="h-4 w-4 text-slate-400 hover:text-rose-400" />
+                        )}
+                      </button>
+                      <button
+                        onClick={() => handleCopyContent(content.content, content.id)}
+                        className="p-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-200"
+                        title="Copy to clipboard"
+                      >
+                        {copySuccessId === content.id ? (
+                          <span className="text-emerald-400 text-xs px-1">✓</span>
+                        ) : (
+                          <ClipboardDocumentIcon className="h-4 w-4 text-white" />
+                        )}
+                      </button>
+                      <button
+                        className="p-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-200"
+                        title="Duplicate"
+                      >
+                        <DocumentDuplicateIcon className="h-4 w-4 text-white" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Card rendering for email content
+  const renderEmailCards = () => (
+    <div className="relative group">
+      <div className="absolute inset-0 bg-gradient-to-r from-slate-500/10 to-gray-500/10 rounded-3xl blur-xl"></div>
+      <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8">
+        <h3 className="text-2xl font-bold text-white mb-6">My Email Content</h3>
+        
+        <div className="space-y-4">
+          {filteredContent.map((content) => (
+            <div
+              key={content.id}
+              className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 hover:bg-white/15 transition-all duration-200"
+            >
+              <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center space-x-3 mb-3">
+                    <h4 className="text-lg font-semibold text-white">{content.subject}</h4>
+                    <span className={`px-2 py-1 rounded-lg text-xs font-medium border ${getThemeBadgeColor(content.theme)}`}>
+                      {getThemeIcon(content.theme)} {EMAIL_THEMES.find(t => t.id === content.theme)?.name}
+                    </span>
+                    {content.favorite && (
+                      <HeartIcon className="h-5 w-5 text-rose-400" />
+                    )}
+                  </div>
+                  
+                  <p className="text-slate-400 text-sm mb-3">{content.listingAddress}</p>
+                  <p className="text-slate-300 text-sm line-clamp-3 mb-4">{content.content}</p>
+                  
+                  <div className="flex items-center space-x-6 text-sm text-slate-400">
+                    <span>{content.wordCount} words</span>
+                    <span>Created {content.createdDate}</span>
+                    <span>Last used {content.lastUsed}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => handleToggleFavorite(content.id)}
+                    className="p-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-200"
+                    title={content.favorite ? "Remove from favorites" : "Add to favorites"}
+                  >
+                    {content.favorite ? (
+                      <HeartIcon className="h-4 w-4 text-rose-400" />
+                    ) : (
+                      <HeartOutlineIcon className="h-4 w-4 text-slate-400 hover:text-rose-400" />
+                    )}
+                  </button>
+                  <button
+                    onClick={() => handleCopyContent(content.content, content.id)}
+                    className="p-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-200"
+                    title="Copy to clipboard"
+                  >
+                    {copySuccessId === content.id ? (
+                      <span className="text-emerald-400 text-xs px-2">Copied!</span>
+                    ) : (
+                      <ClipboardDocumentIcon className="h-4 w-4 text-slate-400 hover:text-white" />
+                    )}
+                  </button>
+                  <Button variant="ghost" size="sm" leftIcon={<DocumentDuplicateIcon className="h-4 w-4" />}>
+                    Duplicate
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="space-y-8">
       {/* Header with Summary Metrics */}
@@ -237,6 +430,9 @@ const EmailMarketingDashboard: React.FC = () => {
             <div className="flex items-center space-x-4">
               <Button variant="glass" glowColor="emerald" leftIcon={<SparklesIcon className="h-5 w-5" />}>
                 Generate with AI
+              </Button>
+              <Button variant="gradient" leftIcon={<PlusIcon className="h-5 w-5" />}>
+                Create Template
               </Button>
             </div>
           </div>
@@ -283,47 +479,58 @@ const EmailMarketingDashboard: React.FC = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 rounded-3xl blur-xl"></div>
         <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            {/* View Toggle - Simplified to Content and Generate */}
-            <div className="flex items-center bg-white/10 rounded-xl p-1">
-              {['content', 'generate'].map((view) => (
-                <button
-                  key={view}
-                  onClick={() => setViewMode(view as any)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    viewMode === view
-                      ? 'bg-white/20 text-white shadow-lg'
-                      : 'text-slate-400 hover:text-white hover:bg-white/10'
-                  }`}
-                >
-                  {view === 'content' ? 'My Email Content' : 'Quick Generate'}
-                </button>
-              ))}
+            {/* Content Mode Toggle and Search/Filters */}
+            <div className="flex items-center gap-4">
+              {/* View Toggle - Content and Generate */}
+              <div className="flex items-center bg-white/10 rounded-xl p-1">
+                {['content', 'generate'].map((view) => (
+                  <button
+                    key={view}
+                    onClick={() => setViewMode(view as any)}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      viewMode === view
+                        ? 'bg-white/20 text-white shadow-lg'
+                        : 'text-slate-400 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    {view === 'content' ? 'My Email Content' : 'Quick Generate'}
+                  </button>
+                ))}
+              </div>
+
+              {/* Search and Theme Filter - Only for Content View */}
+              {viewMode === 'content' && (
+                <>
+                  <div className="relative">
+                    <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Search content..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="bg-white/10 border border-white/20 rounded-lg pl-10 pr-3 py-2 text-white text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <select
+                    value={selectedTheme}
+                    onChange={(e) => setSelectedTheme(e.target.value as any)}
+                    className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="all">All Themes</option>
+                    {EMAIL_THEMES.map((theme) => (
+                      <option key={theme.id} value={theme.id}>{theme.name}</option>
+                    ))}
+                  </select>
+                </>
+              )}
             </div>
 
-            {/* Filters - Only for Content View */}
+            {/* Display Mode Toggle - Only for Content View */}
             {viewMode === 'content' && (
-              <div className="flex items-center space-x-4">
-                <div className="relative">
-                  <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <input
-                    type="text"
-                    placeholder="Search content..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="bg-white/10 border border-white/20 rounded-lg pl-10 pr-3 py-2 text-white text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <select
-                  value={selectedTheme}
-                  onChange={(e) => setSelectedTheme(e.target.value as any)}
-                  className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="all">All Themes</option>
-                  {EMAIL_THEMES.map((theme) => (
-                    <option key={theme.id} value={theme.id}>{theme.name}</option>
-                  ))}
-                </select>
-              </div>
+              <ViewToggle 
+                viewMode={displayMode} 
+                onViewModeChange={setDisplayMode} 
+              />
             )}
           </div>
         </div>
@@ -331,72 +538,16 @@ const EmailMarketingDashboard: React.FC = () => {
 
       {/* My Email Content View */}
       {viewMode === 'content' && (
-        <div className="relative group">
-          <div className="absolute inset-0 bg-gradient-to-r from-slate-500/10 to-gray-500/10 rounded-3xl blur-xl"></div>
-          <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8">
-            <h3 className="text-2xl font-bold text-white mb-6">My Email Content</h3>
-            
-            <div className="space-y-4">
-              {filteredContent.map((content) => (
-                <div
-                  key={content.id}
-                  className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 hover:bg-white/15 transition-all duration-200"
-                >
-                  <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-3">
-                        <h4 className="text-lg font-semibold text-white">{content.subject}</h4>
-                        <span className={`px-2 py-1 rounded-lg text-xs font-medium border ${getThemeBadgeColor(content.theme)}`}>
-                          {getThemeIcon(content.theme)} {EMAIL_THEMES.find(t => t.id === content.theme)?.name}
-                        </span>
-                        {content.favorite && (
-                          <HeartIcon className="h-5 w-5 text-rose-400" />
-                        )}
-                      </div>
-                      
-                      <p className="text-slate-400 text-sm mb-3">{content.listingAddress}</p>
-                      <p className="text-slate-300 text-sm line-clamp-3 mb-4">{content.content}</p>
-                      
-                      <div className="flex items-center space-x-6 text-sm text-slate-400">
-                        <span>{content.wordCount} words</span>
-                        <span>Created {content.createdDate}</span>
-                        <span>Last used {content.lastUsed}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => handleToggleFavorite(content.id)}
-                        className="p-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-200"
-                        title={content.favorite ? "Remove from favorites" : "Add to favorites"}
-                      >
-                        {content.favorite ? (
-                          <HeartIcon className="h-4 w-4 text-rose-400" />
-                        ) : (
-                          <HeartOutlineIcon className="h-4 w-4 text-slate-400 hover:text-rose-400" />
-                        )}
-                      </button>
-                      <button
-                        onClick={() => handleCopyContent(content.content, content.id)}
-                        className="p-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-200"
-                        title="Copy to clipboard"
-                      >
-                        {copySuccessId === content.id ? (
-                          <span className="text-emerald-400 text-xs px-2">Copied!</span>
-                        ) : (
-                          <ClipboardDocumentIcon className="h-4 w-4 text-slate-400 hover:text-white" />
-                        )}
-                      </button>
-                      <Button variant="ghost" size="sm" leftIcon={<DocumentDuplicateIcon className="h-4 w-4" />}>
-                        Duplicate
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              
-              {filteredContent.length === 0 && (
-                <div className="text-center py-12">
+        <>
+          {/* Content - Conditional Rendering */}
+          {displayMode === 'table' ? renderEmailTable() : renderEmailCards()}
+          
+          {/* Empty State */}
+          {filteredContent.length === 0 && (
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-slate-500/10 to-gray-500/10 rounded-3xl blur-xl"></div>
+              <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-12">
+                <div className="text-center">
                   <EnvelopeIcon className="h-16 w-16 text-slate-400 mx-auto mb-4" />
                   <p className="text-xl text-white mb-2">No email content found</p>
                   <p className="text-slate-400 mb-6">
@@ -412,10 +563,10 @@ const EmailMarketingDashboard: React.FC = () => {
                     Generate Email Content
                   </Button>
                 </div>
-              )}
+              </div>
             </div>
-          </div>
-        </div>
+          )}
+        </>
       )}
 
       {/* Quick Generate View */}

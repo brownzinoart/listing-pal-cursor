@@ -60,6 +60,7 @@ const AppRoutes = () => {
           <Route path="/dashboard/email" element={<PrivateRoute><DashboardPage section="email" /></PrivateRoute>} />
           <Route path="/dashboard/print" element={<PrivateRoute><DashboardPage section="print" /></PrivateRoute>} />
           <Route path="/dashboard/resources" element={<PrivateRoute><DashboardPage section="resources" /></PrivateRoute>} />
+          <Route path="/dashboard/settings" element={<PrivateRoute><DashboardPage section="settings" /></PrivateRoute>} />
           <Route path="/listings/new" element={<PrivateRoute><ListingFormPage /></PrivateRoute>} />
           <Route path="/listings/:id/edit" element={<PrivateRoute><ListingFormPage /></PrivateRoute>} />
           <Route path="/listings/:id" element={<PrivateRoute><ListingDetailPage /></PrivateRoute>} />

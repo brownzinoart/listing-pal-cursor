@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { FaFacebook, FaInstagram, FaTwitter } from 'react-icons/fa';
-import { PencilIcon, TrashIcon, DocumentDuplicateIcon, EyeIcon, MagnifyingGlassIcon, FunnelIcon } from '@heroicons/react/24/outline';
+import { PencilIcon, TrashIcon, DocumentDuplicateIcon, EyeIcon } from '@heroicons/react/24/outline';
 import { SocialPost } from './SocialPostsDashboard';
 import Button from '../shared/Button';
 
@@ -8,37 +8,24 @@ interface SocialPostsTableProps {
   posts: SocialPost[];
   onEdit: (post: SocialPost) => void;
   onCompose: () => void;
+  viewMode: 'cards' | 'table';
 }
 
-const SocialPostsTable: React.FC<SocialPostsTableProps> = ({ posts, onEdit, onCompose }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [platformFilter, setPlatformFilter] = useState<string>('all');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [showFilters, setShowFilters] = useState(false);
+const SocialPostsTable: React.FC<SocialPostsTableProps> = ({ posts, onEdit, onCompose, viewMode }) => {
   const [sortField, setSortField] = useState<'publishedDate' | 'engagementRate' | 'reach'>('publishedDate');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
-  const filteredPosts = useMemo(() => {
-    return posts.filter(post => {
-      const matchesSearch = post.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          post.listingAddress.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          post.hashtags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
-      const matchesPlatform = platformFilter === 'all' || post.platform === platformFilter;
-      const matchesStatus = statusFilter === 'all' || post.status === statusFilter;
-      
-      return matchesSearch && matchesPlatform && matchesStatus;
-    }).sort((a, b) => {
-      if (sortField === 'publishedDate') {
-        const dateA = new Date(a.publishedDate || a.scheduledDate || a.createdAt).getTime();
-        const dateB = new Date(b.publishedDate || b.scheduledDate || b.createdAt).getTime();
-        return sortDirection === 'asc' ? dateA - dateB : dateB - dateA;
-      } else {
-        const valueA = a.metrics[sortField];
-        const valueB = b.metrics[sortField];
-        return sortDirection === 'asc' ? valueA - valueB : valueB - valueA;
-      }
-    });
-  }, [posts, searchTerm, platformFilter, statusFilter, sortField, sortDirection]);
+  const sortedPosts = posts.sort((a, b) => {
+    if (sortField === 'publishedDate') {
+      const dateA = new Date(a.publishedDate || a.scheduledDate || a.createdAt).getTime();
+      const dateB = new Date(b.publishedDate || b.scheduledDate || b.createdAt).getTime();
+      return sortDirection === 'asc' ? dateA - dateB : dateB - dateA;
+    } else {
+      const valueA = a.metrics[sortField];
+      const valueB = b.metrics[sortField];
+      return sortDirection === 'asc' ? valueA - valueB : valueB - valueA;
+    }
+  });
 
   const getPlatformIcon = (platform: SocialPost['platform']) => {
     switch (platform) {
@@ -50,14 +37,14 @@ const SocialPostsTable: React.FC<SocialPostsTableProps> = ({ posts, onEdit, onCo
 
   const getStatusBadge = (status: SocialPost['status']) => {
     const styles = {
-      draft: 'bg-gray-100 text-gray-800 border-gray-300',
-      scheduled: 'bg-blue-100 text-blue-800 border-blue-300',
-      published: 'bg-green-100 text-green-800 border-green-300',
-      archived: 'bg-yellow-100 text-yellow-800 border-yellow-300'
+      draft: 'bg-slate-500/20 text-slate-400 border-slate-500/30',
+      scheduled: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+      published: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+      archived: 'bg-amber-500/20 text-amber-400 border-amber-500/30'
     };
     
     return (
-      <span className={`px-2 py-1 text-xs font-medium rounded-full border ${styles[status]}`}>
+      <span className={`px-3 py-1 text-xs font-medium rounded-full border ${styles[status]}`}>
         {status.charAt(0).toUpperCase() + status.slice(1)}
       </span>
     );
@@ -83,187 +70,279 @@ const SocialPostsTable: React.FC<SocialPostsTableProps> = ({ posts, onEdit, onCo
     }
   };
 
-  return (
-    <div className="space-y-4">
-      {/* Search and Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-brand-text-tertiary" />
-          <input
-            type="text"
-            placeholder="Search posts, listings, or hashtags..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 pr-4 py-2 w-full bg-brand-background border border-brand-border rounded-md text-brand-text-primary placeholder-brand-text-tertiary focus:outline-none focus:ring-2 focus:ring-brand-primary"
-          />
+  const renderTableView = () => (
+    <div className="relative group">
+      <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 rounded-3xl blur-xl"></div>
+      <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl overflow-hidden">
+        <div className="p-6 border-b border-white/10">
+          <h3 className="text-2xl font-bold text-white">My Social Posts</h3>
         </div>
-        <Button
-          variant="secondary"
-          size="md"
-          leftIcon={<FunnelIcon className="h-4 w-4" />}
-          onClick={() => setShowFilters(!showFilters)}
-        >
-          Filters
-        </Button>
+        
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-white/5 border-b border-white/10">
+              <tr>
+                <th className="text-left px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Property & Platform
+                </th>
+                <th className="text-left px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Content
+                </th>
+                <th className="text-center px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="text-center px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider cursor-pointer"
+                    onClick={() => handleSort('publishedDate')}>
+                  Date
+                </th>
+                <th className="text-center px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider cursor-pointer"
+                    onClick={() => handleSort('engagementRate')}>
+                  Engagement
+                </th>
+                <th className="text-center px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider cursor-pointer"
+                    onClick={() => handleSort('reach')}>
+                  Reach
+                </th>
+                <th className="text-right px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/10">
+              {sortedPosts.map((post) => (
+                <tr key={post.id} className="hover:bg-white/5 transition-colors duration-200">
+                  <td className="px-6 py-4">
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-white line-clamp-1">
+                        {post.listingAddress}
+                      </p>
+                      <div className="flex items-center gap-2">
+                        {getPlatformIcon(post.platform)}
+                        <span className="text-sm text-slate-300 capitalize">{post.platform}</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 max-w-xs">
+                    <div>
+                      <p className="text-sm text-white line-clamp-2 leading-relaxed">{post.content}</p>
+                      {post.hashtags.length > 0 && (
+                        <div className="flex gap-2 mt-2">
+                          {post.hashtags.slice(0, 2).map((tag, idx) => (
+                            <span key={idx} className="text-xs px-2 py-1 bg-blue-500/20 text-blue-400 rounded-full">
+                              #{tag}
+                            </span>
+                          ))}
+                          {post.hashtags.length > 2 && (
+                            <span className="text-xs text-slate-400">+{post.hashtags.length - 2}</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    {getStatusBadge(post.status)}
+                  </td>
+                  <td className="px-6 py-4 text-center text-sm text-slate-300">
+                    {formatDate(post.publishedDate || post.scheduledDate)}
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    {post.status === 'published' ? (
+                      <div className="text-sm">
+                        <p className="font-bold text-emerald-400 text-lg">{post.metrics.engagementRate}%</p>
+                        <p className="text-xs text-slate-400">
+                          {post.metrics.likes + post.metrics.shares + post.metrics.comments} interactions
+                        </p>
+                      </div>
+                    ) : (
+                      <span className="text-sm text-slate-500">-</span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    {post.status === 'published' ? (
+                      <p className="text-sm font-semibold text-white">
+                        {post.metrics.reach.toLocaleString()}
+                      </p>
+                    ) : (
+                      <span className="text-sm text-slate-500">-</span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => onEdit(post)}
+                        className="p-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-200"
+                        title={post.status === 'published' ? 'View Post' : 'Edit Post'}
+                      >
+                        {post.status === 'published' ? <EyeIcon className="h-4 w-4 text-white" /> : <PencilIcon className="h-4 w-4 text-white" />}
+                      </button>
+                      <button
+                        className="p-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-200"
+                        title="Duplicate Post"
+                      >
+                        <DocumentDuplicateIcon className="h-4 w-4 text-white" />
+                      </button>
+                      {post.status === 'draft' && (
+                        <button
+                          className="p-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 transition-all duration-200"
+                          title="Delete Post"
+                        >
+                          <TrashIcon className="h-4 w-4 text-red-400" />
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
+    </div>
+  );
 
-      {/* Filter Options */}
-      {showFilters && (
-        <div className="flex flex-wrap gap-4 p-4 bg-brand-background rounded-lg border border-brand-border">
-          <div>
-            <label className="text-sm text-brand-text-secondary mb-1 block">Platform</label>
-            <select
-              value={platformFilter}
-              onChange={(e) => setPlatformFilter(e.target.value)}
-              className="bg-brand-panel border border-brand-border rounded-md px-3 py-1.5 text-sm text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
-            >
-              <option value="all">All Platforms</option>
-              <option value="facebook">Facebook</option>
-              <option value="instagram">Instagram</option>
-              <option value="twitter">Twitter</option>
-            </select>
-          </div>
-          <div>
-            <label className="text-sm text-brand-text-secondary mb-1 block">Status</label>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-brand-panel border border-brand-border rounded-md px-3 py-1.5 text-sm text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
-            >
-              <option value="all">All Status</option>
-              <option value="draft">Draft</option>
-              <option value="scheduled">Scheduled</option>
-              <option value="published">Published</option>
-              <option value="archived">Archived</option>
-            </select>
-          </div>
-        </div>
-      )}
-
-      {/* Posts Table */}
-      <div className="overflow-x-auto rounded-lg border border-brand-border">
-        <table className="w-full">
-          <thead className="bg-brand-background border-b border-brand-border">
-            <tr>
-              <th className="text-left px-4 py-3 text-xs font-medium text-brand-text-secondary uppercase tracking-wider">
-                Listing
-              </th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-brand-text-secondary uppercase tracking-wider">
-                Platform
-              </th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-brand-text-secondary uppercase tracking-wider">
-                Content
-              </th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-brand-text-secondary uppercase tracking-wider">
-                Status
-              </th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-brand-text-secondary uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('publishedDate')}>
-                Date
-              </th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-brand-text-secondary uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('engagementRate')}>
-                Engagement
-              </th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-brand-text-secondary uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('reach')}>
-                Reach
-              </th>
-              <th className="text-right px-4 py-3 text-xs font-medium text-brand-text-secondary uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-brand-panel divide-y divide-brand-border">
-            {filteredPosts.map((post) => (
-              <tr key={post.id} className="hover:bg-brand-background/50 transition-colors">
-                <td className="px-4 py-3">
-                  <p className="text-sm font-medium text-brand-text-primary line-clamp-1">
-                    {post.listingAddress}
-                  </p>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    {getPlatformIcon(post.platform)}
-                    <span className="text-sm text-brand-text-primary capitalize">{post.platform}</span>
-                  </div>
-                </td>
-                <td className="px-4 py-3 max-w-xs">
-                  <p className="text-sm text-brand-text-primary line-clamp-2">{post.content}</p>
-                  <div className="flex gap-2 mt-1">
-                    {post.hashtags.slice(0, 3).map((tag, idx) => (
-                      <span key={idx} className="text-xs text-brand-primary">#{tag}</span>
-                    ))}
-                  </div>
-                </td>
-                <td className="px-4 py-3">
-                  {getStatusBadge(post.status)}
-                </td>
-                <td className="px-4 py-3 text-sm text-brand-text-secondary">
-                  {formatDate(post.publishedDate || post.scheduledDate)}
-                </td>
-                <td className="px-4 py-3">
-                  {post.status === 'published' ? (
-                    <div className="text-sm">
-                      <p className="font-medium text-brand-text-primary">{post.metrics.engagementRate}%</p>
-                      <p className="text-xs text-brand-text-secondary">
-                        {post.metrics.likes + post.metrics.shares + post.metrics.comments} interactions
+  const renderCardView = () => (
+    <div className="relative group">
+      <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 rounded-3xl blur-xl"></div>
+      <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8">
+        <h3 className="text-2xl font-bold text-white mb-6">My Social Posts</h3>
+        
+        <div className="space-y-4">
+          {sortedPosts.map((post) => (
+            <div key={post.id} className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 hover:bg-white/15 transition-all duration-200">
+              <div className="flex flex-col lg:flex-row lg:items-center gap-6">
+                {/* Left Side - Main Content */}
+                <div className="flex-1 space-y-4">
+                  {/* Header Row */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2">
+                        {getPlatformIcon(post.platform)}
+                        <span className="text-white font-medium capitalize">{post.platform}</span>
+                      </div>
+                      {getStatusBadge(post.status)}
+                    </div>
+                    <div className="text-right">
+                      <p className="text-slate-400 text-sm">
+                        {formatDate(post.publishedDate || post.scheduledDate)}
                       </p>
                     </div>
-                  ) : (
-                    <span className="text-sm text-brand-text-tertiary">-</span>
-                  )}
-                </td>
-                <td className="px-4 py-3">
+                  </div>
+
+                  {/* Property Address */}
+                  <div>
+                    <p className="text-slate-300 text-sm font-medium">Property</p>
+                    <p className="text-white font-semibold">{post.listingAddress}</p>
+                  </div>
+
+                  {/* Content Preview */}
+                  <div>
+                    <p className="text-white text-sm leading-relaxed line-clamp-2 mb-2">{post.content}</p>
+                    {post.hashtags.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {post.hashtags.slice(0, 4).map((tag, idx) => (
+                          <span key={idx} className="text-xs px-2 py-1 bg-blue-500/20 text-blue-400 rounded-full">
+                            #{tag}
+                          </span>
+                        ))}
+                        {post.hashtags.length > 4 && (
+                          <span className="text-xs text-slate-400">+{post.hashtags.length - 4} more</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Right Side - Metrics & Actions */}
+                <div className="lg:w-80 space-y-4">
+                  {/* Performance Metrics */}
                   {post.status === 'published' ? (
-                    <p className="text-sm font-medium text-brand-text-primary">
-                      {post.metrics.reach.toLocaleString()}
-                    </p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-white/5 rounded-lg p-3 text-center">
+                        <p className="text-2xl font-bold text-emerald-400">{post.metrics.engagementRate}%</p>
+                        <p className="text-slate-400 text-xs">Engagement Rate</p>
+                      </div>
+                      <div className="bg-white/5 rounded-lg p-3 text-center">
+                        <p className="text-2xl font-bold text-white">{post.metrics.reach.toLocaleString()}</p>
+                        <p className="text-slate-400 text-xs">Reach</p>
+                      </div>
+                      <div className="bg-white/5 rounded-lg p-3 text-center">
+                        <p className="text-lg font-bold text-blue-400">{post.metrics.likes}</p>
+                        <p className="text-slate-400 text-xs">Likes</p>
+                      </div>
+                      <div className="bg-white/5 rounded-lg p-3 text-center">
+                        <p className="text-lg font-bold text-purple-400">
+                          {post.metrics.likes + post.metrics.shares + post.metrics.comments}
+                        </p>
+                        <p className="text-slate-400 text-xs">Total Interactions</p>
+                      </div>
+                    </div>
                   ) : (
-                    <span className="text-sm text-brand-text-tertiary">-</span>
+                    <div className="bg-white/5 rounded-lg p-4 text-center">
+                      <p className="text-slate-400 text-sm">Performance metrics will appear after publishing</p>
+                    </div>
                   )}
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center justify-end gap-1">
+
+                  {/* Action Buttons */}
+                  <div className="flex items-center justify-center gap-2">
                     <button
                       onClick={() => onEdit(post)}
-                      className="p-1.5 text-brand-text-secondary hover:text-brand-primary transition-colors"
-                      title="Edit Post"
+                      className="p-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-200"
+                      title={post.status === 'published' ? 'View Post' : 'Edit Post'}
                     >
-                      {post.status === 'published' ? <EyeIcon className="h-4 w-4" /> : <PencilIcon className="h-4 w-4" />}
+                      {post.status === 'published' ? <EyeIcon className="h-4 w-4 text-white" /> : <PencilIcon className="h-4 w-4 text-white" />}
                     </button>
                     <button
-                      className="p-1.5 text-brand-text-secondary hover:text-brand-primary transition-colors"
+                      className="p-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-200"
                       title="Duplicate Post"
                     >
-                      <DocumentDuplicateIcon className="h-4 w-4" />
+                      <DocumentDuplicateIcon className="h-4 w-4 text-white" />
                     </button>
                     {post.status === 'draft' && (
                       <button
-                        className="p-1.5 text-brand-text-secondary hover:text-red-600 transition-colors"
+                        className="p-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 transition-all duration-200"
                         title="Delete Post"
                       >
-                        <TrashIcon className="h-4 w-4" />
+                        <TrashIcon className="h-4 w-4 text-red-400" />
                       </button>
                     )}
                   </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
+    </div>
+  );
+
+  return (
+    <>
+      {/* Posts Content - Conditional Rendering */}
+      {viewMode === 'table' ? renderTableView() : renderCardView()}
 
       {/* Empty State */}
-      {filteredPosts.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-brand-text-secondary mb-4">No posts found matching your criteria.</p>
-          <Button variant="primary" onClick={onCompose}>
-            Create Your First Post
-          </Button>
+      {sortedPosts.length === 0 && (
+        <div className="relative group">
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-500/10 to-gray-500/10 rounded-3xl blur-xl"></div>
+          <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-12">
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-6 bg-slate-500/20 rounded-2xl flex items-center justify-center">
+                <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10m0 0V6a2 2 0 00-2-2H9a2 2 0 00-2 2v2m0 0v8a2 2 0 002 2h6a2 2 0 002-2V8m0 0H7m5 5v3" />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-2">No Posts Found</h3>
+              <p className="text-slate-400 text-lg mb-8">
+                Start creating engaging social media content for your listings.
+              </p>
+              <Button variant="gradient" size="lg" onClick={onCompose}>
+                Create Your First Post
+              </Button>
+            </div>
+          </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 

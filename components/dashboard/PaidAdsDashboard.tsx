@@ -1,10 +1,12 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { FaFacebook, FaLinkedin, FaGoogle } from 'react-icons/fa';
-import { ChevronUpIcon, ChevronDownIcon, FunnelIcon, MagnifyingGlassIcon, DocumentDuplicateIcon, PlayIcon, PauseIcon, EyeIcon } from '@heroicons/react/24/outline';
-import { ArrowTrendingUpIcon, ArrowTrendingDownIcon, CurrencyDollarIcon, ChartBarIcon } from '@heroicons/react/24/solid';
+import { ChevronUpIcon, ChevronDownIcon, FunnelIcon, MagnifyingGlassIcon, DocumentDuplicateIcon, PlayIcon, PauseIcon, EyeIcon, ClipboardDocumentIcon } from '@heroicons/react/24/outline';
+import { ArrowTrendingUpIcon, ArrowTrendingDownIcon, CurrencyDollarIcon, ChartBarIcon, PlusIcon } from '@heroicons/react/24/solid';
+import { SparklesIcon } from '@heroicons/react/24/outline';
 import CampaignDetailModal from './CampaignDetailModal';
 import Button from '../shared/Button';
 import PropertySelector from '../shared/PropertySelector';
+import ViewToggle, { ViewMode } from '../shared/ViewToggle';
 import { Listing } from '../../types';
 
 export interface AdCampaign {
@@ -213,6 +215,8 @@ const mockListings: Listing[] = [
   }
 ];
 
+type DisplayMode = ViewMode;
+
 const PaidAdsDashboard: React.FC = () => {
   const [campaigns] = useState<AdCampaign[]>(mockCampaigns);
   const [searchTerm, setSearchTerm] = useState('');
@@ -225,6 +229,24 @@ const PaidAdsDashboard: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
   const [duplicateCampaign, setDuplicateCampaign] = useState<AdCampaign | null>(null);
+  const [displayMode, setDisplayMode] = useState<DisplayMode>(() => {
+    // Default to cards on mobile, allow saved preference on desktop
+    if (typeof window !== 'undefined') {
+      const isMobile = window.innerWidth < 768;
+      if (isMobile) return 'cards';
+      
+      const savedView = localStorage.getItem('paidAdsDisplayMode');
+      return (savedView as DisplayMode) || 'cards';
+    }
+    return 'cards';
+  });
+
+  // Save display preference to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('paidAdsDisplayMode', displayMode);
+    }
+  }, [displayMode]);
 
   const filteredCampaigns = useMemo(() => {
     return campaigns.filter(campaign => {
@@ -285,234 +307,130 @@ const PaidAdsDashboard: React.FC = () => {
 
   const getStatusBadge = (status: AdCampaign['status']) => {
     const styles = {
-      draft: 'bg-gray-100 text-gray-800 border-gray-300',
-      running: 'bg-green-100 text-green-800 border-green-300',
-      completed: 'bg-blue-100 text-blue-800 border-blue-300',
-      paused: 'bg-yellow-100 text-yellow-800 border-yellow-300'
+      draft: 'bg-slate-500/20 text-slate-400 border-slate-500/30',
+      running: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+      completed: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+      paused: 'bg-amber-500/20 text-amber-400 border-amber-500/30'
     };
     return (
-      <span className={`px-2 py-1 text-xs font-medium rounded-full border ${styles[status]}`}>
+      <span className={`px-3 py-1 text-xs font-medium rounded-full border ${styles[status]}`}>
         {status.charAt(0).toUpperCase() + status.slice(1)}
       </span>
     );
   };
 
-  return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-brand-panel border border-brand-border rounded-lg p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-brand-text-secondary">Total Spend</p>
-              <p className="text-2xl font-bold text-brand-text-primary">${overallMetrics.totalSpend.toFixed(2)}</p>
-            </div>
-            <CurrencyDollarIcon className="h-8 w-8 text-brand-primary opacity-50" />
-          </div>
+  // Table rendering for campaigns
+  const renderCampaignsTable = () => (
+    <div className="relative group">
+      <div className="absolute inset-0 bg-gradient-to-r from-slate-500/10 to-gray-500/10 rounded-3xl blur-xl"></div>
+      <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl overflow-hidden">
+        <div className="p-6 border-b border-white/10">
+          <h3 className="text-2xl font-bold text-white">Campaign Performance</h3>
         </div>
-        <div className="bg-brand-panel border border-brand-border rounded-lg p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-brand-text-secondary">Avg. CTR</p>
-              <p className="text-2xl font-bold text-brand-text-primary">{overallMetrics.avgCTR.toFixed(2)}%</p>
-            </div>
-            <ChartBarIcon className="h-8 w-8 text-brand-primary opacity-50" />
-          </div>
-        </div>
-        <div className="bg-brand-panel border border-brand-border rounded-lg p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-brand-text-secondary">Total Conversions</p>
-              <p className="text-2xl font-bold text-brand-text-primary">{overallMetrics.totalConversions}</p>
-            </div>
-            <ArrowTrendingUpIcon className="h-8 w-8 text-green-500 opacity-50" />
-          </div>
-        </div>
-        <div className="bg-brand-panel border border-brand-border rounded-lg p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-brand-text-secondary">Total Impressions</p>
-              <p className="text-2xl font-bold text-brand-text-primary">{overallMetrics.totalImpressions.toLocaleString()}</p>
-            </div>
-            <EyeIcon className="h-8 w-8 text-brand-primary opacity-50" />
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-brand-panel border border-brand-border rounded-lg">
-        <div className="p-6 border-b border-brand-border">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <h2 className="text-xl font-semibold text-brand-text-primary">Active Campaigns</h2>
-            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-              <div className="relative flex-1 sm:flex-none">
-                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-brand-text-tertiary" />
-                <input
-                  type="text"
-                  placeholder="Search campaigns..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 w-full sm:w-64 bg-brand-background border border-brand-border rounded-md text-brand-text-primary placeholder-brand-text-tertiary focus:outline-none focus:ring-2 focus:ring-brand-primary"
-                />
-              </div>
-              <Button
-                variant="secondary"
-                size="md"
-                leftIcon={<FunnelIcon className="h-4 w-4" />}
-                onClick={() => setShowFilters(!showFilters)}
-              >
-                Filters
-              </Button>
-            </div>
-          </div>
-
-          {showFilters && (
-            <div className="mt-4 space-y-4 pt-4 border-t border-brand-border">
-              <div className="flex flex-wrap gap-4">
-                <div>
-                  <label className="text-sm text-brand-text-secondary mb-1 block">Status</label>
-                  <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="bg-brand-background border border-brand-border rounded-md px-3 py-1.5 text-sm text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
-                  >
-                    <option value="all">All Status</option>
-                    <option value="draft">Draft</option>
-                    <option value="running">Running</option>
-                    <option value="completed">Completed</option>
-                    <option value="paused">Paused</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-sm text-brand-text-secondary mb-1 block">Platform</label>
-                  <select
-                    value={platformFilter}
-                    onChange={(e) => setPlatformFilter(e.target.value)}
-                    className="bg-brand-background border border-brand-border rounded-md px-3 py-1.5 text-sm text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
-                  >
-                    <option value="all">All Platforms</option>
-                    <option value="facebook">Facebook</option>
-                    <option value="linkedin">LinkedIn</option>
-                    <option value="google">Google</option>
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label className="text-sm text-brand-text-secondary mb-1 block">Properties</label>
-                <div className="w-full max-w-md">
-                  <PropertySelector
-                    listings={mockListings}
-                    selectedListings={selectedListings}
-                    onSelectionChange={setSelectedListings}
-                    placeholder="Filter by properties..."
-                    size="sm"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
+        
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-brand-background border-b border-brand-border">
+            <thead className="bg-white/5 border-b border-white/10">
               <tr>
-                <th className="text-left px-6 py-3 text-xs font-medium text-brand-text-secondary uppercase tracking-wider">
-                  Listing
+                <th className="text-left px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Listing & Campaign
                 </th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-brand-text-secondary uppercase tracking-wider">
+                <th className="text-left px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider">
                   Platform
                 </th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-brand-text-secondary uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-brand-text-secondary uppercase tracking-wider cursor-pointer select-none"
+                <th className="text-center px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider cursor-pointer select-none"
                     onClick={() => handleSort('ctr')}>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center justify-center gap-1">
                     CTR
                     {sortField === 'ctr' && (sortDirection === 'desc' ? <ChevronDownIcon className="h-3 w-3" /> : <ChevronUpIcon className="h-3 w-3" />)}
                   </div>
                 </th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-brand-text-secondary uppercase tracking-wider cursor-pointer select-none"
+                <th className="text-center px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider cursor-pointer select-none"
                     onClick={() => handleSort('cost')}>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center justify-center gap-1">
                     Cost
                     {sortField === 'cost' && (sortDirection === 'desc' ? <ChevronDownIcon className="h-3 w-3" /> : <ChevronUpIcon className="h-3 w-3" />)}
                   </div>
                 </th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-brand-text-secondary uppercase tracking-wider cursor-pointer select-none"
+                <th className="text-center px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider cursor-pointer select-none"
                     onClick={() => handleSort('conversions')}>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center justify-center gap-1">
                     Conversions
                     {sortField === 'conversions' && (sortDirection === 'desc' ? <ChevronDownIcon className="h-3 w-3" /> : <ChevronUpIcon className="h-3 w-3" />)}
                   </div>
                 </th>
-                <th className="text-right px-6 py-3 text-xs font-medium text-brand-text-secondary uppercase tracking-wider">
+                <th className="text-center px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="text-right px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-brand-border">
+            <tbody className="divide-y divide-white/10">
               {filteredCampaigns.map((campaign) => (
-                <tr key={campaign.id} className="hover:bg-brand-background/50 transition-colors">
+                <tr key={campaign.id} className="hover:bg-white/5 transition-colors duration-200">
                   <td className="px-6 py-4">
                     <div>
-                      <p className="text-sm font-medium text-brand-text-primary">{campaign.listingAddress}</p>
-                      <p className="text-xs text-brand-text-secondary mt-1">{campaign.headline}</p>
+                      <p className="text-white font-semibold">{campaign.listingAddress}</p>
+                      <p className="text-slate-300 text-sm line-clamp-1">{campaign.headline}</p>
+                      <p className="text-slate-400 text-xs">{campaign.objective}</p>
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
                       {getPlatformIcon(campaign.platform)}
-                      <span className="text-sm text-brand-text-primary capitalize">{campaign.platform}</span>
+                      <span className="text-white text-sm capitalize">{campaign.platform}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
-                    {getStatusBadge(campaign.status)}
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-1">
-                      <span className="text-sm font-medium text-brand-text-primary">{campaign.metrics.ctr.toFixed(2)}%</span>
+                  <td className="px-6 py-4 text-center">
+                    <div className="flex items-center justify-center gap-1">
+                      <span className="text-white font-bold">{campaign.metrics.ctr.toFixed(2)}%</span>
                       {campaign.metrics.ctr > 5 ? (
-                        <ArrowTrendingUpIcon className="h-4 w-4 text-green-500" />
+                        <ArrowTrendingUpIcon className="h-4 w-4 text-emerald-400" />
                       ) : campaign.metrics.ctr < 3 ? (
-                        <ArrowTrendingDownIcon className="h-4 w-4 text-red-500" />
+                        <ArrowTrendingDownIcon className="h-4 w-4 text-rose-400" />
                       ) : null}
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-brand-text-primary">
-                    ${campaign.metrics.cost.toFixed(2)}
+                  <td className="px-6 py-4 text-center">
+                    <span className="text-emerald-400 font-bold">${campaign.metrics.cost.toFixed(2)}</span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-brand-text-primary">
-                    {campaign.metrics.conversions}
+                  <td className="px-6 py-4 text-center">
+                    <span className="text-white font-bold">{campaign.metrics.conversions}</span>
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    {getStatusBadge(campaign.status)}
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-end gap-2">
                       <button
                         onClick={() => setSelectedCampaign(campaign)}
-                        className="p-1.5 text-brand-text-secondary hover:text-brand-primary transition-colors"
+                        className="p-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-200"
                         title="View Details"
                       >
-                        <EyeIcon className="h-4 w-4" />
+                        <EyeIcon className="h-4 w-4 text-white" />
                       </button>
                       <button
                         onClick={() => handleDuplicate(campaign)}
-                        className="p-1.5 text-brand-text-secondary hover:text-brand-primary transition-colors"
+                        className="p-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-200"
                         title="Duplicate Campaign"
                       >
-                        <DocumentDuplicateIcon className="h-4 w-4" />
+                        <DocumentDuplicateIcon className="h-4 w-4 text-white" />
                       </button>
                       {campaign.status === 'running' ? (
                         <button
-                          className="p-1.5 text-brand-text-secondary hover:text-yellow-600 transition-colors"
+                          className="p-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-200"
                           title="Pause Campaign"
                         >
-                          <PauseIcon className="h-4 w-4" />
+                          <PauseIcon className="h-4 w-4 text-amber-400" />
                         </button>
                       ) : campaign.status === 'paused' ? (
                         <button
-                          className="p-1.5 text-brand-text-secondary hover:text-green-600 transition-colors"
+                          className="p-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-200"
                           title="Resume Campaign"
                         >
-                          <PlayIcon className="h-4 w-4" />
+                          <PlayIcon className="h-4 w-4 text-emerald-400" />
                         </button>
                       ) : null}
                     </div>
@@ -523,6 +441,236 @@ const PaidAdsDashboard: React.FC = () => {
           </table>
         </div>
       </div>
+    </div>
+  );
+
+  // Card rendering for campaigns
+  const renderCampaignsCards = () => (
+    <div className="relative group">
+      <div className="absolute inset-0 bg-gradient-to-r from-slate-500/10 to-gray-500/10 rounded-3xl blur-xl"></div>
+      <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8">
+        <h3 className="text-2xl font-bold text-white mb-6">Campaign Performance</h3>
+        
+        <div className="space-y-4">
+          {filteredCampaigns.map((campaign) => (
+            <div
+              key={campaign.id}
+              className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 hover:bg-white/15 transition-all duration-200"
+            >
+              <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center space-x-3 mb-3">
+                    <h4 className="text-lg font-semibold text-white">{campaign.headline}</h4>
+                    <span className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium border bg-blue-500/20 text-blue-400 border-blue-500/30">
+                      {getPlatformIcon(campaign.platform)} {campaign.platform.charAt(0).toUpperCase() + campaign.platform.slice(1)}
+                    </span>
+                    {getStatusBadge(campaign.status)}
+                  </div>
+                  
+                  <p className="text-slate-400 text-sm mb-3">{campaign.listingAddress}</p>
+                  <p className="text-slate-300 text-sm line-clamp-3 mb-4">{campaign.body}</p>
+                  
+                  <div className="flex items-center space-x-6 text-sm text-slate-400">
+                    <span>{campaign.objective}</span>
+                    <span>${campaign.budget} budget</span>
+                    <span>{campaign.metrics.ctr.toFixed(2)}% CTR</span>
+                    <span>${campaign.metrics.cost.toFixed(2)} spent</span>
+                    <span>{campaign.metrics.conversions} conversions</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => setSelectedCampaign(campaign)}
+                    className="p-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-200"
+                    title="View Details"
+                  >
+                    <EyeIcon className="h-4 w-4 text-slate-400 hover:text-white" />
+                  </button>
+                  <button
+                    className="p-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-200"
+                    title="Copy campaign"
+                  >
+                    <ClipboardDocumentIcon className="h-4 w-4 text-slate-400 hover:text-white" />
+                  </button>
+                  <Button variant="ghost" size="sm" leftIcon={<DocumentDuplicateIcon className="h-4 w-4" />}>
+                    Duplicate
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="space-y-8">
+      {/* Header with Summary Metrics */}
+      <div className="relative group">
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-3xl blur-xl"></div>
+        <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8">
+            <div>
+              <h2 className="text-3xl font-bold text-white mb-2">Paid Advertising Center</h2>
+              <p className="text-slate-400">Optimize and track your digital advertising campaigns</p>
+            </div>
+            <div className="flex items-center space-x-4">
+              <Button variant="glass" glowColor="emerald" leftIcon={<SparklesIcon className="h-5 w-5" />}>
+                AI Optimize
+              </Button>
+              <Button variant="gradient" leftIcon={<PlusIcon className="h-5 w-5" />}>
+                Create Campaign
+              </Button>
+            </div>
+          </div>
+
+          {/* Summary Metrics Grid */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6">
+              <div className="flex items-center justify-between mb-2">
+                <CurrencyDollarIcon className="h-8 w-8 text-emerald-400" />
+                <span className="text-2xl font-bold text-white">${overallMetrics.totalSpend.toFixed(2)}</span>
+              </div>
+              <p className="text-slate-400 text-sm">Total Spend</p>
+            </div>
+
+            <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6">
+              <div className="flex items-center justify-between mb-2">
+                <ChartBarIcon className="h-8 w-8 text-blue-400" />
+                <span className="text-2xl font-bold text-white">{overallMetrics.avgCTR.toFixed(2)}%</span>
+              </div>
+              <p className="text-slate-400 text-sm">Avg. CTR</p>
+            </div>
+
+            <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6">
+              <div className="flex items-center justify-between mb-2">
+                <ArrowTrendingUpIcon className="h-8 w-8 text-purple-400" />
+                <span className="text-2xl font-bold text-white">{overallMetrics.totalConversions}</span>
+              </div>
+              <p className="text-slate-400 text-sm">Total Conversions</p>
+            </div>
+
+            <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6">
+              <div className="flex items-center justify-between mb-2">
+                <EyeIcon className="h-8 w-8 text-amber-400" />
+                <span className="text-2xl font-bold text-white">{overallMetrics.totalImpressions.toLocaleString()}</span>
+              </div>
+              <p className="text-slate-400 text-sm">Total Impressions</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Filters and View Toggle */}
+      <div className="relative group">
+        <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 rounded-3xl blur-xl"></div>
+        <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-6">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            {/* Search and Filters Toggle */}
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search campaigns..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="bg-white/10 border border-white/20 rounded-lg pl-10 pr-3 py-2 text-white text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <Button
+                variant="glass"
+                size="sm"
+                leftIcon={<FunnelIcon className="h-4 w-4" />}
+                onClick={() => setShowFilters(!showFilters)}
+              >
+                Filters
+              </Button>
+            </div>
+
+            {/* Display Mode Toggle */}
+            <ViewToggle 
+              viewMode={displayMode} 
+              onViewModeChange={setDisplayMode} 
+            />
+          </div>
+
+          {showFilters && (
+            <div className="mt-6 pt-6 border-t border-white/10">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                  <label className="text-sm text-slate-300 mb-2 block">Status</label>
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="draft">Draft</option>
+                    <option value="running">Running</option>
+                    <option value="completed">Completed</option>
+                    <option value="paused">Paused</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-sm text-slate-300 mb-2 block">Platform</label>
+                  <select
+                    value={platformFilter}
+                    onChange={(e) => setPlatformFilter(e.target.value)}
+                    className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="all">All Platforms</option>
+                    <option value="facebook">Facebook</option>
+                    <option value="linkedin">LinkedIn</option>
+                    <option value="google">Google</option>
+                  </select>
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="text-sm text-slate-300 mb-2 block">Properties</label>
+                  <div className="w-full">
+                    <PropertySelector
+                      listings={mockListings}
+                      selectedListings={selectedListings}
+                      onSelectionChange={setSelectedListings}
+                      placeholder="Filter by properties..."
+                      size="sm"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Campaign Content - Conditional Rendering */}
+      {displayMode === 'table' ? renderCampaignsTable() : renderCampaignsCards()}
+
+      {/* Empty State */}
+      {filteredCampaigns.length === 0 && (
+        <div className="relative group">
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-500/10 to-gray-500/10 rounded-3xl blur-xl"></div>
+          <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-12">
+            <div className="text-center">
+              <ChartBarIcon className="h-16 w-16 text-slate-400 mx-auto mb-4" />
+              <p className="text-xl text-white mb-2">No campaigns found</p>
+              <p className="text-slate-400 mb-6">
+                {searchTerm || statusFilter !== 'all' || platformFilter !== 'all' || selectedListings.length < mockListings.length
+                  ? 'Try adjusting your filters or search terms.' 
+                  : 'Start by creating your first advertising campaign.'}
+              </p>
+              <Button 
+                variant="gradient" 
+                leftIcon={<PlusIcon className="h-5 w-5" />}
+              >
+                Create Campaign
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {selectedCampaign && (
         <CampaignDetailModal
@@ -533,43 +681,47 @@ const PaidAdsDashboard: React.FC = () => {
 
       {showDuplicateModal && duplicateCampaign && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black/30" onClick={() => setShowDuplicateModal(false)} />
-          <div className="relative bg-brand-panel rounded-xl shadow-xl max-w-2xl w-full p-6 z-10">
-            <h3 className="text-xl font-bold text-brand-text-primary mb-4">Duplicate Campaign Strategy</h3>
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowDuplicateModal(false)} />
+          <div className="relative bg-white/10 backdrop-blur-lg border border-white/20 rounded-3xl shadow-2xl max-w-2xl w-full p-8 z-10">
+            <h3 className="text-2xl font-bold text-white mb-6">Duplicate Campaign Strategy</h3>
             <div className="mb-6">
-              <p className="text-sm text-brand-text-secondary mb-4">
+              <p className="text-slate-300 mb-4">
                 You're about to duplicate the campaign strategy from:
               </p>
-              <div className="bg-brand-background rounded-lg p-4 mb-4">
-                <p className="font-medium text-brand-text-primary">{duplicateCampaign.listingAddress}</p>
-                <div className="flex items-center gap-4 mt-2 text-sm text-brand-text-secondary">
-                  <span className="flex items-center gap-1">
+              <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 mb-6">
+                <p className="font-semibold text-white text-lg">{duplicateCampaign.listingAddress}</p>
+                <div className="flex items-center gap-6 mt-3 text-sm">
+                  <span className="flex items-center gap-2 text-slate-300">
                     {getPlatformIcon(duplicateCampaign.platform)}
                     <span className="capitalize">{duplicateCampaign.platform}</span>
                   </span>
-                  <span>CTR: {duplicateCampaign.metrics.ctr.toFixed(2)}%</span>
-                  <span>{duplicateCampaign.metrics.conversions} conversions</span>
+                  <span className="text-emerald-400 font-medium">CTR: {duplicateCampaign.metrics.ctr.toFixed(2)}%</span>
+                  <span className="text-slate-300">{duplicateCampaign.metrics.conversions} conversions</span>
+                  <span className="text-slate-300">${duplicateCampaign.metrics.cost.toFixed(2)} spent</span>
                 </div>
               </div>
-              <p className="text-sm text-brand-text-secondary mb-4">
+              <p className="text-slate-300 mb-4">
                 Select which listings you'd like to apply this successful campaign to:
               </p>
-              <div className="space-y-2 max-h-60 overflow-y-auto">
+              <div className="space-y-3 max-h-60 overflow-y-auto">
                 {campaigns
                   .filter(c => c.listingId !== duplicateCampaign.listingId)
                   .map(listing => (
-                    <label key={listing.id} className="flex items-center gap-3 p-3 bg-brand-background rounded-lg hover:bg-brand-card transition-colors cursor-pointer">
-                      <input type="checkbox" className="rounded border-brand-border text-brand-primary focus:ring-brand-primary" />
-                      <span className="text-sm text-brand-text-primary">{listing.listingAddress}</span>
+                    <label key={listing.id} className="flex items-center gap-3 p-4 bg-white/5 rounded-xl hover:bg-white/10 transition-colors cursor-pointer border border-white/10">
+                      <input 
+                        type="checkbox" 
+                        className="rounded border-white/20 bg-white/10 text-blue-500 focus:ring-blue-500 focus:ring-offset-0" 
+                      />
+                      <span className="text-white">{listing.listingAddress}</span>
                     </label>
                   ))}
               </div>
             </div>
             <div className="flex justify-end gap-3">
-              <Button variant="secondary" onClick={() => setShowDuplicateModal(false)}>
+              <Button variant="glass" onClick={() => setShowDuplicateModal(false)}>
                 Cancel
               </Button>
-              <Button variant="primary" onClick={() => {
+              <Button variant="gradient" onClick={() => {
                 alert('Campaign strategy duplicated successfully!');
                 setShowDuplicateModal(false);
               }}>

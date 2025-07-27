@@ -1,13 +1,13 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import * as listingService from '../../services/listingService';
 import { Listing } from '../../types';
 import ListingCard from './ListingCard';
 import Button from '../shared/Button';
-import { PlusIcon, SquaresPlusIcon } from '@heroicons/react/24/solid';
-import { Cog6ToothIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, SquaresPlusIcon, PencilIcon, TrashIcon, BuildingOfficeIcon } from '@heroicons/react/24/solid';
+import { Cog6ToothIcon, MapPinIcon, Squares2X2Icon, TableCellsIcon } from '@heroicons/react/24/outline';
 import { Dialog } from '@headlessui/react';
 import PaidAdsDashboard from './PaidAdsDashboard';
 import SocialPostsDashboard from './SocialPostsDashboard';
@@ -15,6 +15,7 @@ import DescriptionsDashboard from './DescriptionsDashboard';
 import EmailMarketingDashboard from './EmailMarketingDashboard';
 import InteriorDesignDashboard from './InteriorDesignDashboard';
 import PrintMaterialsDashboard from './PrintMaterialsDashboard';
+import SettingsDashboard from './SettingsDashboard';
 import ModernDashboardLayout from '../shared/ModernDashboardLayout';
 
 const NAV_LINKS = [
@@ -27,7 +28,6 @@ const NAV_LINKS = [
   { key: 'interior', label: 'Interior Deco', path: '/dashboard/interior' },
   { key: 'print', label: 'Print Materials', path: '/dashboard/print' },
   { key: 'resources', label: 'Resources', path: '/dashboard/resources' },
-  { key: 'demo', label: 'Enhanced Demo', path: '/dashboard/demo' },
 ];
 
 // Resource cards data
@@ -87,6 +87,8 @@ interface DashboardPageProps {
   section?: string;
 }
 
+type ViewMode = 'cards' | 'table';
+
 // Always use 'Pavano' as the test user's name
 function getFirstName() {
   return 'Pavano';
@@ -95,13 +97,32 @@ function getFirstName() {
 const DashboardPage: React.FC<DashboardPageProps> = ({ section }) => {
   const { user } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [listings, setListings] = useState<Listing[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showContractHelper, setShowContractHelper] = useState(false);
   const [selectedState, setSelectedState] = useState('CA');
   const [contractFields, setContractFields] = useState<Record<string, string | number>>({});
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    // Default to cards on mobile, allow saved preference on desktop
+    if (typeof window !== 'undefined') {
+      const isMobile = window.innerWidth < 768;
+      if (isMobile) return 'cards';
+      
+      const savedView = localStorage.getItem('dashboardViewMode');
+      return (savedView as ViewMode) || 'cards';
+    }
+    return 'cards';
+  });
   const contractTemplate = CONTRACT_TEMPLATES[selectedState];
+
+  // Save view preference to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('dashboardViewMode', viewMode);
+    }
+  }, [viewMode]);
 
   const fetchListings = useCallback(async () => {
     if (!user) return;
@@ -145,12 +166,221 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ section }) => {
       'ads': { title: 'Paid Advertising', subtitle: 'Optimize your digital advertising campaigns' },
       'interior': { title: 'Interior Design', subtitle: 'AI-powered room staging and design tools' },
       'print': { title: 'Print Materials', subtitle: 'Professional flyers and marketing materials' },
-      'resources': { title: 'Agent Resources', subtitle: 'Tools and templates for real estate professionals' }
+      'resources': { title: 'Agent Resources', subtitle: 'Tools and templates for real estate professionals' },
+      'settings': { title: 'Settings', subtitle: 'Manage your account and preferences' }
     };
     return pageMap[section || 'dashboard'] || { title: 'Dashboard', subtitle: 'Your real estate command center' };
   };
 
   const { title, subtitle } = getPageInfo();
+
+  // Helper functions for listings display
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('en-US', { 
+      style: 'currency', 
+      currency: 'USD', 
+      minimumFractionDigits: 0 
+    }).format(price);
+  };
+
+  const getCityState = (address: string) => {
+    return address.split(',').slice(1,3).join(',').trim() || 'N/A';
+  };
+
+  const renderListingsTable = () => (
+    <div className="relative group">
+      <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 rounded-3xl blur-xl"></div>
+      <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl overflow-hidden">
+        <div className="p-6 border-b border-white/10">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-white">Your Active Listings</h2>
+            <div className="flex items-center gap-2">
+              {/* View Mode Toggle */}
+              <div className="flex items-center bg-white/10 rounded-xl p-1">
+                <button
+                  onClick={() => setViewMode('cards')}
+                  className={`p-2 rounded-lg transition-all duration-200 ${
+                    viewMode === 'cards'
+                      ? 'bg-white/20 text-white shadow-lg'
+                      : 'text-slate-400 hover:text-white hover:bg-white/10'
+                  }`}
+                  title="Card View"
+                >
+                  <Squares2X2Icon className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode('table')}
+                  className={`p-2 rounded-lg transition-all duration-200 ${
+                    viewMode === 'table'
+                      ? 'bg-white/20 text-white shadow-lg'
+                      : 'text-slate-400 hover:text-white hover:bg-white/10'
+                  }`}
+                  title="Table View"
+                >
+                  <TableCellsIcon className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-white/5 border-b border-white/10">
+              <tr>
+                <th className="text-left px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Property
+                </th>
+                <th className="text-left px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Location
+                </th>
+                <th className="text-center px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Price
+                </th>
+                <th className="text-center px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Bedrooms
+                </th>
+                <th className="text-center px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Bathrooms
+                </th>
+                <th className="text-center px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Sq Ft
+                </th>
+                <th className="text-center px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="text-right px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/10">
+              {listings.map((listing) => {
+                const primaryImage = listing.images && listing.images.length > 0 ? listing.images[0].url : null;
+                
+                return (
+                  <tr key={listing.id} className="hover:bg-white/5 transition-colors duration-200">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-4">
+                        <div className="flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden">
+                          {primaryImage ? (
+                            <img 
+                              src={primaryImage} 
+                              alt={listing.address} 
+                              className="w-full h-full object-cover" 
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-slate-600 flex items-center justify-center">
+                              <BuildingOfficeIcon className="w-6 h-6 text-slate-400" />
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-white font-semibold">{listing.address.split(',')[0]}</p>
+                          <p className="text-slate-400 text-sm">{listing.propertyType}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <MapPinIcon className="h-4 w-4 text-slate-400" />
+                        <span className="text-slate-300">{getCityState(listing.address)}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <span className="text-emerald-400 font-bold text-lg">{formatPrice(listing.price)}</span>
+                    </td>
+                    <td className="px-6 py-4 text-center text-white font-medium">
+                      {listing.bedrooms}
+                    </td>
+                    <td className="px-6 py-4 text-center text-white font-medium">
+                      {listing.bathrooms}
+                    </td>
+                    <td className="px-6 py-4 text-center text-white font-medium">
+                      {listing.squareFootage?.toLocaleString() || 'N/A'}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full text-xs font-medium">
+                        {listing.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => navigate(`/listings/${listing.id}`)}
+                          className="p-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-200"
+                          title="Manage Listing"
+                        >
+                          <Squares2X2Icon className="h-4 w-4 text-white" />
+                        </button>
+                        <Link
+                          to={`/listings/${listing.id}/edit`}
+                          className="p-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-200"
+                          title="Edit Listing"
+                        >
+                          <PencilIcon className="h-4 w-4 text-white" />
+                        </Link>
+                        <button
+                          onClick={() => handleDeleteListing(listing.id)}
+                          className="p-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 transition-all duration-200"
+                          title="Delete Listing"
+                        >
+                          <TrashIcon className="h-4 w-4 text-red-400" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderListingsCards = () => (
+    <div className="relative group">
+      <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 rounded-3xl blur-xl"></div>
+      <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-white">Your Active Listings</h2>
+          <div className="flex items-center gap-2">
+            {/* View Mode Toggle */}
+            <div className="flex items-center bg-white/10 rounded-xl p-1">
+              <button
+                onClick={() => setViewMode('cards')}
+                className={`p-2 rounded-lg transition-all duration-200 ${
+                  viewMode === 'cards'
+                    ? 'bg-white/20 text-white shadow-lg'
+                    : 'text-slate-400 hover:text-white hover:bg-white/10'
+                }`}
+                title="Card View"
+              >
+                <Squares2X2Icon className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => setViewMode('table')}
+                className={`p-2 rounded-lg transition-all duration-200 ${
+                  viewMode === 'table'
+                    ? 'bg-white/20 text-white shadow-lg'
+                    : 'text-slate-400 hover:text-white hover:bg-white/10'
+                }`}
+                title="Table View"
+              >
+                <TableCellsIcon className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {listings.map(listing => (
+            <ListingCard key={listing.id} listing={listing} onDelete={handleDeleteListing} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <ModernDashboardLayout
@@ -188,20 +418,29 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ section }) => {
             </div>
 
             {/* Your Listings Section */}
-            <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 rounded-3xl blur-xl"></div>
-              <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8">
-                <h2 className="text-2xl font-bold text-white mb-6">Your Active Listings</h2>
-                {isLoading ? (
+            {isLoading ? (
+              <div className="relative group">
+                <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 rounded-3xl blur-xl"></div>
+                <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8">
                   <div className="flex justify-center items-center h-64">
                     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-400"></div>
                   </div>
-                ) : error ? (
+                </div>
+              </div>
+            ) : error ? (
+              <div className="relative group">
+                <div className="absolute inset-0 bg-gradient-to-r from-red-500/10 to-rose-500/10 rounded-3xl blur-xl"></div>
+                <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8">
                   <div className="text-center bg-red-500/10 border border-red-500/20 rounded-2xl p-6">
                     <p className="text-red-400">{error}</p>
                   </div>
-                ) : listings.length === 0 ? (
-                  <div className="text-center py-12">
+                </div>
+              </div>
+            ) : listings.length === 0 ? (
+              <div className="relative group">
+                <div className="absolute inset-0 bg-gradient-to-r from-slate-500/10 to-gray-500/10 rounded-3xl blur-xl"></div>
+                <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-12">
+                  <div className="text-center">
                     <SquaresPlusIcon className="h-16 w-16 text-slate-400 mx-auto mb-4" />
                     <p className="text-xl text-white mb-2">No listings yet.</p>
                     <p className="text-slate-400 mb-6">Get started by creating your first property listing.</p>
@@ -211,15 +450,11 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ section }) => {
                       </Button>
                     </Link>
                   </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {listings.map(listing => (
-                      <ListingCard key={listing.id} listing={listing} onDelete={handleDeleteListing} />
-                    ))}
-                  </div>
-                )}
+                </div>
               </div>
-            </div>
+            ) : (
+              viewMode === 'table' ? renderListingsTable() : renderListingsCards()
+            )}
           </>
         )}
         {section === 'descriptions' && (
@@ -235,22 +470,15 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ section }) => {
           <PrintMaterialsDashboard />
         )}
         {section === 'ads' && (
-          <div className="relative group">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-3xl blur-xl"></div>
-            <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8">
-              <PaidAdsDashboard />
-            </div>
-          </div>
+          <PaidAdsDashboard />
         )}
         {section === 'social' && (
-          <div className="relative group">
-            <div className="absolute inset-0 bg-gradient-to-r from-pink-500/10 to-rose-500/10 rounded-3xl blur-xl"></div>
-            <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8">
-              <SocialPostsDashboard />
-            </div>
-          </div>
+          <SocialPostsDashboard />
         )}
-        {section && section !== 'dashboard' && section !== 'resources' && section !== 'ads' && section !== 'social' && section !== 'descriptions' && section !== 'email' && section !== 'interior' && section !== 'print' && (
+        {section === 'settings' && (
+          <SettingsDashboard />
+        )}
+        {section && section !== 'dashboard' && section !== 'resources' && section !== 'ads' && section !== 'social' && section !== 'descriptions' && section !== 'email' && section !== 'interior' && section !== 'print' && section !== 'settings' && (
           <div className="relative group">
             <div className="absolute inset-0 bg-gradient-to-r from-amber-500/10 to-orange-500/10 rounded-3xl blur-xl"></div>
             <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-12">

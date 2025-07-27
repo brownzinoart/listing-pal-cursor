@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { CalendarIcon, TableCellsIcon, ChartBarIcon, PlusIcon, FunnelIcon } from '@heroicons/react/24/outline';
+import { CalendarIcon, TableCellsIcon, ChartBarIcon, PlusIcon, FunnelIcon, MagnifyingGlassIcon, Squares2X2Icon } from '@heroicons/react/24/outline';
 import { FaFacebook, FaInstagram, FaTwitter } from 'react-icons/fa';
 import Button from '../shared/Button';
 import PropertySelector from '../shared/PropertySelector';
@@ -235,13 +235,20 @@ const SocialPostsDashboard: React.FC = () => {
   const [selectedPost, setSelectedPost] = useState<SocialPost | null>(null);
   const [selectedListings, setSelectedListings] = useState<string[]>(mockListings.map(l => l.id));
   const [showFilters, setShowFilters] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
 
-  // Filter posts based on selected listings
+  // Filter posts based on selected listings and search term
   const filteredPosts = useMemo(() => {
-    return posts.filter(post => 
-      selectedListings.length === 0 || selectedListings.includes(post.listingId)
-    );
-  }, [posts, selectedListings]);
+    return posts.filter(post => {
+      const matchesListing = selectedListings.length === 0 || selectedListings.includes(post.listingId);
+      const matchesSearch = !searchTerm || 
+        post.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        post.listingAddress.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        post.hashtags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+      return matchesListing && matchesSearch;
+    });
+  }, [posts, selectedListings, searchTerm]);
 
   // Calculate overview metrics
   const overviewMetrics = useMemo(() => {
@@ -280,64 +287,21 @@ const SocialPostsDashboard: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        <div className="bg-brand-panel border border-brand-border rounded-lg p-4">
-          <p className="text-sm text-brand-text-secondary">Total Posts</p>
-          <p className="text-2xl font-bold text-brand-text-primary">{overviewMetrics.totalPosts}</p>
-        </div>
-        <div className="bg-brand-panel border border-brand-border rounded-lg p-4">
-          <p className="text-sm text-brand-text-secondary">Published</p>
-          <p className="text-2xl font-bold text-green-500">{overviewMetrics.publishedPosts}</p>
-        </div>
-        <div className="bg-brand-panel border border-brand-border rounded-lg p-4">
-          <p className="text-sm text-brand-text-secondary">Scheduled</p>
-          <p className="text-2xl font-bold text-blue-500">{overviewMetrics.scheduledPosts}</p>
-        </div>
-        <div className="bg-brand-panel border border-brand-border rounded-lg p-4">
-          <p className="text-sm text-brand-text-secondary">Total Reach</p>
-          <p className="text-2xl font-bold text-brand-text-primary">{overviewMetrics.totalReach.toLocaleString()}</p>
-        </div>
-        <div className="bg-brand-panel border border-brand-border rounded-lg p-4">
-          <p className="text-sm text-brand-text-secondary">Avg. Engagement</p>
-          <p className="text-2xl font-bold text-brand-text-primary">{overviewMetrics.avgEngagementRate}%</p>
-        </div>
-      </div>
-
-      {/* Navigation and Actions */}
-      <div className="bg-brand-panel border border-brand-border rounded-lg">
-        <div className="p-4 border-b border-brand-border">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="flex gap-1">
-              {viewTabs.map(tab => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveView(tab.id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-md font-medium transition-colors ${
-                    activeView === tab.id
-                      ? 'bg-brand-primary text-white'
-                      : 'text-brand-text-secondary hover:text-brand-text-primary hover:bg-brand-background'
-                  }`}
-                >
-                  <tab.icon className="h-4 w-4" />
-                  <span className="hidden sm:inline">{tab.label}</span>
-                </button>
-              ))}
+    <div className="space-y-8">
+      {/* Header with Summary Metrics */}
+      <div className="relative group">
+        <div className="absolute inset-0 bg-gradient-to-r from-pink-500/10 to-rose-500/10 rounded-3xl blur-xl"></div>
+        <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8">
+            <div>
+              <h2 className="text-3xl font-bold text-white mb-2">Social Media Center</h2>
+              <p className="text-slate-400">Create and manage social media content across platforms</p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center space-x-4">
               <Button
-                variant="secondary"
-                size="md"
-                leftIcon={<FunnelIcon className="h-4 w-4" />}
-                onClick={() => setShowFilters(!showFilters)}
-              >
-                Filters
-              </Button>
-              <Button
-                variant="primary"
-                size="md"
-                leftIcon={<PlusIcon className="h-4 w-4" />}
+                variant="glass"
+                glowColor="emerald"
+                leftIcon={<PlusIcon className="h-5 w-5" />}
                 onClick={() => setShowComposer(true)}
               >
                 Create Post
@@ -345,10 +309,137 @@ const SocialPostsDashboard: React.FC = () => {
             </div>
           </div>
 
+          {/* Summary Metrics Grid */}
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-6">
+            <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6">
+              <div className="flex items-center justify-between mb-2">
+                <TableCellsIcon className="h-8 w-8 text-blue-400" />
+                <span className="text-2xl font-bold text-white">{overviewMetrics.totalPosts}</span>
+              </div>
+              <p className="text-slate-400 text-sm">Total Posts</p>
+            </div>
+
+            <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-2xl">✅</span>
+                <span className="text-2xl font-bold text-emerald-400">{overviewMetrics.publishedPosts}</span>
+              </div>
+              <p className="text-slate-400 text-sm">Published</p>
+            </div>
+
+            <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6">
+              <div className="flex items-center justify-between mb-2">
+                <CalendarIcon className="h-8 w-8 text-blue-400" />
+                <span className="text-2xl font-bold text-blue-400">{overviewMetrics.scheduledPosts}</span>
+              </div>
+              <p className="text-slate-400 text-sm">Scheduled</p>
+            </div>
+
+            <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-2xl">👥</span>
+                <span className="text-2xl font-bold text-white">{overviewMetrics.totalReach.toLocaleString()}</span>
+              </div>
+              <p className="text-slate-400 text-sm">Total Reach</p>
+            </div>
+
+            <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6">
+              <div className="flex items-center justify-between mb-2">
+                <ChartBarIcon className="h-8 w-8 text-purple-400" />
+                <span className="text-2xl font-bold text-white">{overviewMetrics.avgEngagementRate}%</span>
+              </div>
+              <p className="text-slate-400 text-sm">Avg. Engagement</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* View Toggle and Filters */}
+      <div className="relative group">
+        <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 rounded-3xl blur-xl"></div>
+        <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-6">
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+              {/* View Toggle */}
+              <div className="flex items-center bg-white/10 rounded-xl p-1">
+                {viewTabs.map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveView(tab.id)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      activeView === tab.id
+                        ? 'bg-white/20 text-white shadow-lg'
+                        : 'text-slate-400 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    <tab.icon className="h-4 w-4" />
+                    <span className="hidden sm:inline">{tab.label}</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Right side controls */}
+              <div className="flex items-center gap-4">
+                {/* Search Bar - only show for table view */}
+                {activeView === 'table' && (
+                  <div className="relative">
+                    <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Search posts..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 pr-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
+                    />
+                  </div>
+                )}
+
+                {/* View Mode Toggle - only show for table view */}
+                {activeView === 'table' && (
+                  <div className="flex items-center bg-white/10 rounded-xl p-1">
+                    <button
+                      onClick={() => setViewMode('cards')}
+                      className={`p-2 rounded-lg transition-all duration-200 ${
+                        viewMode === 'cards'
+                          ? 'bg-white/20 text-white shadow-lg'
+                          : 'text-slate-400 hover:text-white hover:bg-white/10'
+                      }`}
+                      title="Card View"
+                    >
+                      <Squares2X2Icon className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => setViewMode('table')}
+                      className={`p-2 rounded-lg transition-all duration-200 ${
+                        viewMode === 'table'
+                          ? 'bg-white/20 text-white shadow-lg'
+                          : 'text-slate-400 hover:text-white hover:bg-white/10'
+                      }`}
+                      title="Table View"
+                    >
+                      <TableCellsIcon className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+
+                {/* Filters */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  leftIcon={<FunnelIcon className="h-4 w-4" />}
+                  onClick={() => setShowFilters(!showFilters)}
+                  className={showFilters ? 'bg-white/20' : ''}
+                >
+                  Filters
+                </Button>
+              </div>
+            </div>
+          </div>
+
           {showFilters && (
-            <div className="mt-4 pt-4 border-t border-brand-border">
+            <div className="mt-6 pt-6 border-t border-white/10">
               <div>
-                <label className="text-sm text-brand-text-secondary mb-1 block">Properties</label>
+                <label className="text-sm text-slate-300 mb-2 block font-medium">Properties</label>
                 <div className="w-full max-w-md">
                   <PropertySelector
                     listings={mockListings}
@@ -362,27 +453,36 @@ const SocialPostsDashboard: React.FC = () => {
             </div>
           )}
         </div>
+      </div>
 
-        {/* Content Area */}
-        <div className="p-6">
-          {activeView === 'calendar' && (
+      {/* Content Area */}
+      {activeView === 'calendar' && (
+        <div className="relative group">
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-500/10 to-gray-500/10 rounded-3xl blur-xl"></div>
+          <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8">
             <SocialPostsCalendar 
               posts={filteredPosts} 
               onPostClick={setSelectedPost}
             />
-          )}
-          {activeView === 'table' && (
-            <SocialPostsTable 
-              posts={filteredPosts}
-              onEdit={setSelectedPost}
-              onCompose={() => setShowComposer(true)}
-            />
-          )}
-          {activeView === 'analytics' && (
-            <SocialPostsAnalytics posts={filteredPosts} />
-          )}
+          </div>
         </div>
-      </div>
+      )}
+      {activeView === 'table' && (
+        <SocialPostsTable 
+          posts={filteredPosts}
+          onEdit={setSelectedPost}
+          onCompose={() => setShowComposer(true)}
+          viewMode={viewMode}
+        />
+      )}
+      {activeView === 'analytics' && (
+        <div className="relative group">
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-500/10 to-gray-500/10 rounded-3xl blur-xl"></div>
+          <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8">
+            <SocialPostsAnalytics posts={filteredPosts} />
+          </div>
+        </div>
+      )}
 
       {/* Post Composer Modal */}
       {showComposer && (

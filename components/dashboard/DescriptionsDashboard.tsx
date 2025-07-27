@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Button from '../shared/Button';
 import { 
@@ -15,7 +15,9 @@ import {
 import { 
   DocumentDuplicateIcon,
   ShareIcon,
-  SparklesIcon
+  SparklesIcon,
+  Squares2X2Icon,
+  TableCellsIcon
 } from '@heroicons/react/24/outline';
 
 // Mock data for description versions
@@ -110,10 +112,30 @@ const mockDescriptionVersions = [
   }
 ];
 
+type DisplayMode = 'cards' | 'table';
+
 const DescriptionsDashboard: React.FC = () => {
   const [selectedView, setSelectedView] = useState<'all' | 'by-listing' | 'performance'>('all');
   const [selectedType, setSelectedType] = useState<'all' | 'primary' | 'alternative'>('all');
   const [selectedStatus, setSelectedStatus] = useState<'all' | 'active' | 'needs_review'>('all');
+  const [displayMode, setDisplayMode] = useState<DisplayMode>(() => {
+    // Default to cards on mobile, allow saved preference on desktop
+    if (typeof window !== 'undefined') {
+      const isMobile = window.innerWidth < 768;
+      if (isMobile) return 'cards';
+      
+      const savedView = localStorage.getItem('descriptionsDisplayMode');
+      return (savedView as DisplayMode) || 'cards';
+    }
+    return 'cards';
+  });
+
+  // Save display preference to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('descriptionsDisplayMode', displayMode);
+    }
+  }, [displayMode]);
 
   // Filter descriptions based on selected filters
   const filteredDescriptions = useMemo(() => {
@@ -177,6 +199,167 @@ const DescriptionsDashboard: React.FC = () => {
         return 'bg-slate-500/20 text-slate-400 border-slate-500/30';
     }
   };
+
+  const getStatusBadge = (status: string) => {
+    const styles = {
+      active: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+      needs_review: 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+    };
+    
+    return (
+      <span className={`px-3 py-1 text-xs font-medium rounded-full border ${styles[status as keyof typeof styles] || 'bg-slate-500/20 text-slate-400 border-slate-500/30'}`}>
+        {status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+      </span>
+    );
+  };
+
+  // Table rendering for descriptions
+  const renderDescriptionsTable = (descriptions: typeof mockDescriptionVersions, title: string) => (
+    <div className="relative group">
+      <div className="absolute inset-0 bg-gradient-to-r from-slate-500/10 to-gray-500/10 rounded-3xl blur-xl"></div>
+      <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl overflow-hidden">
+        <div className="p-6 border-b border-white/10">
+          <h3 className="text-2xl font-bold text-white">{title}</h3>
+        </div>
+        
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-white/5 border-b border-white/10">
+              <tr>
+                <th className="text-left px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Description
+                </th>
+                <th className="text-left px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Property
+                </th>
+                <th className="text-center px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Version
+                </th>
+                <th className="text-center px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Words
+                </th>
+                <th className="text-center px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Conversion
+                </th>
+                <th className="text-center px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="text-right px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/10">
+              {descriptions.map((description) => (
+                <tr key={description.id} className="hover:bg-white/5 transition-colors duration-200">
+                  <td className="px-6 py-4">
+                    <div>
+                      <p className="text-white font-semibold">{description.title}</p>
+                      <p className="text-slate-300 text-sm line-clamp-2">{description.content}</p>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <p className="text-slate-300 text-sm">{description.listingAddress}</p>
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    <span className={`px-2 py-1 rounded-full text-xs border ${getVersionBadgeColor(description.version)}`}>
+                      {description.version}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-center text-white font-medium">
+                    {description.wordCount}
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    <span className="text-emerald-400 font-bold">{description.performance.conversionRate}%</span>
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    {getStatusBadge(description.status)}
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center justify-end gap-2">
+                      <button className="p-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-200">
+                        <EyeIcon className="h-4 w-4 text-white" />
+                      </button>
+                      <button className="p-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-200">
+                        <PencilSquareIcon className="h-4 w-4 text-white" />
+                      </button>
+                      <button className="p-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-200">
+                        <DocumentDuplicateIcon className="h-4 w-4 text-white" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Card rendering for descriptions  
+  const renderDescriptionsCards = (descriptions: typeof mockDescriptionVersions, title: string) => (
+    <div className="relative group">
+      <div className="absolute inset-0 bg-gradient-to-r from-slate-500/10 to-gray-500/10 rounded-3xl blur-xl"></div>
+      <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8">
+        <h3 className="text-2xl font-bold text-white mb-6">{title}</h3>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {descriptions.map((description) => (
+            <div
+              key={description.id}
+              className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 hover:bg-white/15 transition-all duration-200"
+            >
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-lg font-semibold text-white">{description.title}</h4>
+                    {getStatusBadge(description.status)}
+                  </div>
+                  
+                  <p className="text-slate-400 text-sm mb-2">{description.listingAddress}</p>
+                  <p className="text-slate-300 text-sm line-clamp-3 mb-4">{description.content}</p>
+                  
+                  <div className="flex items-center gap-4 text-sm">
+                    <span className={`px-2 py-1 rounded-full text-xs border ${getVersionBadgeColor(description.version)}`}>
+                      {description.version}
+                    </span>
+                    <span className="text-slate-400">{description.wordCount} words</span>
+                    <span className="text-slate-400">{description.type}</span>
+                  </div>
+                </div>
+
+                <div className="lg:w-48 space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-white/5 rounded-lg p-2 text-center">
+                      <p className="text-emerald-400 font-bold">{description.performance.conversionRate}%</p>
+                      <p className="text-slate-400 text-xs">Conversion</p>
+                    </div>
+                    <div className="bg-white/5 rounded-lg p-2 text-center">
+                      <p className="text-white font-bold">{description.performance.views}</p>
+                      <p className="text-slate-400 text-xs">Views</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-center gap-2">
+                    <button className="p-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-200">
+                      <EyeIcon className="h-4 w-4 text-white" />
+                    </button>
+                    <button className="p-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-200">
+                      <PencilSquareIcon className="h-4 w-4 text-white" />
+                    </button>
+                    <button className="p-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-200">
+                      <DocumentDuplicateIcon className="h-4 w-4 text-white" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="space-y-8">
@@ -249,7 +432,7 @@ const DescriptionsDashboard: React.FC = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 rounded-3xl blur-xl"></div>
         <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            {/* View Toggle */}
+            {/* Content View Toggle */}
             <div className="flex items-center bg-white/10 rounded-xl p-1">
               {['all', 'by-listing', 'performance'].map((view) => (
                 <button
@@ -266,9 +449,36 @@ const DescriptionsDashboard: React.FC = () => {
               ))}
             </div>
 
-            {/* Filters */}
-            <div className="flex items-center space-x-4">
-              <select
+            <div className="flex items-center gap-4">
+              {/* Display Mode Toggle */}
+              <div className="flex items-center bg-white/10 rounded-xl p-1">
+                <button
+                  onClick={() => setDisplayMode('cards')}
+                  className={`p-2 rounded-lg transition-all duration-200 ${
+                    displayMode === 'cards'
+                      ? 'bg-white/20 text-white shadow-lg'
+                      : 'text-slate-400 hover:text-white hover:bg-white/10'
+                  }`}
+                  title="Card View"
+                >
+                  <Squares2X2Icon className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => setDisplayMode('table')}
+                  className={`p-2 rounded-lg transition-all duration-200 ${
+                    displayMode === 'table'
+                      ? 'bg-white/20 text-white shadow-lg'
+                      : 'text-slate-400 hover:text-white hover:bg-white/10'
+                  }`}
+                  title="Table View"
+                >
+                  <TableCellsIcon className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Filters */}
+              <div className="flex items-center space-x-4">
+                <select
                 value={selectedType}
                 onChange={(e) => setSelectedType(e.target.value as any)}
                 className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -291,201 +501,33 @@ const DescriptionsDashboard: React.FC = () => {
           </div>
         </div>
       </div>
+      </div>
 
       {/* Main Content Area */}
       {selectedView === 'all' && (
-        <div className="relative group">
-          <div className="absolute inset-0 bg-gradient-to-r from-slate-500/10 to-gray-500/10 rounded-3xl blur-xl"></div>
-          <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8">
-            <h3 className="text-2xl font-bold text-white mb-6">All Descriptions</h3>
-            
-            <div className="space-y-4">
-              {filteredDescriptions.map((description) => (
-                <div
-                  key={description.id}
-                  className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 hover:bg-white/15 transition-all duration-200"
-                >
-                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-3">
-                        {getStatusIcon(description.status)}
-                        <h4 className="text-lg font-semibold text-white">{description.title}</h4>
-                        <span className={`px-2 py-1 rounded-lg text-xs font-medium border ${getVersionBadgeColor(description.version)}`}>
-                          {description.version}
-                        </span>
-                        {description.type === 'primary' && (
-                          <span className="px-2 py-1 rounded-lg text-xs font-medium bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                            Primary
-                          </span>
-                        )}
-                      </div>
-                      
-                      <p className="text-slate-400 text-sm mb-2">{description.listingAddress}</p>
-                      <p className="text-slate-300 text-sm line-clamp-2 mb-3">{description.content}</p>
-                      
-                      <div className="flex items-center space-x-6 text-sm">
-                        <span className="text-slate-400">{description.wordCount} words</span>
-                        <span className="text-slate-400">{description.performance.views} views</span>
-                        <span className="text-emerald-400">{description.performance.inquiries} inquiries</span>
-                        <span className="text-blue-400">{description.performance.conversionRate}% conversion</span>
-                      </div>
-
-                      <div className="flex items-center space-x-2 mt-3">
-                        {description.platforms.map((platform) => (
-                          <span
-                            key={platform}
-                            className="px-2 py-1 bg-slate-700/50 text-slate-300 rounded text-xs"
-                          >
-                            {platform}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                      <Button variant="glass" size="sm" leftIcon={<EyeIcon className="h-4 w-4" />}>
-                        View
-                      </Button>
-                      <Button variant="ghost" size="sm" leftIcon={<PencilSquareIcon className="h-4 w-4" />}>
-                        Edit
-                      </Button>
-                      <Button variant="ghost" size="sm" leftIcon={<DocumentDuplicateIcon className="h-4 w-4" />}>
-                        Duplicate
-                      </Button>
-                      <Button variant="ghost" size="sm" leftIcon={<ShareIcon className="h-4 w-4" />}>
-                        Share
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        displayMode === 'table' ? 
+          renderDescriptionsTable(filteredDescriptions, 'All Descriptions') :
+          renderDescriptionsCards(filteredDescriptions, 'All Descriptions')
       )}
+
 
       {selectedView === 'by-listing' && (
         <div className="space-y-6">
           {Object.entries(descriptionsByListing).map(([address, descriptions]) => (
-            <div key={address} className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-3xl blur-xl"></div>
-              <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-bold text-white">{address}</h3>
-                  <span className="text-slate-400 text-sm">{descriptions.length} versions</span>
-                </div>
-                
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {descriptions.map((description) => (
-                    <div
-                      key={description.id}
-                      className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl p-4"
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center space-x-2">
-                          {getStatusIcon(description.status)}
-                          <span className={`px-2 py-1 rounded text-xs font-medium border ${getVersionBadgeColor(description.version)}`}>
-                            {description.version}
-                          </span>
-                          {description.type === 'primary' && (
-                            <span className="px-2 py-1 rounded text-xs font-medium bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                              Primary
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <p className="text-slate-300 text-sm line-clamp-3 mb-3">{description.content}</p>
-                      
-                      <div className="grid grid-cols-2 gap-4 text-xs">
-                        <div>
-                          <span className="text-slate-400">Views:</span>
-                          <span className="text-white ml-1">{description.performance.views}</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-400">Inquiries:</span>
-                          <span className="text-emerald-400 ml-1">{description.performance.inquiries}</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-400">Conversion:</span>
-                          <span className="text-blue-400 ml-1">{description.performance.conversionRate}%</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-400">Engagement:</span>
-                          <span className="text-purple-400 ml-1">{description.performance.engagement}%</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
+            displayMode === 'table' ? 
+              renderDescriptionsTable(descriptions, address) :
+              renderDescriptionsCards(descriptions, address)
           ))}
         </div>
       )}
 
+
       {selectedView === 'performance' && (
-        <div className="relative group">
-          <div className="absolute inset-0 bg-gradient-to-r from-amber-500/10 to-orange-500/10 rounded-3xl blur-xl"></div>
-          <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8">
-            <h3 className="text-2xl font-bold text-white mb-6">Performance Analysis</h3>
-            
-            <div className="space-y-4">
-              {[...filteredDescriptions]
-                .sort((a, b) => b.performance.leadScore - a.performance.leadScore)
-                .map((description, index) => (
-                  <div
-                    key={description.id}
-                    className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6"
-                  >
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center space-x-4">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                          index === 0 ? 'bg-yellow-500/20 text-yellow-400' :
-                          index === 1 ? 'bg-gray-400/20 text-gray-400' :
-                          index === 2 ? 'bg-amber-600/20 text-amber-600' :
-                          'bg-slate-500/20 text-slate-400'
-                        }`}>
-                          #{index + 1}
-                        </div>
-                        <div>
-                          <h4 className="text-lg font-semibold text-white">{description.title}</h4>
-                          <p className="text-slate-400 text-sm">{description.listingAddress}</p>
-                        </div>
-                        <span className={`px-2 py-1 rounded text-xs font-medium border ${getVersionBadgeColor(description.version)}`}>
-                          {description.version}
-                        </span>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-white">{description.performance.leadScore}</div>
-                        <div className="text-slate-400 text-sm">Lead Score</div>
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                      <div className="bg-white/5 rounded-lg p-3">
-                        <div className="text-lg font-semibold text-white">{description.performance.views}</div>
-                        <div className="text-slate-400 text-sm">Views</div>
-                      </div>
-                      <div className="bg-white/5 rounded-lg p-3">
-                        <div className="text-lg font-semibold text-emerald-400">{description.performance.inquiries}</div>
-                        <div className="text-slate-400 text-sm">Inquiries</div>
-                      </div>
-                      <div className="bg-white/5 rounded-lg p-3">
-                        <div className="text-lg font-semibold text-blue-400">{description.performance.conversionRate}%</div>
-                        <div className="text-slate-400 text-sm">Conversion</div>
-                      </div>
-                      <div className="bg-white/5 rounded-lg p-3">
-                        <div className="text-lg font-semibold text-purple-400">{description.performance.engagement}%</div>
-                        <div className="text-slate-400 text-sm">Engagement</div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-            </div>
-          </div>
-        </div>
+        displayMode === 'table' ? 
+          renderDescriptionsTable(filteredDescriptions.sort((a, b) => b.performance.conversionRate - a.performance.conversionRate), 'Performance Analysis') :
+          renderDescriptionsCards(filteredDescriptions.sort((a, b) => b.performance.conversionRate - a.performance.conversionRate), 'Performance Analysis')
       )}
+
     </div>
   );
 };

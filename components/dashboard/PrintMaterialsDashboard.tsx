@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Button from '../shared/Button';
 import { 
@@ -14,6 +14,7 @@ import {
   HeartIcon as HeartOutlineIcon,
   ShareIcon
 } from '@heroicons/react/24/outline';
+import ViewToggle, { ViewMode } from '../shared/ViewToggle';
 
 // Print material types from existing generator
 type PrintMaterialType = 'flyer' | 'lawnSign' | 'busPanel' | 'postcard' | 'doorHanger';
@@ -112,12 +113,32 @@ const mockListings = [
   { id: 'listing-003', address: '789 Maple Drive, Berkeley', price: 695000 },
 ];
 
+type DisplayMode = ViewMode;
+
 const PrintMaterialsDashboard: React.FC = () => {
   const [viewMode, setViewMode] = useState<'content' | 'generate'>('content');
   const [selectedType, setSelectedType] = useState<PrintMaterialType | 'all'>('all');
   const [selectedListing, setSelectedListing] = useState<string>('');
   const [selectedGenerateType, setSelectedGenerateType] = useState<PrintMaterialType>('flyer');
   const [copySuccessId, setCopySuccessId] = useState<string | null>(null);
+  const [displayMode, setDisplayMode] = useState<DisplayMode>(() => {
+    // Default to cards on mobile, allow saved preference on desktop
+    if (typeof window !== 'undefined') {
+      const isMobile = window.innerWidth < 768;
+      if (isMobile) return 'cards';
+      
+      const savedView = localStorage.getItem('printDisplayMode');
+      return (savedView as DisplayMode) || 'cards';
+    }
+    return 'cards';
+  });
+
+  // Save display preference to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('printDisplayMode', displayMode);
+    }
+  }, [displayMode]);
 
   // Filter content based on selections
   const filteredContent = useMemo(() => {
@@ -193,6 +214,250 @@ const PrintMaterialsDashboard: React.FC = () => {
     };
     return colorMap[type] || 'bg-slate-500/20 text-slate-400 border-slate-500/30';
   };
+
+  // Table rendering for print materials
+  const renderMaterialsTable = () => (
+    <div className="relative group">
+      <div className="absolute inset-0 bg-gradient-to-r from-slate-500/10 to-gray-500/10 rounded-3xl blur-xl"></div>
+      <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl overflow-hidden">
+        <div className="p-6 border-b border-white/10">
+          <h3 className="text-2xl font-bold text-white">My Print Materials</h3>
+        </div>
+        
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-white/5 border-b border-white/10">
+              <tr>
+                <th className="text-left px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Material & Property
+                </th>
+                <th className="text-center px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Type
+                </th>
+                <th className="text-center px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Color & Size
+                </th>
+                <th className="text-center px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Print Count
+                </th>
+                <th className="text-center px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="text-right px-6 py-4 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/10">
+              {filteredContent.map((material) => {
+                const typeInfo = getMaterialTypeInfo(material.type);
+                
+                return (
+                  <tr key={material.id} className="hover:bg-white/5 transition-colors duration-200">
+                    <td className="px-6 py-4">
+                      <div>
+                        <p className="text-white font-semibold">{material.title}</p>
+                        <p className="text-slate-400 text-sm">{material.listingAddress}</p>
+                        <div className="flex items-center gap-1 mt-1">
+                          {material.favorite && (
+                            <HeartOutlineIcon className="h-4 w-4 text-rose-400 fill-current" />
+                          )}
+                          <span className="text-slate-400 text-xs">Created {material.createdDate}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <span className={`px-2 py-1 rounded-lg text-xs font-medium border ${getTypeBadgeColor(material.type)}`}>
+                        {typeInfo.icon} {typeInfo.name}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="text-sm">
+                        <p className="text-white font-medium">{material.colorScheme}</p>
+                        <p className="text-slate-400 text-xs">{material.size}</p>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <span className="text-emerald-400 font-bold text-lg">{material.printCount.toLocaleString()}</span>
+                      {material.lastPrinted && (
+                        <p className="text-slate-400 text-xs">Last: {material.lastPrinted}</p>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      {material.status === 'ready' ? (
+                        <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full text-xs font-medium">
+                          Ready
+                        </span>
+                      ) : (
+                        <span className="px-3 py-1 bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-full text-xs font-medium">
+                          Generating
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => handleToggleFavorite(material.id)}
+                          className="p-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-200"
+                          title={material.favorite ? "Remove from favorites" : "Add to favorites"}
+                        >
+                          <HeartOutlineIcon className={`h-4 w-4 transition-colors ${
+                            material.favorite ? 'text-rose-400 fill-current' : 'text-slate-400 hover:text-rose-400'
+                          }`} />
+                        </button>
+                        {material.status === 'ready' && (
+                          <>
+                            <button
+                              onClick={() => handleCopyDownload(material.downloadUrl, material.id)}
+                              className="p-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-200"
+                              title="Copy download link"
+                            >
+                              {copySuccessId === material.id ? (
+                                <span className="text-emerald-400 text-xs px-1">✓</span>
+                              ) : (
+                                <ClipboardDocumentIcon className="h-4 w-4 text-white" />
+                              )}
+                            </button>
+                            <button className="p-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-200">
+                              <EyeIcon className="h-4 w-4 text-white" />
+                            </button>
+                            <button className="p-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-200">
+                              <PrinterIcon className="h-4 w-4 text-white" />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Card rendering for print materials
+  const renderMaterialsCards = () => (
+    <div className="relative group">
+      <div className="absolute inset-0 bg-gradient-to-r from-slate-500/10 to-gray-500/10 rounded-3xl blur-xl"></div>
+      <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8">
+        <h3 className="text-2xl font-bold text-white mb-6">My Print Materials</h3>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {filteredContent.map((material) => {
+            const typeInfo = getMaterialTypeInfo(material.type);
+            
+            return (
+              <div
+                key={material.id}
+                className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 hover:bg-white/15 transition-all duration-200"
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-3">
+                    <h4 className="text-lg font-semibold text-white">{material.title}</h4>
+                    {material.favorite && (
+                      <HeartOutlineIcon className="h-5 w-5 text-rose-400 fill-current" />
+                    )}
+                    {material.status === 'generating' && (
+                      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-orange-400"></div>
+                    )}
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => handleToggleFavorite(material.id)}
+                      className="p-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-200"
+                      title={material.favorite ? "Remove from favorites" : "Add to favorites"}
+                    >
+                      <HeartOutlineIcon className={`h-4 w-4 transition-colors ${
+                        material.favorite ? 'text-rose-400 fill-current' : 'text-slate-400 hover:text-rose-400'
+                      }`} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Property and Type Info */}
+                <div className="flex items-center space-x-3 mb-4">
+                  <p className="text-slate-400 text-sm">{material.listingAddress}</p>
+                  <span className={`px-2 py-1 rounded-lg text-xs font-medium border ${getTypeBadgeColor(material.type)}`}>
+                    {typeInfo.icon} {typeInfo.name}
+                  </span>
+                </div>
+
+                {/* Material Details */}
+                <div className="bg-white/5 rounded-lg p-4 mb-4">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-slate-400">Color Scheme:</span>
+                      <span className="text-white ml-2">{material.colorScheme}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400">Size:</span>
+                      <span className="text-white ml-2">{material.size}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400">Print Count:</span>
+                      <span className="text-emerald-400 ml-2">{material.printCount.toLocaleString()}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400">Created:</span>
+                      <span className="text-white ml-2">{material.createdDate}</span>
+                    </div>
+                  </div>
+                  {material.lastPrinted && (
+                    <div className="mt-2 text-sm">
+                      <span className="text-slate-400">Last printed:</span>
+                      <span className="text-white ml-2">{material.lastPrinted}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Status and Actions */}
+                {material.status === 'ready' ? (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4 text-sm">
+                      <span className="px-2 py-1 bg-emerald-500/20 text-emerald-400 rounded-lg">Ready to Print</span>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => handleCopyDownload(material.downloadUrl, material.id)}
+                        className="p-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-200"
+                        title="Copy download link"
+                      >
+                        {copySuccessId === material.id ? (
+                          <span className="text-emerald-400 text-xs px-2">Copied!</span>
+                        ) : (
+                          <ClipboardDocumentIcon className="h-4 w-4 text-slate-400 hover:text-white" />
+                        )}
+                      </button>
+                      <Button variant="ghost" size="sm" leftIcon={<EyeIcon className="h-4 w-4" />}>
+                        Preview
+                      </Button>
+                      <Button variant="ghost" size="sm" leftIcon={<PrinterIcon className="h-4 w-4" />}>
+                        Download
+                      </Button>
+                      <Button variant="ghost" size="sm" leftIcon={<DocumentDuplicateIcon className="h-4 w-4" />}>
+                        Duplicate
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-white/5 rounded-lg p-4 text-center">
+                    <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-orange-400 mx-auto mb-2"></div>
+                    <p className="text-slate-300 text-sm">Generating {typeInfo.name.toLowerCase()}...</p>
+                    <p className="text-slate-400 text-xs">This usually takes 1-2 minutes</p>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="space-y-8">
@@ -273,7 +538,13 @@ const PrintMaterialsDashboard: React.FC = () => {
 
             {/* Filters - Only for Content View */}
             {viewMode === 'content' && (
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center gap-4">
+                {/* Display Mode Toggle */}
+                <ViewToggle 
+                  viewMode={displayMode} 
+                  onViewModeChange={setDisplayMode} 
+                />
+
                 <select
                   value={selectedType}
                   onChange={(e) => setSelectedType(e.target.value as any)}
@@ -292,123 +563,16 @@ const PrintMaterialsDashboard: React.FC = () => {
 
       {/* My Print Materials View */}
       {viewMode === 'content' && (
-        <div className="relative group">
-          <div className="absolute inset-0 bg-gradient-to-r from-slate-500/10 to-gray-500/10 rounded-3xl blur-xl"></div>
-          <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8">
-            <h3 className="text-2xl font-bold text-white mb-6">My Print Materials</h3>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {filteredContent.map((material) => {
-                const typeInfo = getMaterialTypeInfo(material.type);
-                
-                return (
-                  <div
-                    key={material.id}
-                    className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 hover:bg-white/15 transition-all duration-200"
-                  >
-                    {/* Header */}
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center space-x-3">
-                        <h4 className="text-lg font-semibold text-white">{material.title}</h4>
-                        {material.favorite && (
-                          <HeartOutlineIcon className="h-5 w-5 text-rose-400 fill-current" />
-                        )}
-                        {material.status === 'generating' && (
-                          <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-orange-400"></div>
-                        )}
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => handleToggleFavorite(material.id)}
-                          className="p-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-200"
-                          title={material.favorite ? "Remove from favorites" : "Add to favorites"}
-                        >
-                          <HeartOutlineIcon className={`h-4 w-4 transition-colors ${
-                            material.favorite ? 'text-rose-400 fill-current' : 'text-slate-400 hover:text-rose-400'
-                          }`} />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Property and Type Info */}
-                    <div className="flex items-center space-x-3 mb-4">
-                      <p className="text-slate-400 text-sm">{material.listingAddress}</p>
-                      <span className={`px-2 py-1 rounded-lg text-xs font-medium border ${getTypeBadgeColor(material.type)}`}>
-                        {typeInfo.icon} {typeInfo.name}
-                      </span>
-                    </div>
-
-                    {/* Material Details */}
-                    <div className="bg-white/5 rounded-lg p-4 mb-4">
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <span className="text-slate-400">Color Scheme:</span>
-                          <span className="text-white ml-2">{material.colorScheme}</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-400">Size:</span>
-                          <span className="text-white ml-2">{material.size}</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-400">Print Count:</span>
-                          <span className="text-emerald-400 ml-2">{material.printCount.toLocaleString()}</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-400">Created:</span>
-                          <span className="text-white ml-2">{material.createdDate}</span>
-                        </div>
-                      </div>
-                      {material.lastPrinted && (
-                        <div className="mt-2 text-sm">
-                          <span className="text-slate-400">Last printed:</span>
-                          <span className="text-white ml-2">{material.lastPrinted}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Status and Actions */}
-                    {material.status === 'ready' ? (
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4 text-sm">
-                          <span className="px-2 py-1 bg-emerald-500/20 text-emerald-400 rounded-lg">Ready to Print</span>
-                        </div>
-
-                        <div className="flex items-center space-x-2">
-                          <button
-                            onClick={() => handleCopyDownload(material.downloadUrl, material.id)}
-                            className="p-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-200"
-                            title="Copy download link"
-                          >
-                            {copySuccessId === material.id ? (
-                              <span className="text-emerald-400 text-xs px-2">Copied!</span>
-                            ) : (
-                              <ClipboardDocumentIcon className="h-4 w-4 text-slate-400 hover:text-white" />
-                            )}
-                          </button>
-                          <Button variant="ghost" size="sm" leftIcon={<EyeIcon className="h-4 w-4" />}>
-                            Preview
-                          </Button>
-                          <Button variant="ghost" size="sm" leftIcon={<PrinterIcon className="h-4 w-4" />}>
-                            Download
-                          </Button>
-                          <Button variant="ghost" size="sm" leftIcon={<DocumentDuplicateIcon className="h-4 w-4" />}>
-                            Duplicate
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="bg-white/5 rounded-lg p-4 text-center">
-                        <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-orange-400 mx-auto mb-2"></div>
-                        <p className="text-slate-300 text-sm">Generating {typeInfo.name.toLowerCase()}...</p>
-                        <p className="text-slate-400 text-xs">This usually takes 1-2 minutes</p>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-              
-              {filteredContent.length === 0 && (
-                <div className="col-span-2 text-center py-12">
+        <>
+          {/* Content - Conditional Rendering */}
+          {displayMode === 'table' ? renderMaterialsTable() : renderMaterialsCards()}
+          
+          {/* Empty State */}
+          {filteredContent.length === 0 && (
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-slate-500/10 to-gray-500/10 rounded-3xl blur-xl"></div>
+              <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-12">
+                <div className="text-center">
                   <DocumentTextIcon className="h-16 w-16 text-slate-400 mx-auto mb-4" />
                   <p className="text-xl text-white mb-2">No print materials found</p>
                   <p className="text-slate-400 mb-6">
@@ -424,10 +588,10 @@ const PrintMaterialsDashboard: React.FC = () => {
                     Generate Print Materials
                   </Button>
                 </div>
-              )}
+              </div>
             </div>
-          </div>
-        </div>
+          )}
+        </>
       )}
 
       {/* Quick Generate View */}
