@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
-import { 
-  FunnelIcon, 
-  MapIcon, 
-  HomeIcon, 
+import React, { useState } from "react";
+import {
+  FunnelIcon,
+  MapIcon,
+  HomeIcon,
   CurrencyDollarIcon,
   CalendarIcon,
-  XMarkIcon
-} from '@heroicons/react/24/outline';
-import { CheckIcon } from '@heroicons/react/24/solid';
-import Button from './Button';
+  XMarkIcon,
+} from "@heroicons/react/24/outline";
+import { CheckIcon } from "@heroicons/react/24/solid";
+import Button from "./Button";
 
 export interface FilterOptions {
   priceRange: {
@@ -42,7 +42,7 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
   availableStatuses,
   availableLocations,
   onClearAll,
-  className = ''
+  className = "",
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -52,44 +52,44 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
 
   const togglePropertyType = (type: string) => {
     const newTypes = filters.propertyTypes.includes(type)
-      ? filters.propertyTypes.filter(t => t !== type)
+      ? filters.propertyTypes.filter((t) => t !== type)
       : [...filters.propertyTypes, type];
     updateFilters({ propertyTypes: newTypes });
   };
 
   const toggleStatus = (status: string) => {
     const newStatuses = filters.statuses.includes(status)
-      ? filters.statuses.filter(s => s !== status)
+      ? filters.statuses.filter((s) => s !== status)
       : [...filters.statuses, status];
     updateFilters({ statuses: newStatuses });
   };
 
   const toggleLocation = (location: string) => {
     const newLocations = filters.locations.includes(location)
-      ? filters.locations.filter(l => l !== location)
+      ? filters.locations.filter((l) => l !== location)
       : [...filters.locations, location];
     updateFilters({ locations: newLocations });
   };
 
   const toggleMarketSegment = (segment: string) => {
     const newSegments = filters.marketSegments.includes(segment)
-      ? filters.marketSegments.filter(s => s !== segment)
+      ? filters.marketSegments.filter((s) => s !== segment)
       : [...filters.marketSegments, segment];
     updateFilters({ marketSegments: newSegments });
   };
 
-  const handlePriceRangeChange = (type: 'min' | 'max', value: string) => {
-    const numValue = value === '' ? null : parseInt(value.replace(/,/g, ''));
+  const handlePriceRangeChange = (type: "min" | "max", value: string) => {
+    const numValue = value === "" ? null : parseInt(value.replace(/,/g, ""));
     updateFilters({
       priceRange: {
         ...filters.priceRange,
-        [type]: numValue
-      }
+        [type]: numValue,
+      },
     });
   };
 
   const formatPrice = (price: number | null) => {
-    return price ? price.toLocaleString() : '';
+    return price ? price.toLocaleString() : "";
   };
 
   const getActiveFilterCount = () => {
@@ -102,21 +102,24 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
     return count;
   };
 
-  const FilterCheckbox: React.FC<{ 
-    checked: boolean; 
-    onChange: () => void; 
+  const FilterCheckbox: React.FC<{
+    checked: boolean;
+    onChange: () => void;
     label: string;
     count?: number;
   }> = ({ checked, onChange, label, count }) => (
     <label className="flex items-center justify-between p-2 hover:bg-brand-background rounded-md cursor-pointer">
       <div className="flex items-center">
-        <div className={`
+        <div
+          className={`
           flex items-center justify-center w-4 h-4 border rounded
-          ${checked 
-            ? 'bg-brand-primary border-brand-primary text-white' 
-            : 'border-brand-border bg-brand-panel'
+          ${
+            checked
+              ? "bg-brand-primary border-brand-primary text-white"
+              : "border-brand-border bg-brand-panel"
           }
-        `}>
+        `}
+        >
           {checked && <CheckIcon className="w-3 h-3" />}
         </div>
         <span className="ml-2 text-sm text-brand-text-primary">{label}</span>
@@ -134,12 +137,16 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
   );
 
   return (
-    <div className={`bg-brand-panel border border-brand-border rounded-lg ${className}`}>
+    <div
+      className={`bg-brand-panel border border-brand-border rounded-lg ${className}`}
+    >
       {/* Filter Header */}
       <div className="flex items-center justify-between p-4 border-b border-brand-border">
         <div className="flex items-center gap-2">
           <FunnelIcon className="h-5 w-5 text-brand-text-secondary" />
-          <span className="font-medium text-brand-text-primary">Advanced Filters</span>
+          <span className="font-medium text-brand-text-primary">
+            Advanced Filters
+          </span>
           {getActiveFilterCount() > 0 && (
             <span className="bg-brand-primary text-white text-xs px-2 py-1 rounded-full">
               {getActiveFilterCount()}
@@ -148,9 +155,9 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
         </div>
         <div className="flex items-center gap-2">
           {getActiveFilterCount() > 0 && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={onClearAll}
               leftIcon={<XMarkIcon className="h-4 w-4" />}
             >
@@ -162,7 +169,7 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
             size="sm"
             onClick={() => setIsExpanded(!isExpanded)}
           >
-            {isExpanded ? 'Collapse' : 'Expand'}
+            {isExpanded ? "Collapse" : "Expand"}
           </Button>
         </div>
       </div>
@@ -174,25 +181,35 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
           <div>
             <div className="flex items-center gap-2 mb-3">
               <CurrencyDollarIcon className="h-4 w-4 text-brand-text-secondary" />
-              <span className="text-sm font-medium text-brand-text-primary">Price Range</span>
+              <span className="text-sm font-medium text-brand-text-primary">
+                Price Range
+              </span>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs text-brand-text-secondary mb-1">Min Price</label>
+                <label className="block text-xs text-brand-text-secondary mb-1">
+                  Min Price
+                </label>
                 <input
                   type="text"
                   value={formatPrice(filters.priceRange.min)}
-                  onChange={(e) => handlePriceRangeChange('min', e.target.value)}
+                  onChange={(e) =>
+                    handlePriceRangeChange("min", e.target.value)
+                  }
                   placeholder="$0"
                   className="w-full px-3 py-2 text-sm border border-brand-border rounded-md bg-brand-panel text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-brand-primary"
                 />
               </div>
               <div>
-                <label className="block text-xs text-brand-text-secondary mb-1">Max Price</label>
+                <label className="block text-xs text-brand-text-secondary mb-1">
+                  Max Price
+                </label>
                 <input
                   type="text"
                   value={formatPrice(filters.priceRange.max)}
-                  onChange={(e) => handlePriceRangeChange('max', e.target.value)}
+                  onChange={(e) =>
+                    handlePriceRangeChange("max", e.target.value)
+                  }
                   placeholder="No limit"
                   className="w-full px-3 py-2 text-sm border border-brand-border rounded-md bg-brand-panel text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-brand-primary"
                 />
@@ -204,10 +221,16 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
           <div>
             <div className="flex items-center gap-2 mb-3">
               <CurrencyDollarIcon className="h-4 w-4 text-brand-text-secondary" />
-              <span className="text-sm font-medium text-brand-text-primary">Market Segments</span>
+              <span className="text-sm font-medium text-brand-text-primary">
+                Market Segments
+              </span>
             </div>
             <div className="space-y-1">
-              {['Luxury ($2M+)', 'Mid-Market ($500K-$2M)', 'Entry-Level (<$500K)'].map((segment) => (
+              {[
+                "Luxury ($2M+)",
+                "Mid-Market ($500K-$2M)",
+                "Entry-Level (<$500K)",
+              ].map((segment) => (
                 <FilterCheckbox
                   key={segment}
                   checked={filters.marketSegments.includes(segment)}
@@ -222,7 +245,9 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
           <div>
             <div className="flex items-center gap-2 mb-3">
               <HomeIcon className="h-4 w-4 text-brand-text-secondary" />
-              <span className="text-sm font-medium text-brand-text-primary">Property Types</span>
+              <span className="text-sm font-medium text-brand-text-primary">
+                Property Types
+              </span>
             </div>
             <div className="space-y-1">
               {availablePropertyTypes.map((type) => (
@@ -230,7 +255,10 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
                   key={type}
                   checked={filters.propertyTypes.includes(type)}
                   onChange={() => togglePropertyType(type)}
-                  label={type.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                  label={type
+                    .split("-")
+                    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(" ")}
                 />
               ))}
             </div>
@@ -240,7 +268,9 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
           <div>
             <div className="flex items-center gap-2 mb-3">
               <CalendarIcon className="h-4 w-4 text-brand-text-secondary" />
-              <span className="text-sm font-medium text-brand-text-primary">Status</span>
+              <span className="text-sm font-medium text-brand-text-primary">
+                Status
+              </span>
             </div>
             <div className="space-y-1">
               {availableStatuses.map((status) => (
@@ -248,7 +278,10 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
                   key={status}
                   checked={filters.statuses.includes(status)}
                   onChange={() => toggleStatus(status)}
-                  label={status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ')}
+                  label={
+                    status.charAt(0).toUpperCase() +
+                    status.slice(1).replace("_", " ")
+                  }
                 />
               ))}
             </div>
@@ -258,7 +291,9 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
           <div>
             <div className="flex items-center gap-2 mb-3">
               <MapIcon className="h-4 w-4 text-brand-text-secondary" />
-              <span className="text-sm font-medium text-brand-text-primary">Locations</span>
+              <span className="text-sm font-medium text-brand-text-primary">
+                Locations
+              </span>
             </div>
             <div className="space-y-1 max-h-40 overflow-y-auto">
               {availableLocations.map((location) => (

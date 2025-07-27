@@ -1,6 +1,15 @@
-import React from 'react';
-import { AreaChart as RechartsAreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import ChartWrapper from './ChartWrapper';
+import React from "react";
+import {
+  AreaChart as RechartsAreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from "recharts";
+import ChartWrapper from "./ChartWrapper";
 
 export interface AreaChartDataPoint {
   [key: string]: string | number;
@@ -24,7 +33,7 @@ interface AreaChartProps {
   loading?: boolean;
   error?: string;
   className?: string;
-  variant?: 'default' | 'elevated' | 'outline' | 'glass' | 'gradient';
+  variant?: "default" | "elevated" | "outline" | "glass" | "gradient";
   showGrid?: boolean;
   showLegend?: boolean;
   showTooltip?: boolean;
@@ -36,17 +45,17 @@ interface AreaChartProps {
 }
 
 const defaultColors = [
-  '#4A55C7', // brand-primary
-  '#38A169', // brand-secondary
-  '#805AD5', // brand-accent
-  '#3182CE', // brand-info
-  '#D69E2E', // brand-warning
-  '#E53E3E', // brand-danger
+  "#4A55C7", // brand-primary
+  "#38A169", // brand-secondary
+  "#805AD5", // brand-accent
+  "#3182CE", // brand-info
+  "#D69E2E", // brand-warning
+  "#E53E3E", // brand-danger
 ];
 
 // Function to adjust color opacity for gradients
 const adjustColorOpacity = (color: string, opacity: number) => {
-  if (color.startsWith('#')) {
+  if (color.startsWith("#")) {
     const hex = color.slice(1);
     const r = parseInt(hex.slice(0, 2), 16);
     const g = parseInt(hex.slice(2, 4), 16);
@@ -59,15 +68,15 @@ const adjustColorOpacity = (color: string, opacity: number) => {
 const AreaChart: React.FC<AreaChartProps> = ({
   data,
   areas = [],
-  xAxisKey = 'date',
+  xAxisKey = "date",
   title,
   subtitle,
   actions,
   height = 300,
   loading = false,
   error,
-  className = '',
-  variant = 'default',
+  className = "",
+  variant = "default",
   showGrid = true,
   showLegend = true,
   showTooltip = true,
@@ -80,18 +89,20 @@ const AreaChart: React.FC<AreaChartProps> = ({
   // Auto-generate areas if not provided
   const autoAreas = React.useMemo(() => {
     if (areas.length > 0) return areas;
-    
+
     if (data.length === 0) return [];
-    
+
     const firstDataPoint = data[0];
-    const keys = Object.keys(firstDataPoint).filter(key => key !== xAxisKey && typeof firstDataPoint[key] === 'number');
-    
+    const keys = Object.keys(firstDataPoint).filter(
+      (key) => key !== xAxisKey && typeof firstDataPoint[key] === "number",
+    );
+
     return keys.map((key, index) => ({
       key,
       color: defaultColors[index % defaultColors.length],
       name: key.charAt(0).toUpperCase() + key.slice(1),
       fillOpacity: 0.3,
-      stackId: stacked ? 'stack' : undefined,
+      stackId: stacked ? "stack" : undefined,
     }));
   }, [data, areas, xAxisKey, stacked]);
 
@@ -99,8 +110,8 @@ const AreaChart: React.FC<AreaChartProps> = ({
   const gradients = autoAreas.map((area, index) => (
     <defs key={`gradient-${index}`}>
       <linearGradient id={`gradient-${area.key}`} x1="0" y1="0" x2="0" y2="1">
-        <stop offset="5%" stopColor={area.color} stopOpacity={0.8}/>
-        <stop offset="95%" stopColor={area.color} stopOpacity={0.1}/>
+        <stop offset="5%" stopColor={area.color} stopOpacity={0.8} />
+        <stop offset="95%" stopColor={area.color} stopOpacity={0.1} />
       </linearGradient>
     </defs>
   ));
@@ -114,15 +125,17 @@ const AreaChart: React.FC<AreaChartProps> = ({
           </p>
           {payload.map((entry: any, index: number) => (
             <div key={index} className="flex items-center gap-2 mb-1">
-              <div 
-                className="w-3 h-3 rounded-full" 
+              <div
+                className="w-3 h-3 rounded-full"
                 style={{ backgroundColor: entry.color }}
               />
               <span className="text-brand-text-secondary text-sm">
                 {entry.name}:
               </span>
               <span className="text-brand-text-primary font-medium">
-                {formatTooltip ? formatTooltip(entry.value, entry.name, entry) : entry.value}
+                {formatTooltip
+                  ? formatTooltip(entry.value, entry.name, entry)
+                  : entry.value}
               </span>
             </div>
           ))}
@@ -144,41 +157,44 @@ const AreaChart: React.FC<AreaChartProps> = ({
       variant={variant}
     >
       <ResponsiveContainer width="100%" height="100%">
-        <RechartsAreaChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+        <RechartsAreaChart
+          data={data}
+          margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+        >
           {gradients}
           {showGrid && (
-            <CartesianGrid 
-              strokeDasharray="3 3" 
+            <CartesianGrid
+              strokeDasharray="3 3"
               stroke="rgba(74, 85, 199, 0.1)"
               horizontal={true}
               vertical={false}
             />
           )}
-          <XAxis 
+          <XAxis
             dataKey={xAxisKey}
             axisLine={false}
             tickLine={false}
-            tick={{ fill: '#A0AEC0', fontSize: 12 }}
+            tick={{ fill: "#A0AEC0", fontSize: 12 }}
             tickFormatter={formatXAxisLabel}
           />
-          <YAxis 
+          <YAxis
             axisLine={false}
             tickLine={false}
-            tick={{ fill: '#A0AEC0', fontSize: 12 }}
+            tick={{ fill: "#A0AEC0", fontSize: 12 }}
             tickFormatter={formatYAxisLabel}
           />
           {showTooltip && <Tooltip content={customTooltip} />}
           {showLegend && (
-            <Legend 
-              wrapperStyle={{ 
-                paddingTop: '20px',
-                fontSize: '12px',
-                color: '#A0AEC0'
+            <Legend
+              wrapperStyle={{
+                paddingTop: "20px",
+                fontSize: "12px",
+                color: "#A0AEC0",
               }}
             />
           )}
           {autoAreas.map((area) => (
-            <Area 
+            <Area
               key={area.key}
               type={smooth ? "monotone" : "linear"}
               dataKey={area.key}
@@ -189,7 +205,12 @@ const AreaChart: React.FC<AreaChartProps> = ({
               fillOpacity={area.fillOpacity || 0.3}
               name={area.name}
               dot={{ fill: area.color, strokeWidth: 0, r: 3 }}
-              activeDot={{ r: 5, stroke: area.color, strokeWidth: 2, fill: '#1A2236' }}
+              activeDot={{
+                r: 5,
+                stroke: area.color,
+                strokeWidth: 2,
+                fill: "#1A2236",
+              }}
             />
           ))}
         </RechartsAreaChart>

@@ -1,7 +1,7 @@
-import React, { ReactNode } from 'react';
-import { useLocation } from 'react-router-dom';
-import CollapsibleSidebar from './CollapsibleSidebar';
-import { useLayout } from '../../contexts/LayoutContext';
+import React, { ReactNode } from "react";
+import { useLocation } from "react-router-dom";
+import CollapsibleSidebar from "./CollapsibleSidebar";
+import { useLayout } from "../../contexts/LayoutContext";
 
 interface ModernDashboardLayoutProps {
   children: ReactNode;
@@ -16,15 +16,16 @@ const ModernDashboardLayout: React.FC<ModernDashboardLayoutProps> = ({
   title,
   subtitle,
   actions,
-  breadcrumbs
+  breadcrumbs,
 }) => {
-  const { isSidebarCollapsed, toggleSidebar, getMainContentMargin } = useLayout();
+  const { isSidebarCollapsed, toggleSidebar, getMainContentMargin } =
+    useLayout();
   const location = useLocation();
 
   // Auto-generate breadcrumbs if not provided
   const defaultBreadcrumbs = [
-    { label: 'Dashboard', href: '/dashboard' },
-    { label: getBreadcrumbFromPath(location.pathname) }
+    { label: "Dashboard", href: "/dashboard" },
+    { label: getBreadcrumbFromPath(location.pathname) },
   ];
 
   const finalBreadcrumbs = breadcrumbs || defaultBreadcrumbs;
@@ -38,10 +39,11 @@ const ModernDashboardLayout: React.FC<ModernDashboardLayoutProps> = ({
       />
 
       {/* Main Content */}
-      <div className={`transition-all duration-300 ${getMainContentMargin()} min-h-full`}>
+      <div
+        className={`transition-all duration-300 ${getMainContentMargin()} min-h-full`}
+      >
         <div className="p-6">
           <div className="w-full space-y-8">
-            
             {/* Header with Breadcrumb */}
             {(title || finalBreadcrumbs) && (
               <div className="flex items-center justify-between mb-8">
@@ -51,11 +53,20 @@ const ModernDashboardLayout: React.FC<ModernDashboardLayoutProps> = ({
                       {finalBreadcrumbs.map((crumb, index) => (
                         <React.Fragment key={index}>
                           {crumb.href ? (
-                            <a href={crumb.href} className="hover:text-blue-400 transition-colors">
+                            <a
+                              href={crumb.href}
+                              className="hover:text-blue-400 transition-colors"
+                            >
                               {crumb.label}
                             </a>
                           ) : (
-                            <span className={index === finalBreadcrumbs.length - 1 ? 'text-blue-400' : ''}>
+                            <span
+                              className={
+                                index === finalBreadcrumbs.length - 1
+                                  ? "text-blue-400"
+                                  : ""
+                              }
+                            >
                               {crumb.label}
                             </span>
                           )}
@@ -75,11 +86,9 @@ const ModernDashboardLayout: React.FC<ModernDashboardLayoutProps> = ({
                     </div>
                   )}
                 </div>
-                
+
                 {actions && (
-                  <div className="flex items-center space-x-4">
-                    {actions}
-                  </div>
+                  <div className="flex items-center space-x-4">{actions}</div>
                 )}
               </div>
             )}
@@ -95,22 +104,25 @@ const ModernDashboardLayout: React.FC<ModernDashboardLayoutProps> = ({
 
 // Helper function to generate breadcrumb from path
 function getBreadcrumbFromPath(path: string): string {
-  const segments = path.split('/').filter(Boolean);
+  const segments = path.split("/").filter(Boolean);
   const lastSegment = segments[segments.length - 1];
-  
+
   const pathMap: { [key: string]: string } = {
-    'dashboard': 'Home',
-    'portfolio': 'Portfolio Analytics',
-    'descriptions': 'Descriptions',
-    'social': 'Social Posts',
-    'email': 'Email',
-    'ads': 'Paid Ads',
-    'interior': 'Interior Deco',
-    'print': 'Print Materials',
-    'resources': 'Resources'
+    dashboard: "Home",
+    portfolio: "Portfolio Analytics",
+    descriptions: "Descriptions",
+    social: "Social Posts",
+    email: "Email",
+    ads: "Paid Ads",
+    interior: "Interior Deco",
+    print: "Print Materials",
+    resources: "Resources",
   };
 
-  return pathMap[lastSegment] || lastSegment.charAt(0).toUpperCase() + lastSegment.slice(1);
+  return (
+    pathMap[lastSegment] ||
+    lastSegment.charAt(0).toUpperCase() + lastSegment.slice(1)
+  );
 }
 
 export default ModernDashboardLayout;
