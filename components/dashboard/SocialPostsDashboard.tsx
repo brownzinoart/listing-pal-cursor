@@ -1,11 +1,13 @@
 import React, { useState, useMemo } from 'react';
-import { CalendarIcon, TableCellsIcon, ChartBarIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { CalendarIcon, TableCellsIcon, ChartBarIcon, PlusIcon, FunnelIcon } from '@heroicons/react/24/outline';
 import { FaFacebook, FaInstagram, FaTwitter } from 'react-icons/fa';
 import Button from '../shared/Button';
+import PropertySelector from '../shared/PropertySelector';
 import SocialPostsCalendar from './SocialPostsCalendar';
 import SocialPostsTable from './SocialPostsTable';
 import SocialPostsAnalytics from './SocialPostsAnalytics';
 import SocialPostComposer from './SocialPostComposer';
+import { Listing } from '../../types';
 
 export interface SocialPost {
   id: string;
@@ -158,15 +160,92 @@ const generatePastDate = (): string => {
 
 type ViewType = 'calendar' | 'table' | 'analytics';
 
+// Mock listings for property filtering
+const mockListings: Listing[] = [
+  {
+    id: 'listing-1',
+    userId: 'user-1',
+    address: '123 Maple Street, Sunnyvale, CA',
+    city: 'Sunnyvale',
+    state: 'CA',
+    zipCode: '94085',
+    bedrooms: 4,
+    bathrooms: 3,
+    squareFootage: 2100,
+    price: 1250000,
+    propertyType: 'single-family',
+    status: 'active',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'listing-2',
+    userId: 'user-1',
+    address: '456 Oak Avenue, Palo Alto, CA',
+    city: 'Palo Alto',
+    state: 'CA',
+    zipCode: '94301',
+    bedrooms: 5,
+    bathrooms: 4,
+    squareFootage: 3200,
+    price: 2850000,
+    propertyType: 'single-family',
+    status: 'active',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'listing-3',
+    userId: 'user-1',
+    address: '789 Pine Lane, Mountain View, CA',
+    city: 'Mountain View',
+    state: 'CA',
+    zipCode: '94041',
+    bedrooms: 3,
+    bathrooms: 2,
+    squareFootage: 1800,
+    price: 1650000,
+    propertyType: 'townhome',
+    status: 'active',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'listing-4',
+    userId: 'user-1',
+    address: '321 Elm Street, San Jose, CA',
+    city: 'San Jose',
+    state: 'CA',
+    zipCode: '95110',
+    bedrooms: 2,
+    bathrooms: 2,
+    squareFootage: 1200,
+    price: 950000,
+    propertyType: 'condo',
+    status: 'sold',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  }
+];
+
 const SocialPostsDashboard: React.FC = () => {
   const [posts] = useState<SocialPost[]>(generateMockPosts());
   const [activeView, setActiveView] = useState<ViewType>('table');
   const [showComposer, setShowComposer] = useState(false);
   const [selectedPost, setSelectedPost] = useState<SocialPost | null>(null);
+  const [selectedListings, setSelectedListings] = useState<string[]>(mockListings.map(l => l.id));
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Filter posts based on selected listings
+  const filteredPosts = useMemo(() => {
+    return posts.filter(post => 
+      selectedListings.length === 0 || selectedListings.includes(post.listingId)
+    );
+  }, [posts, selectedListings]);
 
   // Calculate overview metrics
   const overviewMetrics = useMemo(() => {
-    const publishedPosts = posts.filter(p => p.status === 'published');
+    const publishedPosts = filteredPosts.filter(p => p.status === 'published');
     const totalEngagement = publishedPosts.reduce((sum, post) => 
       sum + post.metrics.likes + post.metrics.shares + post.metrics.comments, 0
     );
@@ -174,17 +253,17 @@ const SocialPostsDashboard: React.FC = () => {
     const avgEngagementRate = publishedPosts.length > 0
       ? publishedPosts.reduce((sum, post) => sum + post.metrics.engagementRate, 0) / publishedPosts.length
       : 0;
-    const scheduledCount = posts.filter(p => p.status === 'scheduled').length;
+    const scheduledCount = filteredPosts.filter(p => p.status === 'scheduled').length;
     
     return {
-      totalPosts: posts.length,
+      totalPosts: filteredPosts.length,
       publishedPosts: publishedPosts.length,
       scheduledPosts: scheduledCount,
       totalEngagement,
       totalReach,
       avgEngagementRate: avgEngagementRate.toFixed(2)
     };
-  }, [posts]);
+  }, [filteredPosts]);
 
   const viewTabs = [
     { id: 'calendar' as ViewType, label: 'Calendar', icon: CalendarIcon },
@@ -246,34 +325,61 @@ const SocialPostsDashboard: React.FC = () => {
                 </button>
               ))}
             </div>
-            <Button
-              variant="primary"
-              size="md"
-              leftIcon={<PlusIcon className="h-4 w-4" />}
-              onClick={() => setShowComposer(true)}
-            >
-              Create Post
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="secondary"
+                size="md"
+                leftIcon={<FunnelIcon className="h-4 w-4" />}
+                onClick={() => setShowFilters(!showFilters)}
+              >
+                Filters
+              </Button>
+              <Button
+                variant="primary"
+                size="md"
+                leftIcon={<PlusIcon className="h-4 w-4" />}
+                onClick={() => setShowComposer(true)}
+              >
+                Create Post
+              </Button>
+            </div>
           </div>
+
+          {showFilters && (
+            <div className="mt-4 pt-4 border-t border-brand-border">
+              <div>
+                <label className="text-sm text-brand-text-secondary mb-1 block">Properties</label>
+                <div className="w-full max-w-md">
+                  <PropertySelector
+                    listings={mockListings}
+                    selectedListings={selectedListings}
+                    onSelectionChange={setSelectedListings}
+                    placeholder="Filter by properties..."
+                    size="sm"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Content Area */}
         <div className="p-6">
           {activeView === 'calendar' && (
             <SocialPostsCalendar 
-              posts={posts} 
+              posts={filteredPosts} 
               onPostClick={setSelectedPost}
             />
           )}
           {activeView === 'table' && (
             <SocialPostsTable 
-              posts={posts}
+              posts={filteredPosts}
               onEdit={setSelectedPost}
               onCompose={() => setShowComposer(true)}
             />
           )}
           {activeView === 'analytics' && (
-            <SocialPostsAnalytics posts={posts} />
+            <SocialPostsAnalytics posts={filteredPosts} />
           )}
         </div>
       </div>

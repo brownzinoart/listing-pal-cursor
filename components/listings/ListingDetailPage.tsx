@@ -4,6 +4,8 @@ import * as listingService from '../../services/listingService';
 import { Listing, AiDesignStyle } from '../../types';
 import { AI_DESIGN_STYLES } from '../../constants';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLayout } from '../../contexts/LayoutContext';
+import CollapsibleSidebar from '../shared/CollapsibleSidebar';
 import AiWorkflowPlaceholder from './AiWorkflowPlaceholder';
 import NeighborhoodInsights from '../shared/NeighborhoodInsights';
 import SocialMediaMockup from './generation/SocialMediaMockups';
@@ -120,6 +122,7 @@ const FormattedKeyFeatures: React.FC<{ content: string }> = ({ content }) => {
 const ListingDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
+  const { isSidebarCollapsed, toggleSidebar, getMainContentMargin } = useLayout();
   const navigate = useNavigate();
   const [listing, setListing] = useState<Listing | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -186,10 +189,16 @@ const ListingDetailPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-brand-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-brand-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-brand-text-primary text-lg">Loading...</p>
+      <div className="min-h-screen w-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 fixed inset-0 overflow-auto">
+        <CollapsibleSidebar
+          isCollapsed={isSidebarCollapsed}
+          onToggleCollapse={toggleSidebar}
+        />
+        <div className={`transition-all duration-300 ${getMainContentMargin()} min-h-full flex items-center justify-center`}>
+          <div className="text-center">
+            <div className="w-12 h-12 border-4 border-blue-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-white text-lg">Loading...</p>
+          </div>
         </div>
       </div>
     );
@@ -197,9 +206,17 @@ const ListingDetailPage: React.FC = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-brand-background flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-brand-danger bg-red-900/20 p-4 rounded-md">{error}</p>
+      <div className="min-h-screen w-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 fixed inset-0 overflow-auto">
+        <CollapsibleSidebar
+          isCollapsed={isSidebarCollapsed}
+          onToggleCollapse={toggleSidebar}
+        />
+        <div className={`transition-all duration-300 ${getMainContentMargin()} min-h-full flex items-center justify-center`}>
+          <div className="text-center">
+            <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-6">
+              <p className="text-red-400">{error}</p>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -207,10 +224,16 @@ const ListingDetailPage: React.FC = () => {
 
   if (!listing) {
     return (
-      <div className="min-h-screen bg-brand-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-brand-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-brand-text-primary text-lg">Loading listing...</p>
+      <div className="min-h-screen w-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 fixed inset-0 overflow-auto">
+        <CollapsibleSidebar
+          isCollapsed={isSidebarCollapsed}
+          onToggleCollapse={toggleSidebar}
+        />
+        <div className={`transition-all duration-300 ${getMainContentMargin()} min-h-full flex items-center justify-center`}>
+          <div className="text-center">
+            <div className="w-12 h-12 border-4 border-blue-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-white text-lg">Loading listing...</p>
+          </div>
         </div>
       </div>
     );
@@ -220,52 +243,57 @@ const ListingDetailPage: React.FC = () => {
   const hasMultipleImages = listing.images && listing.images.length > 1;
 
   return (
-    <div className="min-h-screen bg-brand-background overflow-hidden">
-      {/* Header */}
-      <div className="bg-brand-background border-b border-brand-border overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 overflow-hidden">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center space-x-4 min-w-0 flex-shrink-0">
-              <Button 
-                variant="ghost" 
-                onClick={() => navigate('/dashboard')}
-                leftIcon={<ArrowLeftIcon className="w-4 h-4" />}
-                size="md"
-              >
-                Dashboard
-              </Button>
-            </div>
-            <div className="text-center flex-1 min-w-0 overflow-hidden">
-              <h1 className="text-2xl sm:text-3xl font-bold text-brand-text-primary break-words">
-                {listing.address.split(',')[0]}
-              </h1>
-              <p className="text-brand-text-secondary mt-1 break-words">
-                {listing.address.split(',').slice(1).join(',').trim()}
-              </p>
-            </div>
-            <div className="flex items-center justify-end flex-shrink-0">
-              <Link to={`/listings/${listing.id}/edit`}>
-                <Button 
-                  variant="edit" 
-                  leftIcon={<PencilSquareIcon className="w-4 h-4" />}
-                  size="lg"
-                >
-                  Edit Details
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen w-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 fixed inset-0 overflow-auto">
+      {/* Collapsible Sidebar Navigation */}
+      <CollapsibleSidebar
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={toggleSidebar}
+      />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-hidden">
+      {/* Main Content */}
+      <div className={`transition-all duration-300 ${getMainContentMargin()} min-h-full`}>
+        <div className="p-6">
+          <div className="w-full space-y-8">
+            
+            {/* Header with Breadcrumb */}
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <div className="flex items-center text-slate-400 text-sm mb-2">
+                  <span>Dashboard</span>
+                  <span className="mx-2">›</span>
+                  <span>Listings</span>
+                  <span className="mx-2">›</span>
+                  <span className="text-blue-400">{listing.address.split(',')[0]}</span>
+                </div>
+                <h1 className="text-3xl font-bold text-white">{listing.address.split(',')[0]}</h1>
+                <p className="text-slate-400 mt-2">{listing.address.split(',').slice(1).join(',').trim()}</p>
+              </div>
+              
+              <div className="flex items-center space-x-4">
+                <Link to={`/listings/${listing.id}/edit`}>
+                  <Button 
+                    variant="glass" 
+                    glowColor="blue"
+                    leftIcon={<PencilSquareIcon className="w-4 h-4" />}
+                    size="lg"
+                  >
+                    Edit Details
+                  </Button>
+                </Link>
+              </div>
+            </div>
+
+            {/* Main Content Area */}
         {/* Property Gallery Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 mb-12 overflow-hidden">
+        <div className="relative group mb-12">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-3xl blur-xl"></div>
+          <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 overflow-hidden">
           
           {/* Left Column - Photo Gallery */}
           <div className="space-y-4 flex flex-col overflow-hidden">
             {/* Main Hero Image */}
-            <div className="relative aspect-[4/3] sm:aspect-[16/10] lg:aspect-[4/3] bg-gradient-to-br from-brand-primary to-brand-secondary rounded-lg overflow-hidden">
+            <div className="relative aspect-[4/3] sm:aspect-[16/10] lg:aspect-[4/3] bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-2xl overflow-hidden border border-white/10">
               {primaryImage ? (
                 <>
                   <img 
@@ -275,13 +303,13 @@ const ListingDetailPage: React.FC = () => {
                   />
                   {hasMultipleImages && (
                     <>
-                      <button onClick={prevImage} className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 bg-black/40 text-white p-1.5 sm:p-2 rounded-full hover:bg-black/60 transition-all focus:outline-none">
+                      <button onClick={prevImage} className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 bg-white/10 backdrop-blur-lg border border-white/20 text-white p-1.5 sm:p-2 rounded-full hover:bg-white/20 transition-all focus:outline-none">
                           <ChevronLeftIcon className="h-4 w-4 sm:h-6 sm:w-6" />
                       </button>
-                      <button onClick={nextImage} className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 bg-black/40 text-white p-1.5 sm:p-2 rounded-full hover:bg-black/60 transition-all focus:outline-none">
+                      <button onClick={nextImage} className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 bg-white/10 backdrop-blur-lg border border-white/20 text-white p-1.5 sm:p-2 rounded-full hover:bg-white/20 transition-all focus:outline-none">
                           <ChevronRightIcon className="h-4 w-4 sm:h-6 sm:w-6" />
                       </button>
-                      <div className="absolute bottom-2 sm:bottom-3 left-1/2 -translate-x-1/2 bg-black/50 text-white text-xs px-2.5 py-1 rounded-full">
+                      <div className="absolute bottom-2 sm:bottom-3 left-1/2 -translate-x-1/2 bg-white/10 backdrop-blur-lg border border-white/20 text-white text-xs px-2.5 py-1 rounded-full">
                         {currentImageIndex + 1} / {listing.images.length}
                       </div>
                     </>
@@ -307,10 +335,10 @@ const ListingDetailPage: React.FC = () => {
                 {listing.images && listing.images.map((image, index) => (
                   <div 
                     key={image.id} 
-                    className={`relative flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 bg-brand-card rounded-lg overflow-hidden cursor-pointer transition-all ${
+                    className={`relative flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 bg-white/10 rounded-lg overflow-hidden cursor-pointer transition-all ${
                       index === currentImageIndex 
-                        ? 'ring-2 ring-brand-primary ring-offset-2 ring-offset-brand-background' 
-                        : 'hover:ring-1 hover:ring-brand-secondary'
+                        ? 'ring-2 ring-blue-400 ring-offset-2 ring-offset-slate-900' 
+                        : 'hover:ring-1 hover:ring-white/20'
                     }`}
                     onClick={() => setCurrentImageIndex(index)}
                   >
@@ -320,7 +348,7 @@ const ListingDetailPage: React.FC = () => {
                       className="w-full h-full object-cover"
                     />
                     {index === currentImageIndex && (
-                      <div className="absolute inset-0 bg-brand-primary/20 flex items-center justify-center">
+                      <div className="absolute inset-0 bg-blue-400/20 flex items-center justify-center">
                         <div className="w-2 h-2 bg-white rounded-full"></div>
                       </div>
                     )}
@@ -330,10 +358,10 @@ const ListingDetailPage: React.FC = () => {
                 {/* Add Image Button - Only show when images exist */}
                 {listing.images && listing.images.length > 0 && (
                   <Link to={`/listings/${listing.id}/edit`} className="flex-shrink-0">
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-brand-card border-2 border-dashed border-brand-border rounded-lg flex items-center justify-center cursor-pointer hover:border-brand-primary hover:bg-brand-primary/10 transition-all group">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white/10 border-2 border-dashed border-white/20 rounded-lg flex items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-400/10 transition-all group">
                       <div className="text-center">
-                        <PhotoIcon className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600 group-hover:text-brand-primary mx-auto mb-1" />
-                        <span className="text-xs text-blue-600 group-hover:text-brand-primary">Add</span>
+                        <PhotoIcon className="w-6 h-6 sm:w-8 sm:h-8 text-blue-400 group-hover:text-blue-300 mx-auto mb-1" />
+                        <span className="text-xs text-blue-400 group-hover:text-blue-300">Add</span>
                       </div>
                     </div>
                   </Link>
@@ -344,7 +372,7 @@ const ListingDetailPage: React.FC = () => {
               {(!listing.images || listing.images.length === 0) && (
                 <div className="flex gap-2 sm:gap-3">
                   <Link to={`/listings/${listing.id}/edit`} className="flex-shrink-0">
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-brand-primary/20 border-2 border-dashed border-brand-primary rounded-lg flex items-center justify-center cursor-pointer hover:bg-brand-primary/30 transition-all group">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-blue-500/20 border-2 border-dashed border-blue-400 rounded-lg flex items-center justify-center cursor-pointer hover:bg-blue-500/30 transition-all group">
                       <div className="text-center">
                         <PhotoIcon className="w-6 h-6 sm:w-8 sm:h-8 text-white mx-auto mb-1" />
                         <span className="text-xs text-white font-medium">Add Image</span>
@@ -358,46 +386,46 @@ const ListingDetailPage: React.FC = () => {
 
           {/* Right Column - Property Details */}
           <div className="space-y-6 overflow-hidden">
-            <div className="bg-brand-panel border border-brand-border rounded-lg p-4 sm:p-6 shadow-xl overflow-hidden">
+            <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-4 sm:p-6 overflow-hidden">
               <div className="space-y-4 overflow-hidden">
                 <div className="flex flex-col gap-4 overflow-hidden">
                   <div className="flex-1 min-w-0 overflow-hidden">
-                    <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-brand-text-primary mb-2 break-words">{listing.address.split(',')[0]}</h1>
-                    <p className="text-brand-text-secondary text-sm sm:text-base lg:text-lg break-words">{listing.address.split(',').slice(1).join(',').trim()}</p>
+                    <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-2 break-words">{listing.address.split(',')[0]}</h1>
+                    <p className="text-slate-400 text-sm sm:text-base lg:text-lg break-words">{listing.address.split(',').slice(1).join(',').trim()}</p>
                   </div>
                   <div className="text-left lg:text-right flex-shrink-0">
-                    <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-brand-secondary break-words">
+                    <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-emerald-400 break-words">
                       {formatPrice(listing.price)}
                     </div>
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 py-4 border-t border-b border-brand-border overflow-hidden">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 py-4 border-t border-b border-white/20 overflow-hidden">
                   <div className="text-center min-w-0">
-                    <div className="text-lg sm:text-xl lg:text-2xl font-bold text-brand-text-primary break-words">{listing.bedrooms}</div>
-                    <div className="text-xs sm:text-sm text-brand-text-secondary break-words">Bedrooms</div>
+                    <div className="text-lg sm:text-xl lg:text-2xl font-bold text-white break-words">{listing.bedrooms}</div>
+                    <div className="text-xs sm:text-sm text-slate-400 break-words">Bedrooms</div>
                   </div>
                   <div className="text-center min-w-0">
-                    <div className="text-lg sm:text-xl lg:text-2xl font-bold text-brand-text-primary break-words">{listing.bathrooms}</div>
-                    <div className="text-xs sm:text-sm text-brand-text-secondary break-words">Bathrooms</div>
+                    <div className="text-lg sm:text-xl lg:text-2xl font-bold text-white break-words">{listing.bathrooms}</div>
+                    <div className="text-xs sm:text-sm text-slate-400 break-words">Bathrooms</div>
                   </div>
                   <div className="text-center min-w-0">
-                    <div className="text-lg sm:text-xl lg:text-2xl font-bold text-brand-text-primary break-words">{listing.squareFootage.toLocaleString()}</div>
-                    <div className="text-xs sm:text-sm text-brand-text-secondary break-words">Sq Ft</div>
+                    <div className="text-lg sm:text-xl lg:text-2xl font-bold text-white break-words">{listing.squareFootage.toLocaleString()}</div>
+                    <div className="text-xs sm:text-sm text-slate-400 break-words">Sq Ft</div>
                   </div>
                   <div className="text-center min-w-0">
-                    <div className="text-lg sm:text-xl lg:text-2xl font-bold text-brand-text-primary break-words">{listing.yearBuilt}</div>
-                    <div className="text-xs sm:text-sm text-brand-text-secondary break-words">Built</div>
+                    <div className="text-lg sm:text-xl lg:text-2xl font-bold text-white break-words">{listing.yearBuilt}</div>
+                    <div className="text-xs sm:text-sm text-slate-400 break-words">Built</div>
                   </div>
                 </div>
                 
                 <div className="overflow-hidden">
-                  <h3 className="text-base sm:text-lg font-semibold text-brand-text-primary mb-3 break-words">Key Features</h3>
-                  <div className="text-brand-text-secondary leading-relaxed min-h-[60px] overflow-hidden">
+                  <h3 className="text-base sm:text-lg font-semibold text-white mb-3 break-words">Key Features</h3>
+                  <div className="text-slate-300 leading-relaxed min-h-[60px] overflow-hidden">
                     {listing.keyFeatures && listing.keyFeatures.trim().length > 0 ? (
                       <FormattedKeyFeatures content={listing.keyFeatures} />
                     ) : (
-                      <div className="text-brand-text-tertiary italic text-sm break-words">
+                      <div className="text-slate-500 italic text-sm break-words">
                         No key features listed. Add features to enhance your listing.
                       </div>
                     )}
@@ -406,11 +434,15 @@ const ListingDetailPage: React.FC = () => {
               </div>
             </div>
           </div>
+            </div>
+          </div>
         </div>
 
         {/* Neighborhood Insights Section - Only show if coordinates available */}
         {listing.latitude && listing.longitude ? (
-          <section className="bg-brand-panel border border-brand-border rounded-xl p-6 sm:p-8 shadow-xl overflow-hidden">
+          <div className="relative group mb-12">
+            <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 rounded-3xl blur-xl"></div>
+            <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-6 sm:p-8 overflow-hidden">
             <NeighborhoodInsights
               address={listing.address}
               lat={listing.latitude}
@@ -425,13 +457,17 @@ const ListingDetailPage: React.FC = () => {
                 setListing(prev => prev ? { ...prev, neighborhoodSections: sections } : null);
               }}
             />
-          </section>
+            </div>
+          </div>
         ) : (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-            <h3 className="text-lg font-semibold text-yellow-800 mb-2">Neighborhood Insights Unavailable</h3>
-            <p className="text-yellow-700">
-              To view neighborhood insights, please edit this listing and re-select the address to ensure proper coordinates are set.
-            </p>
+          <div className="relative group mb-12">
+            <div className="absolute inset-0 bg-gradient-to-r from-amber-500/10 to-orange-500/10 rounded-3xl blur-xl"></div>
+            <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-6">
+              <h3 className="text-lg font-semibold text-amber-400 mb-2">Neighborhood Insights Unavailable</h3>
+              <p className="text-slate-300">
+                To view neighborhood insights, please edit this listing and re-select the address to ensure proper coordinates are set.
+              </p>
+            </div>
           </div>
         )}
 
@@ -948,11 +984,16 @@ const ListingDetailPage: React.FC = () => {
             )}
           </div>
         )}
-      </div>
 
-      {/* Content Generation Tools */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <AiWorkflowPlaceholder listing={listing} />
+            {/* Content Generation Tools */}
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-3xl blur-xl"></div>
+              <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8">
+                <AiWorkflowPlaceholder listing={listing} />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

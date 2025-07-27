@@ -18,7 +18,14 @@ import PaidAdGeneratorPage from './components/listings/generation/PaidAdGenerato
 import PrintGeneratorPage from './components/print/PrintGeneratorPage';
 import ContentGenerationProgressPage from './components/listings/ContentGenerationProgressPage';
 import PreselectBatchPage from './components/listings/generation/PreselectBatchPage';
+import PortfolioAnalyticsDashboard from './components/dashboard/PortfolioAnalyticsDashboard';
+import PortfolioAnalyticsDebug from './components/dashboard/PortfolioAnalyticsDebug';
+import PortfolioAnalyticsProgressive from './components/dashboard/PortfolioAnalyticsProgressive';
+import PortfolioAnalyticsNoCharts from './components/dashboard/PortfolioAnalyticsNoCharts';
+import PortfolioAnalyticsMinimal from './components/dashboard/PortfolioAnalyticsMinimal';
+import ModernPortfolioAnalytics from './components/dashboard/ModernPortfolioAnalytics';
 import { OllamaStatusProvider } from './contexts/OllamaStatusContext';
+import { LayoutProvider } from './contexts/LayoutContext';
 
 const PrivateRoute: React.FC<{ children: React.ReactElement }> = ({ children }) => {
   const { user, isLoading } = useAuth();
@@ -45,6 +52,7 @@ const AppRoutes = () => {
           <Route path="/signup" element={<SignupPage />} />
           
           <Route path="/dashboard" element={<PrivateRoute><DashboardPage section="dashboard" /></PrivateRoute>} />
+          <Route path="/dashboard/portfolio" element={<PrivateRoute><ModernPortfolioAnalytics /></PrivateRoute>} />
           <Route path="/dashboard/ads" element={<PrivateRoute><DashboardPage section="ads" /></PrivateRoute>} />
           <Route path="/dashboard/social" element={<PrivateRoute><DashboardPage section="social" /></PrivateRoute>} />
           <Route path="/dashboard/interior" element={<PrivateRoute><DashboardPage section="interior" /></PrivateRoute>} />
@@ -110,7 +118,9 @@ function App() {
   return (
     <AuthProvider>
       <OllamaStatusProvider>
-        <AppRoutes />
+        <LayoutProvider>
+          <AppRoutes />
+        </LayoutProvider>
       </OllamaStatusProvider>
     </AuthProvider>
   );

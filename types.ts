@@ -45,6 +45,9 @@ export interface Listing {
   id: string;
   userId: string;
   address: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
   latitude?: number;
   longitude?: number;
   bedrooms: number;
@@ -56,6 +59,9 @@ export interface Listing {
   images: ListingImage[]; 
   propertyType?: string;
   listingType?: string; // 'sale' or 'rental' 
+  status?: 'active' | 'sold' | 'pending' | 'withdrawn' | 'coming_soon';
+  createdAt?: string;
+  updatedAt?: string;
   generatedDescription?: string;
   generatedFacebookPost?: string;
   generatedInstagramCaption?: string;

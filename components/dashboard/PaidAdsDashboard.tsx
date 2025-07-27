@@ -4,6 +4,8 @@ import { ChevronUpIcon, ChevronDownIcon, FunnelIcon, MagnifyingGlassIcon, Docume
 import { ArrowTrendingUpIcon, ArrowTrendingDownIcon, CurrencyDollarIcon, ChartBarIcon } from '@heroicons/react/24/solid';
 import CampaignDetailModal from './CampaignDetailModal';
 import Button from '../shared/Button';
+import PropertySelector from '../shared/PropertySelector';
+import { Listing } from '../../types';
 
 export interface AdCampaign {
   id: string;
@@ -143,11 +145,80 @@ const mockCampaigns: AdCampaign[] = [
   }
 ];
 
+// Mock listings for property filtering
+const mockListings: Listing[] = [
+  {
+    id: 'listing-1',
+    userId: 'user-1',
+    address: '123 Maple Street, Sunnyvale, CA',
+    city: 'Sunnyvale',
+    state: 'CA',
+    zipCode: '94085',
+    bedrooms: 4,
+    bathrooms: 3,
+    squareFootage: 2100,
+    price: 1250000,
+    propertyType: 'single-family',
+    status: 'active',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'listing-2',
+    userId: 'user-1',
+    address: '456 Oak Avenue, Palo Alto, CA',
+    city: 'Palo Alto',
+    state: 'CA',
+    zipCode: '94301',
+    bedrooms: 5,
+    bathrooms: 4,
+    squareFootage: 3200,
+    price: 2850000,
+    propertyType: 'single-family',
+    status: 'active',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'listing-3',
+    userId: 'user-1',
+    address: '789 Pine Lane, Mountain View, CA',
+    city: 'Mountain View',
+    state: 'CA',
+    zipCode: '94041',
+    bedrooms: 3,
+    bathrooms: 2,
+    squareFootage: 1800,
+    price: 1650000,
+    propertyType: 'townhome',
+    status: 'active',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'listing-4',
+    userId: 'user-1',
+    address: '321 Elm Street, San Jose, CA',
+    city: 'San Jose',
+    state: 'CA',
+    zipCode: '95110',
+    bedrooms: 2,
+    bathrooms: 2,
+    squareFootage: 1200,
+    price: 950000,
+    propertyType: 'condo',
+    status: 'sold',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  }
+];
+
 const PaidAdsDashboard: React.FC = () => {
   const [campaigns] = useState<AdCampaign[]>(mockCampaigns);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [platformFilter, setPlatformFilter] = useState<string>('all');
+  const [selectedListings, setSelectedListings] = useState<string[]>(mockListings.map(l => l.id));
   const [sortField, setSortField] = useState<keyof AdCampaign['metrics'] | 'status'>('ctr');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [selectedCampaign, setSelectedCampaign] = useState<AdCampaign | null>(null);
@@ -161,7 +232,8 @@ const PaidAdsDashboard: React.FC = () => {
                           campaign.headline.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === 'all' || campaign.status === statusFilter;
       const matchesPlatform = platformFilter === 'all' || campaign.platform === platformFilter;
-      return matchesSearch && matchesStatus && matchesPlatform;
+      const matchesListing = selectedListings.length === 0 || selectedListings.includes(campaign.listingId);
+      return matchesSearch && matchesStatus && matchesPlatform && matchesListing;
     }).sort((a, b) => {
       if (sortField === 'status') {
         return sortDirection === 'asc' 
@@ -293,33 +365,47 @@ const PaidAdsDashboard: React.FC = () => {
           </div>
 
           {showFilters && (
-            <div className="mt-4 flex flex-wrap gap-4 pt-4 border-t border-brand-border">
-              <div>
-                <label className="text-sm text-brand-text-secondary mb-1 block">Status</label>
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="bg-brand-background border border-brand-border rounded-md px-3 py-1.5 text-sm text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
-                >
-                  <option value="all">All Status</option>
-                  <option value="draft">Draft</option>
-                  <option value="running">Running</option>
-                  <option value="completed">Completed</option>
-                  <option value="paused">Paused</option>
-                </select>
+            <div className="mt-4 space-y-4 pt-4 border-t border-brand-border">
+              <div className="flex flex-wrap gap-4">
+                <div>
+                  <label className="text-sm text-brand-text-secondary mb-1 block">Status</label>
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="bg-brand-background border border-brand-border rounded-md px-3 py-1.5 text-sm text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="draft">Draft</option>
+                    <option value="running">Running</option>
+                    <option value="completed">Completed</option>
+                    <option value="paused">Paused</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-sm text-brand-text-secondary mb-1 block">Platform</label>
+                  <select
+                    value={platformFilter}
+                    onChange={(e) => setPlatformFilter(e.target.value)}
+                    className="bg-brand-background border border-brand-border rounded-md px-3 py-1.5 text-sm text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                  >
+                    <option value="all">All Platforms</option>
+                    <option value="facebook">Facebook</option>
+                    <option value="linkedin">LinkedIn</option>
+                    <option value="google">Google</option>
+                  </select>
+                </div>
               </div>
               <div>
-                <label className="text-sm text-brand-text-secondary mb-1 block">Platform</label>
-                <select
-                  value={platformFilter}
-                  onChange={(e) => setPlatformFilter(e.target.value)}
-                  className="bg-brand-background border border-brand-border rounded-md px-3 py-1.5 text-sm text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
-                >
-                  <option value="all">All Platforms</option>
-                  <option value="facebook">Facebook</option>
-                  <option value="linkedin">LinkedIn</option>
-                  <option value="google">Google</option>
-                </select>
+                <label className="text-sm text-brand-text-secondary mb-1 block">Properties</label>
+                <div className="w-full max-w-md">
+                  <PropertySelector
+                    listings={mockListings}
+                    selectedListings={selectedListings}
+                    onSelectionChange={setSelectedListings}
+                    placeholder="Filter by properties..."
+                    size="sm"
+                  />
+                </div>
               </div>
             </div>
           )}

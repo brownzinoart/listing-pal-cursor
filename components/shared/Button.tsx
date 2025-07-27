@@ -1,13 +1,14 @@
 import React, { ReactNode, ButtonHTMLAttributes } from 'react';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'tertiary' | 'danger' | 'ghost' | 'edit' | 'custom';
+  variant?: 'primary' | 'secondary' | 'tertiary' | 'danger' | 'ghost' | 'edit' | 'custom' | 'glass' | 'gradient' | 'glow';
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   isLoading?: boolean;
   children: ReactNode;
   leftIcon?: ReactNode;
   rightIcon?: ReactNode;
   fullWidth?: boolean;
+  glowColor?: 'blue' | 'emerald' | 'purple' | 'amber' | 'red';
 }
 
 const Button: React.FC<ButtonProps> = ({
@@ -20,13 +21,23 @@ const Button: React.FC<ButtonProps> = ({
   leftIcon,
   rightIcon,
   fullWidth = false,
+  glowColor = 'blue',
   ...props
 }: ButtonProps) => {
   const baseStyle = `
     font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-brand-background 
     transition-all duration-200 ease-out inline-flex items-center justify-center relative overflow-hidden
-    transform active:scale-95 disabled:transform-none
+    transform hover:scale-105 active:scale-95 disabled:transform-none
   `;
+
+  // Glow color mappings
+  const glowColors = {
+    blue: 'hover:shadow-blue-500/25',
+    emerald: 'hover:shadow-emerald-500/25', 
+    purple: 'hover:shadow-purple-500/25',
+    amber: 'hover:shadow-amber-500/25',
+    red: 'hover:shadow-red-500/25'
+  };
   
   let variantStyle = '';
   switch (variant) {
@@ -82,6 +93,30 @@ const Button: React.FC<ButtonProps> = ({
       break;
     case 'custom':
       variantStyle = '';
+      break;
+    case 'glass':
+      variantStyle = `
+        bg-white/10 backdrop-blur-lg border border-white/20 text-white font-medium
+        hover:bg-white/15 hover:shadow-lg ${glowColors[glowColor]}
+        focus:ring-white focus:ring-opacity-50
+        transform hover:scale-105
+      `;
+      break;
+    case 'gradient':
+      variantStyle = `
+        bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold
+        hover:from-blue-600 hover:to-purple-600 hover:shadow-lg ${glowColors[glowColor]}
+        focus:ring-blue-500 focus:ring-opacity-50
+        transform hover:scale-105 border border-transparent
+      `;
+      break;
+    case 'glow':
+      variantStyle = `
+        bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold
+        hover:from-emerald-600 hover:to-teal-600 hover:shadow-lg ${glowColors[glowColor]}
+        focus:ring-emerald-500 focus:ring-opacity-50
+        transform hover:scale-105 border border-transparent shadow-lg
+      `;
       break;
   }
 

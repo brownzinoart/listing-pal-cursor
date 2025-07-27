@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { FaFacebook, FaInstagram, FaTwitter } from 'react-icons/fa';
-import { PencilIcon, TrashIcon, DuplicateIcon, EyeIcon, MagnifyingGlassIcon, FunnelIcon } from '@heroicons/react/24/outline';
+import { PencilIcon, TrashIcon, DocumentDuplicateIcon, EyeIcon, MagnifyingGlassIcon, FunnelIcon } from '@heroicons/react/24/outline';
 import { SocialPost } from './SocialPostsDashboard';
 import Button from '../shared/Button';
 
@@ -236,7 +236,7 @@ const SocialPostsTable: React.FC<SocialPostsTableProps> = ({ posts, onEdit, onCo
                       className="p-1.5 text-brand-text-secondary hover:text-brand-primary transition-colors"
                       title="Duplicate Post"
                     >
-                      <DuplicateIcon className="h-4 w-4" />
+                      <DocumentDuplicateIcon className="h-4 w-4" />
                     </button>
                     {post.status === 'draft' && (
                       <button

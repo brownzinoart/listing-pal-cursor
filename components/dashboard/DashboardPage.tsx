@@ -11,9 +11,15 @@ import { Cog6ToothIcon } from '@heroicons/react/24/outline';
 import { Dialog } from '@headlessui/react';
 import PaidAdsDashboard from './PaidAdsDashboard';
 import SocialPostsDashboard from './SocialPostsDashboard';
+import DescriptionsDashboard from './DescriptionsDashboard';
+import EmailMarketingDashboard from './EmailMarketingDashboard';
+import InteriorDesignDashboard from './InteriorDesignDashboard';
+import PrintMaterialsDashboard from './PrintMaterialsDashboard';
+import ModernDashboardLayout from '../shared/ModernDashboardLayout';
 
 const NAV_LINKS = [
   { key: 'dashboard', label: 'Home', path: '/dashboard' },
+  { key: 'portfolio', label: 'Portfolio Analytics', path: '/dashboard/portfolio' },
   { key: 'descriptions', label: 'Descriptions', path: '/dashboard/descriptions' },
   { key: 'social', label: 'Social Posts', path: '/dashboard/social' },
   { key: 'email', label: 'Email', path: '/dashboard/email' },
@@ -21,6 +27,7 @@ const NAV_LINKS = [
   { key: 'interior', label: 'Interior Deco', path: '/dashboard/interior' },
   { key: 'print', label: 'Print Materials', path: '/dashboard/print' },
   { key: 'resources', label: 'Resources', path: '/dashboard/resources' },
+  { key: 'demo', label: 'Enhanced Demo', path: '/dashboard/demo' },
 ];
 
 // Resource cards data
@@ -91,8 +98,6 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ section }) => {
   const [listings, setListings] = useState<Listing[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
   const [showContractHelper, setShowContractHelper] = useState(false);
   const [selectedState, setSelectedState] = useState('CA');
   const [contractFields, setContractFields] = useState<Record<string, string | number>>({});
@@ -130,175 +135,179 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ section }) => {
     }
   };
 
-  // Sidebar navigation
-  const Sidebar = () => (
-    <aside className={`fixed z-30 inset-y-0 left-0 w-64 transform transition-transform duration-200 ease-in-out
-      ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-      md:relative md:translate-x-0 md:flex md:flex-col md:w-64 md:min-h-screen`}
-    >
-      <div className="flex items-center justify-between px-6 py-4 md:hidden">
-        <span className="font-bold text-lg text-brand-text-primary">Menu</span>
-        <button onClick={() => setSidebarOpen(false)} className="text-brand-text-secondary hover:text-brand-text-primary focus:outline-none">✕</button>
-      </div>
-      <nav className="flex flex-col gap-1 p-4 flex-1">
-        {NAV_LINKS.map(link => (
-          <Link
-            key={link.key}
-            to={link.path}
-            className={`block px-4 py-2 rounded-md font-medium transition-all duration-200
-              ${location.pathname === link.path
-                ? 'bg-brand-primary text-white font-semibold shadow-md'
-                : 'text-brand-text-secondary hover:text-brand-text-primary hover:bg-brand-panel'}`}
-            onClick={() => setSidebarOpen(false)}
-          >
-            {link.label}
-          </Link>
-        ))}
-      </nav>
-      {/* Avatar and Settings at the bottom */}
-      <div className="p-4 border-t border-brand-border flex flex-col items-center">
-        <div className="w-14 h-14 rounded-full bg-brand-panel border border-brand-border flex items-center justify-center text-2xl font-bold text-brand-text-primary select-none mb-2">
-          P
-        </div>
-        <div className="relative w-full flex flex-col items-center">
-          <button
-            className="flex items-center px-3 py-2 rounded-md border border-brand-border text-brand-text-secondary hover:text-brand-text-primary hover:bg-brand-panel focus:outline-none w-full justify-center gap-2"
-            onClick={() => setShowSettings(s => !s)}
-            type="button"
-            aria-label="Open settings menu"
-          >
-            <Cog6ToothIcon className="w-5 h-5 mr-1" />
-            <span>Settings</span>
-            <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
-          </button>
-          {showSettings && (
-            <div className="absolute bottom-12 left-1/2 -translate-x-1/2 w-52 bg-gray-900 text-white border border-brand-border rounded-md shadow-lg z-50">
-              <Link to="/account" className="block px-4 py-2 hover:bg-gray-800">Account Details</Link>
-              <Link to="/subscription" className="block px-4 py-2 hover:bg-gray-800">Subscription</Link>
-              <Link to="/settings" className="block px-4 py-2 hover:bg-gray-800">Settings</Link>
-            </div>
-          )}
-        </div>
-      </div>
-    </aside>
-  );
+  // Get page title and subtitle based on section
+  const getPageInfo = () => {
+    const pageMap: { [key: string]: { title: string; subtitle: string } } = {
+      'dashboard': { title: 'Dashboard Home', subtitle: 'Manage your property listings and business' },
+      'descriptions': { title: 'Listing Descriptions', subtitle: 'AI-powered property descriptions and content' },
+      'social': { title: 'Social Media Posts', subtitle: 'Create engaging social content for your listings' },
+      'email': { title: 'Email Marketing', subtitle: 'Professional email templates and campaigns' },
+      'ads': { title: 'Paid Advertising', subtitle: 'Optimize your digital advertising campaigns' },
+      'interior': { title: 'Interior Design', subtitle: 'AI-powered room staging and design tools' },
+      'print': { title: 'Print Materials', subtitle: 'Professional flyers and marketing materials' },
+      'resources': { title: 'Agent Resources', subtitle: 'Tools and templates for real estate professionals' }
+    };
+    return pageMap[section || 'dashboard'] || { title: 'Dashboard', subtitle: 'Your real estate command center' };
+  };
+
+  const { title, subtitle } = getPageInfo();
 
   return (
-    <div className="flex min-h-screen">
-      {/* Sidebar for desktop */}
-      <div className="hidden md:block">
-        <Sidebar />
-      </div>
-      {/* Sidebar overlay for mobile */}
-      {sidebarOpen && (
-        <div className="fixed inset-0 z-20 bg-black bg-opacity-20 md:hidden" onClick={() => setSidebarOpen(false)} />
-      )}
-      {/* Sidebar slide-in for mobile */}
-      <div className="md:hidden">
-        <Sidebar />
-      </div>
-      {/* Main content */}
-      <main className="flex-1 p-6 md:p-10">
-        {/* Mobile menu button */}
-        <button
-          className="md:hidden mb-4 px-3 py-2 rounded-md border border-brand-border shadow"
-          onClick={() => setSidebarOpen(true)}
-        >
-          Menu
-        </button>
+    <ModernDashboardLayout
+      title={title}
+      subtitle={subtitle}
+    >
         {(!section || section === 'dashboard') && (
           <>
-            <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-8 gap-4">
-              <div>
-                {/* Personalized Greeting */}
-                <h1 className="text-3xl font-bold text-brand-text-primary">
-                  {(() => {
-                    const hour = new Date().getHours();
-                    let greeting = 'Welcome Back';
-                    if (hour < 12) greeting = 'Good Morning';
-                    else if (hour < 18) greeting = 'Good Afternoon';
-                    else greeting = 'Good Evening';
-                    return `${greeting}, Pavano`;
-                  })()}
-                </h1>
-                <p className="text-brand-text-secondary mt-1">Manage your property listings</p>
+            {/* Personalized Welcome Section */}
+            <div className="relative group mb-12">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-3xl blur-xl"></div>
+              <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8">
+                <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                  <div>
+                    {/* Personalized Greeting */}
+                    <h1 className="text-3xl font-bold text-white">
+                      {(() => {
+                        const hour = new Date().getHours();
+                        let greeting = 'Welcome Back';
+                        if (hour < 12) greeting = 'Good Morning';
+                        else if (hour < 18) greeting = 'Good Afternoon';
+                        else greeting = 'Good Evening';
+                        return `${greeting}, Pavano`;
+                      })()}
+                    </h1>
+                    <p className="text-slate-400 mt-2">Manage your property listings and grow your business</p>
+                  </div>
+                  <Link to="/listings/new">
+                    <Button variant="glass" glowColor="emerald" leftIcon={<PlusIcon className="h-5 w-5"/>} className="w-full sm:w-auto">
+                      New Listing
+                    </Button>
+                  </Link>
+                </div>
               </div>
-              <Link to="/listings/new">
-                <Button variant="primary" leftIcon={<PlusIcon className="h-5 w-5"/>} className="w-full sm:w-auto">
-                  New Listing
-                </Button>
-              </Link>
             </div>
-            <h2 className="text-xl font-semibold text-brand-text-primary mb-4">Your Listings</h2>
-            {isLoading ? (
-              <div className="flex justify-center items-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-primary"></div>
+
+            {/* Your Listings Section */}
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 rounded-3xl blur-xl"></div>
+              <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8">
+                <h2 className="text-2xl font-bold text-white mb-6">Your Active Listings</h2>
+                {isLoading ? (
+                  <div className="flex justify-center items-center h-64">
+                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-400"></div>
+                  </div>
+                ) : error ? (
+                  <div className="text-center bg-red-500/10 border border-red-500/20 rounded-2xl p-6">
+                    <p className="text-red-400">{error}</p>
+                  </div>
+                ) : listings.length === 0 ? (
+                  <div className="text-center py-12">
+                    <SquaresPlusIcon className="h-16 w-16 text-slate-400 mx-auto mb-4" />
+                    <p className="text-xl text-white mb-2">No listings yet.</p>
+                    <p className="text-slate-400 mb-6">Get started by creating your first property listing.</p>
+                    <Link to="/listings/new">
+                      <Button variant="gradient" size="lg" leftIcon={<PlusIcon className="h-6 w-6"/>}>
+                        Create First Listing
+                      </Button>
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {listings.map(listing => (
+                      <ListingCard key={listing.id} listing={listing} onDelete={handleDeleteListing} />
+                    ))}
+                  </div>
+                )}
               </div>
-            ) : error ? (
-              <p className="text-center text-brand-danger bg-red-900/20 p-4 rounded-md">{error}</p>
-            ) : listings.length === 0 ? (
-              <div className="text-center py-12 bg-brand-panel rounded-lg shadow-xl border border-brand-border">
-                <SquaresPlusIcon className="h-16 w-16 text-brand-text-tertiary mx-auto mb-4" />
-                <p className="text-xl text-brand-text-secondary mb-2">No listings yet.</p>
-                <p className="text-brand-text-tertiary mb-6">Get started by creating your first property listing.</p>
-                <Link to="/listings/new">
-                  <Button variant="primary" size="lg" leftIcon={<PlusIcon className="h-6 w-6"/>}>
-                    Create First Listing
-                  </Button>
-                </Link>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {listings.map(listing => (
-                  <ListingCard key={listing.id} listing={listing} onDelete={handleDeleteListing} />
-                ))}
-              </div>
-            )}
+            </div>
           </>
         )}
+        {section === 'descriptions' && (
+          <DescriptionsDashboard />
+        )}
+        {section === 'email' && (
+          <EmailMarketingDashboard />
+        )}
+        {section === 'interior' && (
+          <InteriorDesignDashboard />
+        )}
+        {section === 'print' && (
+          <PrintMaterialsDashboard />
+        )}
         {section === 'ads' && (
-          <PaidAdsDashboard />
+          <div className="relative group">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-3xl blur-xl"></div>
+            <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8">
+              <PaidAdsDashboard />
+            </div>
+          </div>
         )}
         {section === 'social' && (
-          <SocialPostsDashboard />
+          <div className="relative group">
+            <div className="absolute inset-0 bg-gradient-to-r from-pink-500/10 to-rose-500/10 rounded-3xl blur-xl"></div>
+            <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8">
+              <SocialPostsDashboard />
+            </div>
+          </div>
         )}
-        {section && section !== 'dashboard' && section !== 'resources' && section !== 'ads' && section !== 'social' && (
-          <div className="flex flex-col items-center justify-center h-full p-12">
-            <h2 className="text-2xl font-bold text-brand-text-primary mb-2 capitalize">{NAV_LINKS.find(l => l.path.endsWith(section))?.label || section}</h2>
-            <p className="text-brand-text-secondary text-lg">This section will show actionable analytics and insights for <span className="font-semibold">{NAV_LINKS.find(l => l.path.endsWith(section))?.label || section}</span>.</p>
-            <div className="mt-8 text-brand-text-tertiary">(Coming soon in Beta!)</div>
+        {section && section !== 'dashboard' && section !== 'resources' && section !== 'ads' && section !== 'social' && section !== 'descriptions' && section !== 'email' && section !== 'interior' && section !== 'print' && (
+          <div className="relative group">
+            <div className="absolute inset-0 bg-gradient-to-r from-amber-500/10 to-orange-500/10 rounded-3xl blur-xl"></div>
+            <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-12">
+              <div className="text-center">
+                <div className="w-16 h-16 mx-auto mb-6 bg-amber-500/20 rounded-2xl flex items-center justify-center">
+                  <svg className="w-8 h-8 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                </div>
+                <h2 className="text-3xl font-bold text-white mb-4 capitalize">{NAV_LINKS.find(l => l.path.endsWith(section))?.label || section}</h2>
+                <p className="text-slate-300 text-lg mb-8">This section will show actionable analytics and insights for <span className="font-semibold text-amber-400">{NAV_LINKS.find(l => l.path.endsWith(section))?.label || section}</span>.</p>
+                <div className="inline-flex items-center px-6 py-3 bg-amber-500/20 border border-amber-500/30 rounded-2xl text-amber-400 font-medium">
+                  Coming Soon in Beta!
+                </div>
+              </div>
+            </div>
           </div>
         )}
         {section === 'resources' && (
-          <div className="max-w-5xl mx-auto">
-            <h2 className="text-2xl font-bold text-brand-text-primary mb-6">Agent Resources</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {RESOURCE_CARDS.map(card => (
-                <div
-                  key={card.key}
-                  className="bg-brand-panel border border-brand-border rounded-xl shadow hover:shadow-lg p-6 flex flex-col items-start transition-all cursor-pointer group"
-                  onClick={() => card.key === 'contract-helper' ? setShowContractHelper(true) : null}
-                >
-                  <div className="w-12 h-12 rounded-full bg-brand-card flex items-center justify-center mb-4 text-brand-primary text-xl font-bold group-hover:bg-brand-primary group-hover:text-white transition-all">
-                    {/* Placeholder for icon */}
-                    <span>{card.title[0]}</span>
+          <div className="relative group">
+            <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 rounded-3xl blur-xl"></div>
+            <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8">
+              <h2 className="text-2xl font-bold text-white mb-8">Agent Resources</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {RESOURCE_CARDS.map(card => (
+                  <div
+                    key={card.key}
+                    className="relative cursor-pointer transform transition-transform duration-200 hover:scale-105"
+                    onClick={() => card.key === 'contract-helper' ? setShowContractHelper(true) : null}
+                  >
+                    <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 hover:bg-white/15 hover:border-white/30 transition-all duration-200">
+                      <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center mb-4">
+                        <span className="text-emerald-400 text-xl font-bold">{card.title[0]}</span>
+                      </div>
+                      <h3 className="text-lg font-semibold text-white mb-2">{card.title}</h3>
+                      <p className="text-slate-300 mb-4 text-sm leading-relaxed">{card.description}</p>
+                      <div className="flex items-center text-emerald-400 font-medium text-sm">
+                        <span>Open</span>
+                        <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </div>
+                    </div>
                   </div>
-                  <h3 className="text-lg font-semibold text-brand-text-primary mb-2">{card.title}</h3>
-                  <p className="text-brand-text-secondary mb-2">{card.description}</p>
-                  <span className="text-brand-primary font-medium mt-auto group-hover:underline">Open</span>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
             {/* Contract Helper Modal */}
             <Dialog open={showContractHelper} onClose={() => setShowContractHelper(false)} className="fixed z-50 inset-0 overflow-y-auto">
               <div className="flex items-center justify-center min-h-screen px-4">
-                <div className="fixed inset-0 bg-black bg-opacity-40" />
-                <div className="relative bg-white rounded-xl shadow-xl max-w-lg w-full mx-auto p-8 z-10">
-                  <Dialog.Title className="text-2xl font-bold mb-4 text-brand-text-primary">Contract Helper</Dialog.Title>
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium mb-1 text-brand-text-secondary">Select State</label>
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
+                <div className="relative bg-slate-800 border border-white/20 rounded-2xl shadow-2xl max-w-lg w-full mx-auto p-8 z-10">
+                  <Dialog.Title className="text-2xl font-bold mb-6 text-white">Contract Helper</Dialog.Title>
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium mb-2 text-slate-300">Select State</label>
                     <select
-                      className="w-full border border-brand-border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                      className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                       value={selectedState}
                       onChange={e => setSelectedState(e.target.value)}
                     >
@@ -307,15 +316,15 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ section }) => {
                       ))}
                     </select>
                   </div>
-                  <div className="mb-4">
-                    <h3 className="text-lg font-semibold mb-2 text-brand-text-primary">{contractTemplate.name}</h3>
-                    <form className="space-y-3">
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold mb-4 text-white">{contractTemplate.name}</h3>
+                    <form className="space-y-4">
                       {contractTemplate.fields.map((field: any) => (
                         <div key={field.key}>
-                          <label className="block text-sm font-medium text-brand-text-secondary mb-1">{field.label}</label>
+                          <label className="block text-sm font-medium text-slate-300 mb-2">{field.label}</label>
                           <input
                             type={field.type}
-                            className="w-full border border-brand-border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                            className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                             value={contractFields[field.key] || ''}
                             onChange={e => setContractFields(f => ({ ...f, [field.key]: e.target.value }))}
                           />
@@ -323,15 +332,15 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ section }) => {
                       ))}
                     </form>
                   </div>
-                  <div className="flex justify-end gap-2">
+                  <div className="flex justify-end gap-3">
                     <button
-                      className="px-4 py-2 rounded-md bg-brand-panel border border-brand-border text-brand-text-secondary hover:bg-brand-primary hover:text-white transition"
+                      className="px-6 py-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-300 hover:bg-slate-600 hover:text-white transition-all"
                       onClick={() => setShowContractHelper(false)}
                     >
                       Close
                     </button>
                     <button
-                      className="px-4 py-2 rounded-md bg-brand-primary text-white font-semibold hover:bg-brand-accent transition"
+                      className="px-6 py-3 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold hover:from-emerald-600 hover:to-teal-600 transition-all"
                       onClick={() => setShowContractHelper(false)}
                     >
                       Save
@@ -342,8 +351,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ section }) => {
             </Dialog>
           </div>
         )}
-      </main>
-    </div>
+    </ModernDashboardLayout>
   );
 };
 
