@@ -1,0 +1,20 @@
+[
+  {
+    "name": "Basic slideshow without audio",
+    "success": true,
+    "duration": "29.38",
+    "videoUrl": "/videos/103541fd-e265-48e5-b322-d609da0887a4.mp4"
+  },
+  {
+    "name": "Slideshow with audio",
+    "success": true,
+    "duration": "25.89",
+    "videoUrl": "/videos/1a650862-6fe3-4496-afc1-25dbed5533fd.mp4"
+  },
+  {
+    "name": "TikTok format video",
+    "success": true,
+    "duration": "32.78",
+    "videoUrl": "/videos/0f27db4e-9a11-4f93-b66a-6ba82a4033ef.mp4"
+  }
+]

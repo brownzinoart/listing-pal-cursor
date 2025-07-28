@@ -27,6 +27,9 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' })); // Increase JSON payload limit
 app.use(express.urlencoded({ limit: '50mb', extended: true })); // Increase URL-encoded payload limit
 
+// Serve static files from public directory
+app.use(express.static('public'));
+
 const upload = multer({ memory: true });
 
 // Cloudinary configuration
@@ -2989,6 +2992,82 @@ Guidelines:
     
     return {};
 }
+
+// Remotion video generation endpoint
+app.post('/api/generate-remotion-video', async (req, res) => {
+    try {
+        const {
+            images,
+            audioUrl,
+            propertyInfo,
+            transitionType = 'fade',
+            imageDuration = 5,
+            platform = 'youtube',
+            generateAllPlatforms = false,
+        } = req.body;
+
+        if (!images || images.length === 0) {
+            return res.status(400).json({ error: 'No images provided' });
+        }
+
+        if (!propertyInfo) {
+            return res.status(400).json({ error: 'Property info is required' });
+        }
+
+        console.log('🎬 Starting Remotion video generation...');
+
+        // Import the Remotion service
+        const { remotionVideoService } = await import('./services/remotionVideoService.js');
+
+        if (generateAllPlatforms) {
+            // Generate videos for all platforms
+            const videos = await remotionVideoService.generateAllPlatformVideos(
+                {
+                    images,
+                    audioUrl,
+                    propertyInfo,
+                    transitionType,
+                    imageDuration,
+                },
+                (platform, progress) => {
+                    console.log(`${platform}: ${Math.round(progress * 100)}%`);
+                }
+            );
+
+            return res.status(200).json({
+                success: true,
+                videos,
+            });
+        } else {
+            // Generate single platform video
+            const videoUrl = await remotionVideoService.generateVideo(
+                {
+                    images,
+                    audioUrl,
+                    propertyInfo,
+                    transitionType,
+                    imageDuration,
+                    platform,
+                },
+                (progress) => {
+                    console.log(`Progress: ${Math.round(progress * 100)}%`);
+                }
+            );
+
+            return res.status(200).json({
+                success: true,
+                videoUrl,
+                platform,
+            });
+        }
+    } catch (error) {
+        console.error('Video generation error:', error);
+        return res.status(500).json({
+            error: 'Failed to generate video',
+            details: error instanceof Error ? error.message : 'Unknown error',
+        });
+    }
+});
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {

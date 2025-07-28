@@ -189,6 +189,7 @@ function getBreadcrumbFromPath(path: string): string {
     'portfolio': 'Portfolio Analytics',
     'descriptions': 'Descriptions',
     'social': 'Social Posts',
+    'videos': 'Video Studio',
     'email': 'Email',
     'ads': 'Paid Ads',
     'interior': 'Interior Deco',

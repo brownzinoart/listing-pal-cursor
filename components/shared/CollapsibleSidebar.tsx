@@ -15,7 +15,8 @@ import {
   UserCircleIcon,
   Cog6ToothIcon,
   ArrowRightOnRectangleIcon,
-  ChevronDownIcon
+  ChevronDownIcon,
+  VideoCameraIcon
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -24,6 +25,7 @@ const NAV_LINKS = [
   { key: 'portfolio', label: 'Portfolio Analytics', path: '/dashboard/portfolio', icon: ChartBarIcon },
   { key: 'descriptions', label: 'Descriptions', path: '/dashboard/descriptions', icon: DocumentTextIcon },
   { key: 'social', label: 'Social Posts', path: '/dashboard/social', icon: ChatBubbleLeftRightIcon },
+  { key: 'videos', label: 'Video Studio', path: '/dashboard/videos', icon: VideoCameraIcon },
   { key: 'email', label: 'Email', path: '/dashboard/email', icon: EnvelopeIcon },
   { key: 'ads', label: 'Paid Ads', path: '/dashboard/ads', icon: MegaphoneIcon },
   { key: 'interior', label: 'Interior Deco', path: '/dashboard/interior', icon: PhotoIcon },
@@ -53,10 +55,10 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     } ${className}`}>
       <div className="h-full bg-white/5 backdrop-blur-lg border-r border-white/10 relative">
         
-        {/* Floating Toggle Button - Positioned off the edge */}
+        {/* Floating Toggle Button - Positioned to align with header */}
         <button
           onClick={onToggleCollapse}
-          className="absolute -right-4 top-8 z-50 p-2 bg-white/10 backdrop-blur-lg border border-white/20 rounded-full text-white hover:bg-white/15 transition-all duration-200 shadow-lg hover:shadow-blue-500/25"
+          className="absolute -right-4 top-[24px] z-50 p-2 bg-white/10 backdrop-blur-lg border border-white/20 rounded-full text-white hover:bg-white/15 transition-all duration-200 shadow-lg hover:shadow-blue-500/25"
           title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {isCollapsed ? (
@@ -66,19 +68,25 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           )}
         </button>
         
-        {/* Logo Header */}
-        {!isCollapsed && (
-          <Link to="/dashboard" className="block p-6 border-b border-white/10 hover:bg-white/5 transition-colors">
-            <img 
-              src="/logo.png" 
-              alt="ListingPal" 
-              className="h-12 w-auto"
-            />
-          </Link>
-        )}
-        {isCollapsed && (
-          <div className="p-6 border-b border-white/10" />
-        )}
+        {/* Logo Header - Match the exact height of main content header (85px) */}
+        <div className="h-[85px] border-b border-white/10">
+          {!isCollapsed && (
+            <Link to="/dashboard" className="block h-full hover:bg-white/5 transition-colors">
+              <div className="flex items-center h-full px-6">
+                <img 
+                  src="/logo.png" 
+                  alt="ListingPal" 
+                  className="h-10 w-auto"
+                />
+              </div>
+            </Link>
+          )}
+          {isCollapsed && (
+            <div className="flex items-center h-full px-6">
+              <div className="h-10 w-auto" />
+            </div>
+          )}
+        </div>
 
         {/* Navigation Links */}
         <nav className="p-4 space-y-2">

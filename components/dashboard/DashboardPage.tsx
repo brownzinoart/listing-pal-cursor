@@ -16,6 +16,7 @@ import EmailMarketingDashboard from './EmailMarketingDashboard';
 import InteriorDesignDashboard from './InteriorDesignDashboard';
 import PrintMaterialsDashboard from './PrintMaterialsDashboard';
 import SettingsDashboard from './SettingsDashboard';
+import VideoStudioDashboard from './VideoStudioDashboard';
 import ModernDashboardLayout from '../shared/ModernDashboardLayout';
 
 const NAV_LINKS = [
@@ -162,6 +163,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ section }) => {
       'dashboard': { title: 'Dashboard Home', subtitle: 'Manage your property listings and business' },
       'descriptions': { title: 'Listing Descriptions', subtitle: 'AI-powered property descriptions and content' },
       'social': { title: 'Social Media Posts', subtitle: 'Create engaging social content for your listings' },
+      'videos': { title: 'Video Studio', subtitle: 'Create AI-powered property videos' },
       'email': { title: 'Email Marketing', subtitle: 'Professional email templates and campaigns' },
       'ads': { title: 'Paid Advertising', subtitle: 'Optimize your digital advertising campaigns' },
       'interior': { title: 'Interior Design', subtitle: 'AI-powered room staging and design tools' },
@@ -475,10 +477,13 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ section }) => {
         {section === 'social' && (
           <SocialPostsDashboard />
         )}
+        {section === 'videos' && (
+          <VideoStudioDashboard />
+        )}
         {section === 'settings' && (
           <SettingsDashboard />
         )}
-        {section && section !== 'dashboard' && section !== 'resources' && section !== 'ads' && section !== 'social' && section !== 'descriptions' && section !== 'email' && section !== 'interior' && section !== 'print' && section !== 'settings' && (
+        {section && section !== 'dashboard' && section !== 'resources' && section !== 'ads' && section !== 'social' && section !== 'videos' && section !== 'descriptions' && section !== 'email' && section !== 'interior' && section !== 'print' && section !== 'settings' && (
           <div className="relative group">
             <div className="absolute inset-0 bg-gradient-to-r from-amber-500/10 to-orange-500/10 rounded-3xl blur-xl"></div>
             <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-12">

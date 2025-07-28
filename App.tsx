@@ -55,6 +55,7 @@ const AppRoutes = () => {
           <Route path="/dashboard/portfolio" element={<PrivateRoute><ModernPortfolioAnalytics /></PrivateRoute>} />
           <Route path="/dashboard/ads" element={<PrivateRoute><DashboardPage section="ads" /></PrivateRoute>} />
           <Route path="/dashboard/social" element={<PrivateRoute><DashboardPage section="social" /></PrivateRoute>} />
+          <Route path="/dashboard/videos" element={<PrivateRoute><DashboardPage section="videos" /></PrivateRoute>} />
           <Route path="/dashboard/interior" element={<PrivateRoute><DashboardPage section="interior" /></PrivateRoute>} />
           <Route path="/dashboard/descriptions" element={<PrivateRoute><DashboardPage section="descriptions" /></PrivateRoute>} />
           <Route path="/dashboard/email" element={<PrivateRoute><DashboardPage section="email" /></PrivateRoute>} />

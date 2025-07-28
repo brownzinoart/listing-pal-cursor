@@ -50,3 +50,6 @@ temp/
 build/
 .cache/
 decor8ai-sdk/
+
+# Generated videos
+public/videos/*.mp4

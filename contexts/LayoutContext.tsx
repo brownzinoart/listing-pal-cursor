@@ -20,7 +20,7 @@ export const LayoutProvider: React.FC<LayoutProviderProps> = ({ children }) => {
   };
 
   const getMainContentMargin = () => {
-    return isSidebarCollapsed ? 'ml-28' : 'ml-64';
+    return isSidebarCollapsed ? 'ml-20' : 'ml-64';
   };
 
   const value = {
