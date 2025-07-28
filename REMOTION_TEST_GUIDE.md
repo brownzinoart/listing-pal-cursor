@@ -5,23 +5,27 @@
 To test the new Remotion video generation system, follow these steps:
 
 ### 1. Start the development server
+
 ```bash
 npm run dev
 ```
+
 Open a new terminal tab (keep the server running)
 
 ### 2. Run all video generation tests
+
 ```bash
 npm run test:video-generation
 ```
 
 ### 3. Run specific test scenarios
+
 ```bash
 # Test basic slideshow without audio
 npm run test:video:basic
 
 # Test slideshow with audio
-npm run test:video:audio  
+npm run test:video:audio
 
 # Test TikTok format (vertical)
 npm run test:video:tiktok
@@ -30,6 +34,7 @@ npm run test:video:tiktok
 ## What the Tests Do
 
 The automated tests will:
+
 1. Generate test images automatically
 2. Create videos using Remotion (server-side rendering)
 3. Test different scenarios:
@@ -43,6 +48,7 @@ The automated tests will:
 ## Expected Output
 
 Successful test output looks like:
+
 ```
 📋 Testing: Basic slideshow without audio
 Platform: youtube
@@ -61,18 +67,21 @@ If tests fail:
 
 1. **Server not running**: Make sure `npm run dev` is running
 2. **FFmpeg not installed**: Remotion requires FFmpeg on your system
+
    ```bash
    # macOS
    brew install ffmpeg
-   
+
    # Ubuntu/Debian
    sudo apt-get install ffmpeg
    ```
+
 3. **Port 3000 in use**: Check if another process is using port 3000
 
 ## Manual Testing in Browser
 
 You can also test through the UI:
+
 1. Go to http://localhost:3000
 2. Navigate to the Video Creation section
 3. Upload property images
@@ -91,11 +100,13 @@ You can also test through the UI:
 ## Generated Videos Location
 
 All generated videos are saved to:
+
 ```
 public/videos/[video-id].mp4
 ```
 
 You can access them at:
+
 ```
 http://localhost:3000/videos/[video-id].mp4
 ```

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from "react";
 
 interface LayoutContextType {
   isSidebarCollapsed: boolean;
@@ -20,26 +20,24 @@ export const LayoutProvider: React.FC<LayoutProviderProps> = ({ children }) => {
   };
 
   const getMainContentMargin = () => {
-    return isSidebarCollapsed ? 'ml-20' : 'ml-64';
+    return isSidebarCollapsed ? "ml-20" : "ml-64";
   };
 
   const value = {
     isSidebarCollapsed,
     toggleSidebar,
-    getMainContentMargin
+    getMainContentMargin,
   };
 
   return (
-    <LayoutContext.Provider value={value}>
-      {children}
-    </LayoutContext.Provider>
+    <LayoutContext.Provider value={value}>{children}</LayoutContext.Provider>
   );
 };
 
 export const useLayout = (): LayoutContextType => {
   const context = useContext(LayoutContext);
   if (context === undefined) {
-    throw new Error('useLayout must be used within a LayoutProvider');
+    throw new Error("useLayout must be used within a LayoutProvider");
   }
   return context;
 };

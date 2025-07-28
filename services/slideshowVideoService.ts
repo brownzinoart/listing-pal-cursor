@@ -1,5 +1,5 @@
-import { FFmpeg } from '@ffmpeg/ffmpeg';
-import { fetchFile, toBlobURL } from '@ffmpeg/util';
+import { FFmpeg } from "@ffmpeg/ffmpeg";
+import { fetchFile, toBlobURL } from "@ffmpeg/util";
 
 /**
  * Slideshow Video Service
@@ -16,11 +16,11 @@ export class SlideshowVideoService {
   private chunks: Blob[] = [];
 
   constructor() {
-    this.canvas = document.createElement('canvas');
+    this.canvas = document.createElement("canvas");
     this.canvas.width = 1920; // Full HD
     this.canvas.height = 1080;
-    const ctx = this.canvas.getContext('2d');
-    if (!ctx) throw new Error('Could not get canvas context');
+    const ctx = this.canvas.getContext("2d");
+    if (!ctx) throw new Error("Could not get canvas context");
     this.ctx = ctx;
   }
 
@@ -32,23 +32,31 @@ export class SlideshowVideoService {
 
     try {
       this.ffmpeg = new FFmpeg();
-      
+
       // Set up progress logging
-      this.ffmpeg.on('progress', ({ progress, time }) => {
-        console.log(`⏳ FFmpeg Progress: ${Math.round(progress * 100)}% (time: ${time})`);
+      this.ffmpeg.on("progress", ({ progress, time }) => {
+        console.log(
+          `⏳ FFmpeg Progress: ${Math.round(progress * 100)}% (time: ${time})`,
+        );
       });
-      
+
       // Load FFmpeg with proper configuration
-      const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm';
+      const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm";
       await this.ffmpeg.load({
-        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+        coreURL: await toBlobURL(
+          `${baseURL}/ffmpeg-core.js`,
+          "text/javascript",
+        ),
+        wasmURL: await toBlobURL(
+          `${baseURL}/ffmpeg-core.wasm`,
+          "application/wasm",
+        ),
       });
-      
+
       this.ffmpegLoaded = true;
-      console.log('✅ FFmpeg.wasm loaded successfully');
+      console.log("✅ FFmpeg.wasm loaded successfully");
     } catch (error) {
-      console.error('❌ Failed to load FFmpeg.wasm:', error);
+      console.error("❌ Failed to load FFmpeg.wasm:", error);
       throw error;
     }
   }
@@ -61,45 +69,48 @@ export class SlideshowVideoService {
     audioUrl?: string,
     options: {
       duration?: number; // seconds per image
-      transition?: 'fade' | 'slide' | 'zoom';
+      transition?: "fade" | "slide" | "zoom";
       fps?: number;
-    } = {}
+    } = {},
   ): Promise<string> {
-    const {
-      duration = 5,
-      transition = 'fade',
-      fps = 30
-    } = options;
+    const { duration = 5, transition = "fade", fps = 30 } = options;
 
     try {
       // Initialize FFmpeg if not already loaded
       await this.initializeFFmpeg();
-      
+
       // Load all images
       const loadedImages = await this.loadImages(images);
-      
+
       // First, create the video without audio
-      console.log('🎬 Creating video slideshow...');
-      const videoBlob = await this.createVideoOnly(loadedImages, duration, transition, fps);
-      
+      console.log("🎬 Creating video slideshow...");
+      const videoBlob = await this.createVideoOnly(
+        loadedImages,
+        duration,
+        transition,
+        fps,
+      );
+
       // If no audio, return the video as-is
       if (!audioUrl) {
         return URL.createObjectURL(videoBlob);
       }
-      
+
       // If we have audio, use FFmpeg to merge them
-      console.log('🎵 Merging audio with video using FFmpeg...');
+      console.log("🎵 Merging audio with video using FFmpeg...");
       try {
         const mergedBlob = await this.mergeAudioVideo(videoBlob, audioUrl);
         return URL.createObjectURL(mergedBlob);
       } catch (ffmpegError) {
-        console.warn('⚠️ FFmpeg merge failed, returning video without audio:', ffmpegError);
+        console.warn(
+          "⚠️ FFmpeg merge failed, returning video without audio:",
+          ffmpegError,
+        );
         // Fallback: return video without audio if FFmpeg fails
         return URL.createObjectURL(videoBlob);
       }
-      
     } catch (error) {
-      console.error('❌ Slideshow creation failed:', error);
+      console.error("❌ Slideshow creation failed:", error);
       throw error;
     }
   }
@@ -110,15 +121,15 @@ export class SlideshowVideoService {
   private async createVideoOnly(
     images: HTMLImageElement[],
     duration: number,
-    transition: 'fade' | 'slide' | 'zoom',
-    fps: number
+    transition: "fade" | "slide" | "zoom",
+    fps: number,
   ): Promise<Blob> {
     const stream = this.canvas.captureStream(fps);
-    
+
     // Configure MediaRecorder for video only
     const mediaRecorderOptions = {
-      mimeType: 'video/webm;codecs=vp9',
-      videoBitsPerSecond: 5000000
+      mimeType: "video/webm;codecs=vp9",
+      videoBitsPerSecond: 5000000,
     };
 
     this.mediaRecorder = new MediaRecorder(stream, mediaRecorderOptions);
@@ -126,7 +137,7 @@ export class SlideshowVideoService {
 
     return new Promise((resolve, reject) => {
       if (!this.mediaRecorder) {
-        reject(new Error('MediaRecorder not initialized'));
+        reject(new Error("MediaRecorder not initialized"));
         return;
       }
 
@@ -137,10 +148,10 @@ export class SlideshowVideoService {
       };
 
       this.mediaRecorder.onstop = () => {
-        const blob = new Blob(this.chunks, { type: 'video/webm' });
-        console.log('✅ Video-only recording completed:', {
+        const blob = new Blob(this.chunks, { type: "video/webm" });
+        console.log("✅ Video-only recording completed:", {
           size: blob.size,
-          type: blob.type
+          type: blob.type,
         });
         resolve(blob);
       };
@@ -152,7 +163,7 @@ export class SlideshowVideoService {
 
       // Animate slideshow
       this.animateSlideshow(images, duration, transition, fps).then(() => {
-        if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+        if (this.mediaRecorder && this.mediaRecorder.state !== "inactive") {
           this.mediaRecorder.stop();
         }
       });
@@ -162,60 +173,67 @@ export class SlideshowVideoService {
   /**
    * Merge audio and video using FFmpeg.wasm
    */
-  private async mergeAudioVideo(videoBlob: Blob, audioUrl: string): Promise<Blob> {
+  private async mergeAudioVideo(
+    videoBlob: Blob,
+    audioUrl: string,
+  ): Promise<Blob> {
     if (!this.ffmpeg || !this.ffmpegLoaded) {
-      throw new Error('FFmpeg not initialized');
+      throw new Error("FFmpeg not initialized");
     }
 
     try {
       // Write video to FFmpeg filesystem
       const videoData = new Uint8Array(await videoBlob.arrayBuffer());
-      await this.ffmpeg.writeFile('input_video.webm', videoData);
-      
+      await this.ffmpeg.writeFile("input_video.webm", videoData);
+
       // Fetch and write audio to FFmpeg filesystem
       const audioResponse = await fetch(audioUrl);
       const audioBlob = await audioResponse.blob();
       const audioData = new Uint8Array(await audioBlob.arrayBuffer());
-      await this.ffmpeg.writeFile('input_audio.mp3', audioData);
-      
-      console.log('📁 Files written to FFmpeg filesystem');
-      
+      await this.ffmpeg.writeFile("input_audio.mp3", audioData);
+
+      console.log("📁 Files written to FFmpeg filesystem");
+
       // Merge audio and video with proper synchronization
       await this.ffmpeg.exec([
-        '-i', 'input_video.webm',
-        '-i', 'input_audio.mp3',
-        '-c:v', 'copy',
-        '-c:a', 'aac',
-        '-b:a', '128k',
-        '-shortest',
-        '-y',
-        'output.mp4'
+        "-i",
+        "input_video.webm",
+        "-i",
+        "input_audio.mp3",
+        "-c:v",
+        "copy",
+        "-c:a",
+        "aac",
+        "-b:a",
+        "128k",
+        "-shortest",
+        "-y",
+        "output.mp4",
       ]);
-      
-      console.log('✅ FFmpeg merge completed');
-      
+
+      console.log("✅ FFmpeg merge completed");
+
       // Read the output file
-      const outputData = await this.ffmpeg.readFile('output.mp4');
-      const outputBlob = new Blob([outputData], { type: 'video/mp4' });
-      
+      const outputData = await this.ffmpeg.readFile("output.mp4");
+      const outputBlob = new Blob([outputData], { type: "video/mp4" });
+
       // Clean up FFmpeg filesystem
       try {
-        await this.ffmpeg.deleteFile('input_video.webm');
-        await this.ffmpeg.deleteFile('input_audio.mp3');
-        await this.ffmpeg.deleteFile('output.mp4');
+        await this.ffmpeg.deleteFile("input_video.webm");
+        await this.ffmpeg.deleteFile("input_audio.mp3");
+        await this.ffmpeg.deleteFile("output.mp4");
       } catch (cleanupError) {
-        console.warn('Cleanup error:', cleanupError);
+        console.warn("Cleanup error:", cleanupError);
       }
-      
-      console.log('🎉 Final video with audio created:', {
+
+      console.log("🎉 Final video with audio created:", {
         size: outputBlob.size,
-        type: outputBlob.type
+        type: outputBlob.type,
       });
-      
+
       return outputBlob;
-      
     } catch (error) {
-      console.error('❌ FFmpeg merge failed:', error);
+      console.error("❌ FFmpeg merge failed:", error);
       throw error;
     }
   }
@@ -225,7 +243,7 @@ export class SlideshowVideoService {
    */
   private async loadImages(files: File[]): Promise<HTMLImageElement[]> {
     const images = await Promise.all(
-      files.map(file => this.loadImage(URL.createObjectURL(file)))
+      files.map((file) => this.loadImage(URL.createObjectURL(file))),
     );
     return images;
   }
@@ -248,8 +266,8 @@ export class SlideshowVideoService {
   private async animateSlideshow(
     images: HTMLImageElement[],
     duration: number,
-    transition: 'fade' | 'slide' | 'zoom',
-    fps: number
+    transition: "fade" | "slide" | "zoom",
+    fps: number,
   ): Promise<void> {
     const frameDuration = 1000 / fps;
     const framesPerImage = duration * fps;
@@ -262,12 +280,16 @@ export class SlideshowVideoService {
       // Draw main image frames
       for (let frame = 0; frame < framesPerImage; frame++) {
         // Clear canvas
-        this.ctx.fillStyle = '#000000';
+        this.ctx.fillStyle = "#000000";
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        if (frame >= framesPerImage - transitionFrames && i < images.length - 1) {
+        if (
+          frame >= framesPerImage - transitionFrames &&
+          i < images.length - 1
+        ) {
           // Transition effect
-          const progress = (frame - (framesPerImage - transitionFrames)) / transitionFrames;
+          const progress =
+            (frame - (framesPerImage - transitionFrames)) / transitionFrames;
           this.drawTransition(currentImage, nextImage, progress, transition);
         } else {
           // Ken Burns effect (subtle zoom/pan)
@@ -287,9 +309,9 @@ export class SlideshowVideoService {
    * Draw image with Ken Burns effect
    */
   private drawImageWithKenBurns(image: HTMLImageElement, progress: number) {
-    const scale = 1 + (progress * 0.1); // Zoom from 1x to 1.1x
-    const offsetX = (this.canvas.width - (this.canvas.width * scale)) / 2;
-    const offsetY = (this.canvas.height - (this.canvas.height * scale)) / 2;
+    const scale = 1 + progress * 0.1; // Zoom from 1x to 1.1x
+    const offsetX = (this.canvas.width - this.canvas.width * scale) / 2;
+    const offsetY = (this.canvas.height - this.canvas.height * scale) / 2;
 
     this.ctx.save();
     this.ctx.translate(this.canvas.width / 2, this.canvas.height / 2);
@@ -309,41 +331,41 @@ export class SlideshowVideoService {
     from: HTMLImageElement,
     to: HTMLImageElement,
     progress: number,
-    type: 'fade' | 'slide' | 'zoom'
+    type: "fade" | "slide" | "zoom",
   ) {
     switch (type) {
-      case 'fade':
+      case "fade":
         // Draw from image
         this.ctx.globalAlpha = 1 - progress;
         this.drawImageFitted(from);
-        
+
         // Draw to image
         this.ctx.globalAlpha = progress;
         this.drawImageFitted(to);
-        
+
         this.ctx.globalAlpha = 1;
         break;
 
-      case 'slide':
+      case "slide":
         // Slide from right to left
         this.ctx.save();
-        
+
         // From image slides out
         this.ctx.translate(-this.canvas.width * progress, 0);
         this.drawImageFitted(from);
-        
+
         // To image slides in
         this.ctx.translate(this.canvas.width, 0);
         this.drawImageFitted(to);
-        
+
         this.ctx.restore();
         break;
 
-      case 'zoom':
+      case "zoom":
         // Zoom out from and zoom in to
-        const fromScale = 1 - (progress * 0.5);
-        const toScale = 0.5 + (progress * 0.5);
-        
+        const fromScale = 1 - progress * 0.5;
+        const toScale = 0.5 + progress * 0.5;
+
         // Draw from image zooming out
         this.ctx.save();
         this.ctx.globalAlpha = 1 - progress;
@@ -352,7 +374,7 @@ export class SlideshowVideoService {
         this.ctx.translate(-this.canvas.width / 2, -this.canvas.height / 2);
         this.drawImageFitted(from);
         this.ctx.restore();
-        
+
         // Draw to image zooming in
         this.ctx.save();
         this.ctx.globalAlpha = progress;
@@ -361,7 +383,7 @@ export class SlideshowVideoService {
         this.ctx.translate(-this.canvas.width / 2, -this.canvas.height / 2);
         this.drawImageFitted(to);
         this.ctx.restore();
-        
+
         this.ctx.globalAlpha = 1;
         break;
     }
@@ -373,9 +395,9 @@ export class SlideshowVideoService {
   private drawImageFitted(image: HTMLImageElement) {
     const scale = Math.max(
       this.canvas.width / image.width,
-      this.canvas.height / image.height
+      this.canvas.height / image.height,
     );
-    
+
     const scaledWidth = image.width * scale;
     const scaledHeight = image.height * scale;
     const x = (this.canvas.width - scaledWidth) / 2;
@@ -389,9 +411,14 @@ export class SlideshowVideoService {
    */
   private drawOverlay(currentIndex: number, totalImages: number) {
     // Bottom gradient
-    const gradient = this.ctx.createLinearGradient(0, this.canvas.height - 200, 0, this.canvas.height);
-    gradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
-    gradient.addColorStop(1, 'rgba(0, 0, 0, 0.8)');
+    const gradient = this.ctx.createLinearGradient(
+      0,
+      this.canvas.height - 200,
+      0,
+      this.canvas.height,
+    );
+    gradient.addColorStop(0, "rgba(0, 0, 0, 0)");
+    gradient.addColorStop(1, "rgba(0, 0, 0, 0.8)");
     this.ctx.fillStyle = gradient;
     this.ctx.fillRect(0, this.canvas.height - 200, this.canvas.width, 200);
 
@@ -399,9 +426,13 @@ export class SlideshowVideoService {
     this.drawGradientLogo(40, this.canvas.height - 60);
 
     // Image counter
-    this.ctx.fillStyle = 'white';
-    this.ctx.font = '18px Arial';
-    this.ctx.fillText(`${currentIndex + 1} / ${totalImages}`, this.canvas.width - 100, this.canvas.height - 40);
+    this.ctx.fillStyle = "white";
+    this.ctx.font = "18px Arial";
+    this.ctx.fillText(
+      `${currentIndex + 1} / ${totalImages}`,
+      this.canvas.width - 100,
+      this.canvas.height - 40,
+    );
   }
 
   /**
@@ -409,23 +440,28 @@ export class SlideshowVideoService {
    */
   private drawGradientLogo(x: number, y: number) {
     // Create gradient for logo text
-    const logoGradient = this.ctx.createLinearGradient(x, y - 20, x + 200, y + 10);
-    logoGradient.addColorStop(0, '#8B5CF6'); // Purple
-    logoGradient.addColorStop(0.5, '#A855F7'); // Purple-pink
-    logoGradient.addColorStop(1, '#EC4899'); // Pink
+    const logoGradient = this.ctx.createLinearGradient(
+      x,
+      y - 20,
+      x + 200,
+      y + 10,
+    );
+    logoGradient.addColorStop(0, "#8B5CF6"); // Purple
+    logoGradient.addColorStop(0.5, "#A855F7"); // Purple-pink
+    logoGradient.addColorStop(1, "#EC4899"); // Pink
 
     // Draw logo text with gradient
     this.ctx.fillStyle = logoGradient;
-    this.ctx.font = 'bold 28px Arial';
-    this.ctx.fillText('ListingPal', x, y);
+    this.ctx.font = "bold 28px Arial";
+    this.ctx.fillText("ListingPal", x, y);
 
     // Add a subtle glow effect
-    this.ctx.shadowColor = '#8B5CF6';
+    this.ctx.shadowColor = "#8B5CF6";
     this.ctx.shadowBlur = 8;
-    this.ctx.fillText('ListingPal', x, y);
-    
+    this.ctx.fillText("ListingPal", x, y);
+
     // Reset shadow
-    this.ctx.shadowColor = 'transparent';
+    this.ctx.shadowColor = "transparent";
     this.ctx.shadowBlur = 0;
 
     // Add small icon/symbol before text
@@ -437,33 +473,38 @@ export class SlideshowVideoService {
     this.ctx.fillStyle = logoGradient;
     this.ctx.beginPath();
     // Simple house shape
-    this.ctx.moveTo(iconX + iconSize/2, iconY);
-    this.ctx.lineTo(iconX + iconSize, iconY + iconSize/2);
-    this.ctx.lineTo(iconX + iconSize*0.8, iconY + iconSize/2);
-    this.ctx.lineTo(iconX + iconSize*0.8, iconY + iconSize);
-    this.ctx.lineTo(iconX + iconSize*0.2, iconY + iconSize);
-    this.ctx.lineTo(iconX + iconSize*0.2, iconY + iconSize/2);
-    this.ctx.lineTo(iconX, iconY + iconSize/2);
+    this.ctx.moveTo(iconX + iconSize / 2, iconY);
+    this.ctx.lineTo(iconX + iconSize, iconY + iconSize / 2);
+    this.ctx.lineTo(iconX + iconSize * 0.8, iconY + iconSize / 2);
+    this.ctx.lineTo(iconX + iconSize * 0.8, iconY + iconSize);
+    this.ctx.lineTo(iconX + iconSize * 0.2, iconY + iconSize);
+    this.ctx.lineTo(iconX + iconSize * 0.2, iconY + iconSize / 2);
+    this.ctx.lineTo(iconX, iconY + iconSize / 2);
     this.ctx.closePath();
     this.ctx.fill();
 
     // Door
-    this.ctx.fillStyle = '#1F2937';
-    this.ctx.fillRect(iconX + iconSize*0.4, iconY + iconSize*0.7, iconSize*0.2, iconSize*0.3);
+    this.ctx.fillStyle = "#1F2937";
+    this.ctx.fillRect(
+      iconX + iconSize * 0.4,
+      iconY + iconSize * 0.7,
+      iconSize * 0.2,
+      iconSize * 0.3,
+    );
   }
 
   /**
    * Delay helper
    */
   private delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
    * Clean up resources
    */
   cleanup() {
-    if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+    if (this.mediaRecorder && this.mediaRecorder.state !== "inactive") {
       this.mediaRecorder.stop();
     }
     this.chunks = [];

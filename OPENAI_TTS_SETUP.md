@@ -6,11 +6,11 @@ ListingPal now uses **OpenAI's Text-to-Speech (TTS)** for generating professiona
 
 ## Cost Comparison
 
-| Service | Cost per 1M chars | Property Video (~2k chars) | Monthly Cost (100 videos) |
-|---------|------------------|---------------------------|--------------------------|
-| OpenAI TTS | $15.00 | $0.03 | $3.00 |
-| ElevenLabs | $165.00 | $0.33 | $33.00 |
-| **Savings** | **91% less** | **$0.30 saved** | **$30 saved** |
+| Service     | Cost per 1M chars | Property Video (~2k chars) | Monthly Cost (100 videos) |
+| ----------- | ----------------- | -------------------------- | ------------------------- |
+| OpenAI TTS  | $15.00            | $0.03                      | $3.00                     |
+| ElevenLabs  | $165.00           | $0.33                      | $33.00                    |
+| **Savings** | **91% less**      | **$0.30 saved**            | **$30 saved**             |
 
 ## Setup Instructions
 
@@ -42,6 +42,7 @@ npm run test:voice
 ```
 
 This will:
+
 - Verify your API key is working
 - Generate a sample property narration
 - Show cost estimates
@@ -79,16 +80,19 @@ When you generate property videos:
 ## Troubleshooting
 
 ### API Key Not Working
+
 - Ensure the key starts with `sk-`
 - Check you have billing enabled on OpenAI
 - Verify the key has not expired
 
 ### No Audio in Videos
+
 - Check `VITE_USE_OPENAI_TTS=true` in `.env`
 - Run `npm run test:voice` to verify setup
 - Check console for error messages
 
 ### Rate Limits
+
 - OpenAI has generous rate limits
 - If hit, wait a few seconds and retry
 - Consider upgrading your OpenAI tier if needed
@@ -102,6 +106,7 @@ When you generate property videos:
 ## Support
 
 For issues or questions:
+
 - Check error messages in console
 - Run `npm run test:voice` for diagnostics
 - Verify API key is correctly set in `.env`
