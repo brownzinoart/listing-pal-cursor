@@ -1,6 +1,6 @@
-import React from 'react';
-import { Composition } from 'remotion';
-import { PropertySlideshow } from './compositions/PropertySlideshow';
+import React from "react";
+import { Composition } from "remotion";
+import { PropertySlideshow } from "./compositions/PropertySlideshow";
 
 export const RemotionRoot: React.FC = () => {
   return (
@@ -16,17 +16,17 @@ export const RemotionRoot: React.FC = () => {
           images: [],
           audioUrl: undefined,
           propertyInfo: {
-            address: '',
-            price: '',
+            address: "",
+            price: "",
             beds: 0,
             baths: 0,
             sqft: 0,
           },
-          transitionType: 'fade',
+          transitionType: "fade",
           imageDuration: 5,
         }}
       />
-      
+
       <Composition
         id="PropertySlideshowTikTok"
         component={PropertySlideshow}
@@ -38,18 +38,18 @@ export const RemotionRoot: React.FC = () => {
           images: [],
           audioUrl: undefined,
           propertyInfo: {
-            address: '',
-            price: '',
+            address: "",
+            price: "",
             beds: 0,
             baths: 0,
             sqft: 0,
           },
-          transitionType: 'fade',
+          transitionType: "fade",
           imageDuration: 5,
-          platform: 'tiktok',
+          platform: "tiktok",
         }}
       />
-      
+
       <Composition
         id="PropertySlideshowInstagram"
         component={PropertySlideshow}
@@ -61,15 +61,15 @@ export const RemotionRoot: React.FC = () => {
           images: [],
           audioUrl: undefined,
           propertyInfo: {
-            address: '',
-            price: '',
+            address: "",
+            price: "",
             beds: 0,
             baths: 0,
             sqft: 0,
           },
-          transitionType: 'fade',
+          transitionType: "fade",
           imageDuration: 5,
-          platform: 'instagram',
+          platform: "instagram",
         }}
       />
     </>

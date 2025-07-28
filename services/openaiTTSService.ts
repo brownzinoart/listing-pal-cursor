@@ -1,41 +1,50 @@
-import OpenAI from 'openai';
+import OpenAI from "openai";
 
 // Node.js imports (only in Node environment)
 let fs: any;
 let path: any;
-if (typeof window === 'undefined') {
-  fs = await import('fs');
-  path = await import('path');
+if (typeof window === "undefined") {
+  fs = await import("fs");
+  path = await import("path");
 }
 
 // Voice options for OpenAI TTS
-export type OpenAIVoice = 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer';
-export type OpenAITTSModel = 'tts-1' | 'tts-1-hd';
+export type OpenAIVoice =
+  | "alloy"
+  | "echo"
+  | "fable"
+  | "onyx"
+  | "nova"
+  | "shimmer";
+export type OpenAITTSModel = "tts-1" | "tts-1-hd";
 
 interface TTSOptions {
   model?: OpenAITTSModel;
   voice?: OpenAIVoice;
   speed?: number; // 0.25 to 4.0
-  format?: 'mp3' | 'opus' | 'aac' | 'flac' | 'wav' | 'pcm';
+  format?: "mp3" | "opus" | "aac" | "flac" | "wav" | "pcm";
 }
 
 export class OpenAITTSService {
   private openai: OpenAI;
   private defaultOptions: Required<TTSOptions> = {
-    model: 'tts-1',        // Standard quality, lower latency
-    voice: 'nova',         // Professional female voice
-    speed: 1.0,           // Normal speed
-    format: 'mp3'         // Most compatible format
+    model: "tts-1", // Standard quality, lower latency
+    voice: "nova", // Professional female voice
+    speed: 1.0, // Normal speed
+    format: "mp3", // Most compatible format
   };
 
   constructor(apiKey?: string) {
-    const key = apiKey || process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API_KEY;
+    const key =
+      apiKey || process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API_KEY;
     if (!key) {
-      throw new Error('OpenAI API key not found. Please set OPENAI_API_KEY or VITE_OPENAI_API_KEY in your environment.');
+      throw new Error(
+        "OpenAI API key not found. Please set OPENAI_API_KEY or VITE_OPENAI_API_KEY in your environment.",
+      );
     }
-    
+
     this.openai = new OpenAI({ apiKey: key });
-    console.log('✅ OpenAI TTS Service initialized');
+    console.log("✅ OpenAI TTS Service initialized");
   }
 
   /**
@@ -44,16 +53,19 @@ export class OpenAITTSService {
    * @param options TTS options (model, voice, speed, format)
    * @returns URL to the generated audio file
    */
-  async generateSpeech(text: string, options: TTSOptions = {}): Promise<string> {
+  async generateSpeech(
+    text: string,
+    options: TTSOptions = {},
+  ): Promise<string> {
     try {
       const config = { ...this.defaultOptions, ...options };
-      
-      console.log('🎙️ Generating speech with OpenAI TTS:', {
+
+      console.log("🎙️ Generating speech with OpenAI TTS:", {
         model: config.model,
         voice: config.voice,
         speed: config.speed,
         textLength: text.length,
-        estimatedCost: `$${(text.length * 0.000015).toFixed(4)}` // $0.015 per 1k chars
+        estimatedCost: `$${(text.length * 0.000015).toFixed(4)}`, // $0.015 per 1k chars
       });
 
       // Make the API request
@@ -72,15 +84,15 @@ export class OpenAITTSService {
       const blob = new Blob([buffer], { type: `audio/${config.format}` });
       const audioUrl = URL.createObjectURL(blob);
 
-      console.log('✅ Speech generated successfully:', {
+      console.log("✅ Speech generated successfully:", {
         size: `${(buffer.length / 1024).toFixed(2)} KB`,
         format: config.format,
-        url: audioUrl
+        url: audioUrl,
       });
 
       return audioUrl;
     } catch (error) {
-      console.error('❌ OpenAI TTS Error:', error);
+      console.error("❌ OpenAI TTS Error:", error);
       throw error;
     }
   }
@@ -93,20 +105,22 @@ export class OpenAITTSService {
    * @returns Path to the saved audio file
    */
   async generateSpeechToFile(
-    text: string, 
-    outputPath: string, 
-    options: TTSOptions = {}
+    text: string,
+    outputPath: string,
+    options: TTSOptions = {},
   ): Promise<string> {
-    if (typeof window !== 'undefined') {
-      throw new Error('generateSpeechToFile is only available in Node.js environment');
+    if (typeof window !== "undefined") {
+      throw new Error(
+        "generateSpeechToFile is only available in Node.js environment",
+      );
     }
 
     try {
       const config = { ...this.defaultOptions, ...options };
-      
-      console.log('🎙️ Generating speech to file with OpenAI TTS:', {
+
+      console.log("🎙️ Generating speech to file with OpenAI TTS:", {
         outputPath,
-        ...config
+        ...config,
       });
 
       const response = await this.openai.audio.speech.create({
@@ -128,14 +142,14 @@ export class OpenAITTSService {
       // Write to file
       fs.writeFileSync(outputPath, buffer);
 
-      console.log('✅ Speech saved to file:', {
+      console.log("✅ Speech saved to file:", {
         path: outputPath,
-        size: `${(buffer.length / 1024).toFixed(2)} KB`
+        size: `${(buffer.length / 1024).toFixed(2)} KB`,
       });
 
       return outputPath;
     } catch (error) {
-      console.error('❌ OpenAI TTS Error:', error);
+      console.error("❌ OpenAI TTS Error:", error);
       throw error;
     }
   }
@@ -155,12 +169,12 @@ export class OpenAITTSService {
    */
   getAvailableVoices(): Record<OpenAIVoice, string> {
     return {
-      alloy: 'Neutral and balanced',
-      echo: 'Warm and conversational', 
-      fable: 'Expressive and dynamic',
-      onyx: 'Deep and authoritative',
-      nova: 'Professional and friendly (recommended for property tours)',
-      shimmer: 'Soft and pleasant'
+      alloy: "Neutral and balanced",
+      echo: "Warm and conversational",
+      fable: "Expressive and dynamic",
+      onyx: "Deep and authoritative",
+      nova: "Professional and friendly (recommended for property tours)",
+      shimmer: "Soft and pleasant",
     };
   }
 
@@ -170,7 +184,9 @@ export class OpenAITTSService {
   validateTextLength(text: string): boolean {
     const MAX_LENGTH = 4096;
     if (text.length > MAX_LENGTH) {
-      throw new Error(`Text exceeds maximum length of ${MAX_LENGTH} characters. Current length: ${text.length}`);
+      throw new Error(
+        `Text exceeds maximum length of ${MAX_LENGTH} characters. Current length: ${text.length}`,
+      );
     }
     return true;
   }

@@ -1,15 +1,21 @@
-import React, { useEffect, useState } from 'react';
-import { AILoadingState } from '../../shared/AILoadingStates';
-import { videoGenerationService, VideoAnalysis } from '../../../services/videoGenerationService';
-import { SparklesIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
-import Button from '../../shared/Button';
+import React, { useEffect, useState } from "react";
+import { AILoadingState } from "../../shared/AILoadingStates";
+import {
+  videoGenerationService,
+  VideoAnalysis,
+} from "../../../services/videoGenerationService";
+import { SparklesIcon, CheckCircleIcon } from "@heroicons/react/24/outline";
+import Button from "../../shared/Button";
 
 interface VideoAnalysisStepProps {
   images: File[];
   onComplete: (analysis: VideoAnalysis) => void;
 }
 
-const VideoAnalysisStep: React.FC<VideoAnalysisStepProps> = ({ images, onComplete }) => {
+const VideoAnalysisStep: React.FC<VideoAnalysisStepProps> = ({
+  images,
+  onComplete,
+}) => {
   const [isAnalyzing, setIsAnalyzing] = useState(true);
   const [analysis, setAnalysis] = useState<VideoAnalysis | null>(null);
 
@@ -20,7 +26,7 @@ const VideoAnalysisStep: React.FC<VideoAnalysisStepProps> = ({ images, onComplet
         setAnalysis(result);
         setIsAnalyzing(false);
       } catch (error) {
-        console.error('Analysis failed:', error);
+        console.error("Analysis failed:", error);
         setIsAnalyzing(false);
       }
     };
@@ -33,7 +39,7 @@ const VideoAnalysisStep: React.FC<VideoAnalysisStepProps> = ({ images, onComplet
     { text: "Identifying key features", duration: 700 },
     { text: "Evaluating image quality", duration: 600 },
     { text: "Optimizing composition", duration: 900 },
-    { text: "Analysis complete", duration: 500 }
+    { text: "Analysis complete", duration: 500 },
   ];
 
   if (isAnalyzing) {
@@ -60,7 +66,9 @@ const VideoAnalysisStep: React.FC<VideoAnalysisStepProps> = ({ images, onComplet
     <div className="space-y-8">
       <div className="text-center mb-8">
         <CheckCircleIcon className="h-16 w-16 text-emerald-400 mx-auto mb-4" />
-        <h3 className="text-2xl font-bold text-white mb-2">Analysis Complete!</h3>
+        <h3 className="text-2xl font-bold text-white mb-2">
+          Analysis Complete!
+        </h3>
         <p className="text-slate-400">AI has analyzed your property images</p>
       </div>
 

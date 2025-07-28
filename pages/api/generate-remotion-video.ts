@@ -1,20 +1,20 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { remotionVideoService } from '../../services/remotionVideoService';
+import type { NextApiRequest, NextApiResponse } from "next";
+import { remotionVideoService } from "../../services/remotionVideoService";
 
 export const config = {
   api: {
     bodyParser: {
-      sizeLimit: '10mb',
+      sizeLimit: "10mb",
     },
   },
 };
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse,
 ) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
   }
 
   try {
@@ -22,21 +22,21 @@ export default async function handler(
       images,
       audioUrl,
       propertyInfo,
-      transitionType = 'fade',
+      transitionType = "fade",
       imageDuration = 5,
-      platform = 'youtube',
+      platform = "youtube",
       generateAllPlatforms = false,
     } = req.body;
 
     if (!images || images.length === 0) {
-      return res.status(400).json({ error: 'No images provided' });
+      return res.status(400).json({ error: "No images provided" });
     }
 
     if (!propertyInfo) {
-      return res.status(400).json({ error: 'Property info is required' });
+      return res.status(400).json({ error: "Property info is required" });
     }
 
-    console.log('🎬 Starting Remotion video generation...');
+    console.log("🎬 Starting Remotion video generation...");
 
     if (generateAllPlatforms) {
       // Generate videos for all platforms
@@ -50,7 +50,7 @@ export default async function handler(
         },
         (platform, progress) => {
           console.log(`${platform}: ${Math.round(progress * 100)}%`);
-        }
+        },
       );
 
       return res.status(200).json({
@@ -70,7 +70,7 @@ export default async function handler(
         },
         (progress) => {
           console.log(`Progress: ${Math.round(progress * 100)}%`);
-        }
+        },
       );
 
       return res.status(200).json({
@@ -80,10 +80,10 @@ export default async function handler(
       });
     }
   } catch (error) {
-    console.error('Video generation error:', error);
+    console.error("Video generation error:", error);
     return res.status(500).json({
-      error: 'Failed to generate video',
-      details: error instanceof Error ? error.message : 'Unknown error',
+      error: "Failed to generate video",
+      details: error instanceof Error ? error.message : "Unknown error",
     });
   }
 }
