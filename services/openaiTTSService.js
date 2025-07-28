@@ -2,9 +2,17 @@ import OpenAI from 'openai';
 // Node.js imports (only in Node environment)
 let fs;
 let path;
+
+async function loadNodeModules() {
+    if (typeof window === 'undefined') {
+        fs = await import('fs');
+        path = await import('path');
+    }
+}
+
+// Load Node modules if in Node environment
 if (typeof window === 'undefined') {
-    fs = await import('fs');
-    path = await import('path');
+    loadNodeModules();
 }
 export class OpenAITTSService {
     constructor(apiKey) {
@@ -16,8 +24,12 @@ export class OpenAITTSService {
         };
         const key = apiKey || process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API_KEY;
         if (!key) {
-            throw new Error('OpenAI API key not found. Please set OPENAI_API_KEY or VITE_OPENAI_API_KEY in your environment.');
+            console.warn('⚠️ OpenAI API key not found. TTS features will be disabled. Set OPENAI_API_KEY or VITE_OPENAI_API_KEY to enable.');
+            this.isAvailable = false;
+            this.openai = null;
+            return;
         }
+        this.isAvailable = true;
         this.openai = new OpenAI({ apiKey: key });
         console.log('✅ OpenAI TTS Service initialized');
     }
@@ -28,6 +40,10 @@ export class OpenAITTSService {
      * @returns URL to the generated audio file
      */
     async generateSpeech(text, options = {}) {
+        if (!this.isAvailable) {
+            console.warn('⚠️ OpenAI TTS Service not available. API key required.');
+            throw new Error('OpenAI TTS Service not available. Please configure API key.');
+        }
         try {
             const config = { ...this.defaultOptions, ...options };
             console.log('🎙️ Generating speech with OpenAI TTS:', {
@@ -70,6 +86,10 @@ export class OpenAITTSService {
      * @returns Path to the saved audio file
      */
     async generateSpeechToFile(text, outputPath, options = {}) {
+        if (!this.isAvailable) {
+            console.warn('⚠️ OpenAI TTS Service not available. API key required.');
+            throw new Error('OpenAI TTS Service not available. Please configure API key.');
+        }
         if (typeof window !== 'undefined') {
             throw new Error('generateSpeechToFile is only available in Node.js environment');
         }
