@@ -2,30 +2,37 @@
 
 @theme {
   --font-family-sans: Inter, sans-serif;
-  
-  --color-brand-background: #171E2B;
-  --color-brand-panel: #242B40;
-  --color-brand-card: #2D374F;
-  --color-brand-primary: #4A55C7;
-  --color-brand-secondary: #38A169;
-  --color-brand-accent: #805AD5;
-  --color-brand-text-primary: #F7FAFC;
-  --color-brand-text-secondary: #A0AEC0;
+
+  --color-brand-background: #171e2b;
+  --color-brand-panel: #242b40;
+  --color-brand-card: #2d374f;
+  --color-brand-primary: #4a55c7;
+  --color-brand-secondary: #38a169;
+  --color-brand-accent: #805ad5;
+  --color-brand-text-primary: #f7fafc;
+  --color-brand-text-secondary: #a0aec0;
   --color-brand-text-tertiary: #718096;
-  --color-brand-border: #4A5568;
-  --color-brand-danger: #E53E3E;
-  --color-brand-input-bg: #2D374F;
-  
-  --background-image-brand-gradient: linear-gradient(to right, #805AD5, #4A55C7);
+  --color-brand-border: #4a5568;
+  --color-brand-danger: #e53e3e;
+  --color-brand-input-bg: #2d374f;
+
+  --background-image-brand-gradient: linear-gradient(
+    to right,
+    #805ad5,
+    #4a55c7
+  );
 }
 
 @layer base {
-  html, body {
+  html,
+  body {
     overflow-x: hidden;
     max-width: 100vw;
   }
-  
-  *, *::before, *::after {
+
+  *,
+  *::before,
+  *::after {
     box-sizing: border-box;
   }
 }
@@ -34,7 +41,7 @@
   .content-auto {
     content-visibility: auto;
   }
-  
+
   /* Prevent horizontal overflow globally */
   .prevent-overflow {
     overflow-x: hidden;
@@ -42,13 +49,13 @@
     word-break: break-word;
     hyphens: auto;
   }
-  
+
   /* Hide scrollbars for gallery */
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-  
+
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }

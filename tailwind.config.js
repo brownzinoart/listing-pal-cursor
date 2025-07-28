@@ -12,26 +12,26 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
+        sans: ["Inter", "sans-serif"],
       },
       colors: {
-        'brand-background': '#171E2B',
-        'brand-panel': '#242B40',
-        'brand-card': '#2D374F',
-        'brand-primary': '#4A55C7',
-        'brand-secondary': '#38A169',
-        'brand-accent': '#805AD5',
-        'brand-text-primary': '#F7FAFC',
-        'brand-text-secondary': '#A0AEC0',
-        'brand-text-tertiary': '#718096',
-        'brand-border': '#4A5568',
-        'brand-danger': '#E53E3E',
-        'brand-input-bg': '#2D374F',
+        "brand-background": "#171E2B",
+        "brand-panel": "#242B40",
+        "brand-card": "#2D374F",
+        "brand-primary": "#4A55C7",
+        "brand-secondary": "#38A169",
+        "brand-accent": "#805AD5",
+        "brand-text-primary": "#F7FAFC",
+        "brand-text-secondary": "#A0AEC0",
+        "brand-text-tertiary": "#718096",
+        "brand-border": "#4A5568",
+        "brand-danger": "#E53E3E",
+        "brand-input-bg": "#2D374F",
       },
       backgroundImage: {
-        'brand-gradient': 'linear-gradient(to right, #805AD5, #4A55C7)',
-      }
-    }
+        "brand-gradient": "linear-gradient(to right, #805AD5, #4A55C7)",
+      },
+    },
   },
   plugins: [],
-}
+};
