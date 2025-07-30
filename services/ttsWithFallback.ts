@@ -3,13 +3,15 @@
  * Manages multiple TTS providers with automatic fallback
  */
 
-import { fallbackChainService, ServiceProvider } from './fallbackChainService';
-import { openaiTTSClient } from './openaiTTSClient';
-import { VideoScript } from './videoGenerationService';
+import { fallbackChainService, ServiceProvider } from "./fallbackChainService";
+import { openaiTTSClient } from "./openaiTTSClient";
+import { VideoScript } from "./videoGenerationService";
 
 // Environment variables
-const ELEVENLABS_API_KEY = import.meta.env.VITE_ELEVENLABS_API_KEY || process.env.ELEVENLABS_API_KEY;
-const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
+const ELEVENLABS_API_KEY =
+  import.meta.env.VITE_ELEVENLABS_API_KEY || process.env.ELEVENLABS_API_KEY;
+const OPENAI_API_KEY =
+  import.meta.env.VITE_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
 
 export interface TTSProvider {
   generateSpeech(text: string, options?: any): Promise<string | null>;
@@ -18,7 +20,7 @@ export interface TTSProvider {
 export interface TTSOptions {
   voice?: string;
   speed?: number;
-  style?: 'professional' | 'casual' | 'energetic';
+  style?: "professional" | "casual" | "energetic";
 }
 
 class TTSWithFallback {
@@ -30,108 +32,130 @@ class TTSWithFallback {
     // OpenAI TTS Provider (Primary - PRIORITY for this user)
     if (OPENAI_API_KEY) {
       const openaiProvider: ServiceProvider = {
-        id: 'openai-tts',
-        name: 'OpenAI TTS (Primary)',
+        id: "openai-tts",
+        name: "OpenAI TTS (Primary)",
         priority: 1,
         isAvailable: true,
         failureCount: 0,
         maxFailures: 3,
         cooldownPeriod: 30000, // 30 seconds
-        healthCheckUrl: 'https://api.openai.com/v1/models', // Simple health check
-        execute: async (params: { script: VideoScript; options?: TTSOptions }) => {
-          console.log('🎙️ Using OpenAI TTS (preferred provider)');
+        healthCheckUrl: "https://api.openai.com/v1/models", // Simple health check
+        execute: async (params: {
+          script: VideoScript;
+          options?: TTSOptions;
+        }) => {
+          console.log("🎙️ Using OpenAI TTS (preferred provider)");
           const fullText = this.scriptToText(params.script);
-          
+
           const ttsOptions = {
-            voice: 'nova' as const, // Professional female voice
+            voice: "nova" as const, // Professional female voice
             speed: params.options?.speed || 1.0,
-            model: 'tts-1' as const // Standard quality for faster generation
+            model: "tts-1" as const, // Standard quality for faster generation
           };
 
-          const audioUrl = await openaiTTSClient.generateSpeech(fullText, ttsOptions);
-          console.log('✅ OpenAI TTS completed successfully');
+          const audioUrl = await openaiTTSClient.generateSpeech(
+            fullText,
+            ttsOptions,
+          );
+          console.log("✅ OpenAI TTS completed successfully");
           return audioUrl;
-        }
+        },
       };
 
-      fallbackChainService.registerProvider('tts', openaiProvider);
-      console.log('📡 OpenAI TTS registered as primary provider');
+      fallbackChainService.registerProvider("tts", openaiProvider);
+      console.log("📡 OpenAI TTS registered as primary provider");
     } else {
-      console.warn('⚠️ OpenAI API key not found - OpenAI TTS will not be available');
+      console.warn(
+        "⚠️ OpenAI API key not found - OpenAI TTS will not be available",
+      );
     }
 
     // ElevenLabs Provider (Secondary fallback)
     if (ELEVENLABS_API_KEY) {
       const elevenlabsProvider: ServiceProvider = {
-        id: 'elevenlabs',
-        name: 'ElevenLabs (Fallback)',
+        id: "elevenlabs",
+        name: "ElevenLabs (Fallback)",
         priority: 2,
         isAvailable: true,
         failureCount: 0,
         maxFailures: 3,
         cooldownPeriod: 60000, // 1 minute
-        healthCheckUrl: 'https://api.elevenlabs.io/v1/voices',
-        execute: async (params: { script: VideoScript; options?: TTSOptions }) => {
-          console.log('🎙️ Using ElevenLabs as fallback (OpenAI TTS unavailable)');
-          return await this.generateElevenLabsSpeech(params.script, params.options);
-        }
+        healthCheckUrl: "https://api.elevenlabs.io/v1/voices",
+        execute: async (params: {
+          script: VideoScript;
+          options?: TTSOptions;
+        }) => {
+          console.log(
+            "🎙️ Using ElevenLabs as fallback (OpenAI TTS unavailable)",
+          );
+          return await this.generateElevenLabsSpeech(
+            params.script,
+            params.options,
+          );
+        },
       };
 
-      fallbackChainService.registerProvider('tts', elevenlabsProvider);
+      fallbackChainService.registerProvider("tts", elevenlabsProvider);
     }
 
     // Browser TTS Provider (Tertiary Fallback)
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
       const browserTTSProvider: ServiceProvider = {
-        id: 'browser-tts',
-        name: 'Browser TTS',
+        id: "browser-tts",
+        name: "Browser TTS",
         priority: 3,
         isAvailable: true,
         failureCount: 0,
         maxFailures: 1,
         cooldownPeriod: 5000, // 5 seconds
-        execute: async (params: { script: VideoScript; options?: TTSOptions }) => {
-          return await this.generateBrowserSpeech(params.script, params.options);
-        }
+        execute: async (params: {
+          script: VideoScript;
+          options?: TTSOptions;
+        }) => {
+          return await this.generateBrowserSpeech(
+            params.script,
+            params.options,
+          );
+        },
       };
 
-      fallbackChainService.registerProvider('tts', browserTTSProvider);
+      fallbackChainService.registerProvider("tts", browserTTSProvider);
     }
 
     // Silent Fallback (Always available)
     const silentProvider: ServiceProvider = {
-      id: 'silent',
-      name: 'Silent (No Audio)',
+      id: "silent",
+      name: "Silent (No Audio)",
       priority: 99,
       isAvailable: true,
       failureCount: 0,
       maxFailures: 0,
       cooldownPeriod: 0,
       execute: async () => {
-        console.log('🔇 Using silent fallback - no audio will be generated');
+        console.log("🔇 Using silent fallback - no audio will be generated");
         return null;
-      }
+      },
     };
 
-    fallbackChainService.registerProvider('tts', silentProvider);
+    fallbackChainService.registerProvider("tts", silentProvider);
   }
 
   /**
    * Generate speech with automatic fallback
    */
   async generateSpeech(
-    script: VideoScript, 
+    script: VideoScript,
     options?: TTSOptions,
-    onProviderChange?: (providerId: string, providerName: string) => void
+    onProviderChange?: (providerId: string, providerName: string) => void,
   ): Promise<string | null> {
     try {
       return await fallbackChainService.executeWithFallback<string | null>(
-        'tts',
+        "tts",
         { script, options },
-        onProviderChange
+        onProviderChange,
       );
     } catch (error) {
-      console.error('All TTS providers failed:', error);
+      console.error("All TTS providers failed:", error);
       return null;
     }
   }
@@ -142,42 +166,50 @@ class TTSWithFallback {
   private scriptToText(script: VideoScript): string {
     const parts = [
       script.intro,
-      ...script.scenes.map(scene => scene.narration),
-      script.outro
+      ...script.scenes.map((scene) => scene.narration),
+      script.outro,
     ];
-    
-    return parts.filter(Boolean).join(' ');
+
+    return parts.filter(Boolean).join(" ");
   }
 
   /**
    * Generate speech using ElevenLabs API
    */
-  private async generateElevenLabsSpeech(script: VideoScript, options?: TTSOptions): Promise<string | null> {
+  private async generateElevenLabsSpeech(
+    script: VideoScript,
+    options?: TTSOptions,
+  ): Promise<string | null> {
     const fullText = this.scriptToText(script);
-    const voiceId = '21m00Tcm4TlvDq8ikWAM'; // Rachel voice
+    const voiceId = "21m00Tcm4TlvDq8ikWAM"; // Rachel voice
 
-    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
-      method: 'POST',
-      headers: {
-        'Accept': 'audio/mpeg',
-        'Content-Type': 'application/json',
-        'xi-api-key': ELEVENLABS_API_KEY!,
+    const response = await fetch(
+      `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
+      {
+        method: "POST",
+        headers: {
+          Accept: "audio/mpeg",
+          "Content-Type": "application/json",
+          "xi-api-key": ELEVENLABS_API_KEY!,
+        },
+        body: JSON.stringify({
+          text: fullText,
+          model_id: "eleven_monolingual_v1",
+          voice_settings: {
+            stability: 0.5,
+            similarity_boost: 0.75,
+            style: options?.style === "energetic" ? 0.8 : 0.4,
+            use_speaker_boost: true,
+          },
+        }),
       },
-      body: JSON.stringify({
-        text: fullText,
-        model_id: 'eleven_monolingual_v1',
-        voice_settings: {
-          stability: 0.5,
-          similarity_boost: 0.75,
-          style: options?.style === 'energetic' ? 0.8 : 0.4,
-          use_speaker_boost: true
-        }
-      }),
-    });
+    );
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`ElevenLabs API error: ${response.status} - ${errorText}`);
+      throw new Error(
+        `ElevenLabs API error: ${response.status} - ${errorText}`,
+      );
     }
 
     const audioBlob = await response.blob();
@@ -187,29 +219,38 @@ class TTSWithFallback {
   /**
    * Generate speech using browser's SpeechSynthesis API
    */
-  private async generateBrowserSpeech(script: VideoScript, options?: TTSOptions): Promise<string | null> {
-    if (!('speechSynthesis' in window)) {
-      throw new Error('Browser TTS not supported');
+  private async generateBrowserSpeech(
+    script: VideoScript,
+    options?: TTSOptions,
+  ): Promise<string | null> {
+    if (!("speechSynthesis" in window)) {
+      throw new Error("Browser TTS not supported");
     }
 
     const fullText = this.scriptToText(script);
-    
+
     return new Promise((resolve, reject) => {
       try {
         // Create a more sophisticated browser TTS implementation
         const utterance = new SpeechSynthesisUtterance(fullText);
-        
+
         // Find a good voice
         const voices = speechSynthesis.getVoices();
-        const preferredVoice = voices.find(voice => 
-          voice.lang.startsWith('en') && 
-          (voice.name.includes('Female') || voice.name.includes('Woman') || voice.name.includes('Karen'))
-        ) || voices.find(voice => voice.lang.startsWith('en')) || voices[0];
-        
+        const preferredVoice =
+          voices.find(
+            (voice) =>
+              voice.lang.startsWith("en") &&
+              (voice.name.includes("Female") ||
+                voice.name.includes("Woman") ||
+                voice.name.includes("Karen")),
+          ) ||
+          voices.find((voice) => voice.lang.startsWith("en")) ||
+          voices[0];
+
         if (preferredVoice) {
           utterance.voice = preferredVoice;
         }
-        
+
         utterance.rate = options?.speed || 0.9;
         utterance.pitch = 1.0;
         utterance.volume = 1.0;
@@ -219,14 +260,14 @@ class TTSWithFallback {
         const mediaRecorder = this.setupAudioRecorder(chunks);
 
         utterance.onstart = () => {
-          if (mediaRecorder && mediaRecorder.state !== 'recording') {
+          if (mediaRecorder && mediaRecorder.state !== "recording") {
             mediaRecorder.start();
           }
         };
 
         utterance.onend = () => {
           setTimeout(() => {
-            if (mediaRecorder && mediaRecorder.state === 'recording') {
+            if (mediaRecorder && mediaRecorder.state === "recording") {
               mediaRecorder.stop();
             }
           }, 100);
@@ -244,7 +285,7 @@ class TTSWithFallback {
           };
 
           mediaRecorder.onstop = () => {
-            const audioBlob = new Blob(chunks, { type: 'audio/wav' });
+            const audioBlob = new Blob(chunks, { type: "audio/wav" });
             const audioUrl = URL.createObjectURL(audioBlob);
             resolve(audioUrl);
           };
@@ -256,7 +297,6 @@ class TTSWithFallback {
           // Return null since we can't capture the audio
           resolve(null);
         }
-
       } catch (error) {
         reject(error);
       }
@@ -268,11 +308,11 @@ class TTSWithFallback {
    */
   private setupAudioRecorder(chunks: BlobPart[]): MediaRecorder | null {
     try {
-      // This is a simplified version - in practice, you'd need to 
+      // This is a simplified version - in practice, you'd need to
       // capture system audio which is complex in browsers
       return null;
     } catch (error) {
-      console.warn('Could not setup audio recorder for browser TTS:', error);
+      console.warn("Could not setup audio recorder for browser TTS:", error);
       return null;
     }
   }
@@ -281,7 +321,7 @@ class TTSWithFallback {
    * Get TTS service status
    */
   getStatus() {
-    return fallbackChainService.getServiceStatus('tts');
+    return fallbackChainService.getServiceStatus("tts");
   }
 
   /**
@@ -294,17 +334,17 @@ class TTSWithFallback {
     // OpenAI TTS cost estimation
     if (OPENAI_API_KEY) {
       const openaiCost = (fullText.length / 1000) * 0.015; // $0.015 per 1K characters
-      estimates.push({ service: 'OpenAI TTS', cost: openaiCost });
+      estimates.push({ service: "OpenAI TTS", cost: openaiCost });
     }
 
     // ElevenLabs cost estimation (higher cost)
     if (ELEVENLABS_API_KEY) {
-      const elevenlabsCost = (fullText.length / 1000) * 0.30; // Estimated $0.30 per 1K characters
-      estimates.push({ service: 'ElevenLabs', cost: elevenlabsCost });
+      const elevenlabsCost = (fullText.length / 1000) * 0.3; // Estimated $0.30 per 1K characters
+      estimates.push({ service: "ElevenLabs", cost: elevenlabsCost });
     }
 
     // Browser TTS is free
-    estimates.push({ service: 'Browser TTS', cost: 0 });
+    estimates.push({ service: "Browser TTS", cost: 0 });
 
     return estimates;
   }
@@ -317,7 +357,7 @@ class TTSWithFallback {
       intro: "This is a test.",
       scenes: [],
       outro: "",
-      totalDuration: 3
+      totalDuration: 3,
     };
 
     const results: Record<string, boolean> = {};
@@ -326,9 +366,15 @@ class TTSWithFallback {
     for (const provider of status.providers) {
       try {
         console.log(`Testing ${provider.name}...`);
-        const result = await this.generateSpeech(testScript, undefined, () => {});
+        const result = await this.generateSpeech(
+          testScript,
+          undefined,
+          () => {},
+        );
         results[provider.id] = result !== null;
-        console.log(`${provider.name}: ${results[provider.id] ? '✅ Pass' : '❌ Fail'}`);
+        console.log(
+          `${provider.name}: ${results[provider.id] ? "✅ Pass" : "❌ Fail"}`,
+        );
       } catch (error) {
         results[provider.id] = false;
         console.log(`${provider.name}: ❌ Fail - ${error}`);

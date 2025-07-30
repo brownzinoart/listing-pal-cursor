@@ -1,156 +1,159 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Demo Property Video Test</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background: #1e293b;
-            color: white;
-        }
-        .test-section {
-            background: #334155;
-            padding: 20px;
-            margin: 20px 0;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        button {
-            background: #6366f1;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin: 5px;
-        }
-        button:hover {
-            background: #4f46e5;
-        }
-        button:disabled {
-            background: #64748b;
-            cursor: not-allowed;
-        }
-        .status {
-            margin: 10px 0;
-            padding: 10px;
-            border-radius: 5px;
-        }
-        .success {
-            background: #22c55e;
-            color: white;
-        }
-        .error {
-            background: #ef4444;
-            color: white;
-        }
-        .loading {
-            background: #3b82f6;
-            color: white;
-        }
-        video {
-            width: 100%;
-            margin: 10px 0;
-            border-radius: 8px;
-        }
-        .image-preview {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin: 10px 0;
-        }
-        .image-preview img {
-            width: 150px;
-            height: 100px;
-            object-fit: cover;
-            border-radius: 4px;
-        }
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background: #1e293b;
+        color: white;
+      }
+      .test-section {
+        background: #334155;
+        padding: 20px;
+        margin: 20px 0;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      button {
+        background: #6366f1;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        margin: 5px;
+      }
+      button:hover {
+        background: #4f46e5;
+      }
+      button:disabled {
+        background: #64748b;
+        cursor: not-allowed;
+      }
+      .status {
+        margin: 10px 0;
+        padding: 10px;
+        border-radius: 5px;
+      }
+      .success {
+        background: #22c55e;
+        color: white;
+      }
+      .error {
+        background: #ef4444;
+        color: white;
+      }
+      .loading {
+        background: #3b82f6;
+        color: white;
+      }
+      video {
+        width: 100%;
+        margin: 10px 0;
+        border-radius: 8px;
+      }
+      .image-preview {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin: 10px 0;
+      }
+      .image-preview img {
+        width: 150px;
+        height: 100px;
+        object-fit: cover;
+        border-radius: 4px;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <h1>Demo Property Video Generation Test</h1>
 
     <div class="test-section">
-        <h2>Beverly Hills Mansion Demo</h2>
-        <p>Test video generation using Unsplash URLs directly</p>
-        
-        <button onclick="testDemoVideo()">Generate Demo Video</button>
-        
-        <div id="status"></div>
-        <div id="image-preview" class="image-preview"></div>
-        <video id="generated-video" controls style="display:none"></video>
+      <h2>Beverly Hills Mansion Demo</h2>
+      <p>Test video generation using Unsplash URLs directly</p>
+
+      <button onclick="testDemoVideo()">Generate Demo Video</button>
+
+      <div id="status"></div>
+      <div id="image-preview" class="image-preview"></div>
+      <video id="generated-video" controls style="display: none"></video>
     </div>
 
     <script type="module">
-        window.testDemoVideo = async function() {
-            const statusEl = document.getElementById('status');
-            const videoEl = document.getElementById('generated-video');
-            const previewEl = document.getElementById('image-preview');
-            
-            statusEl.className = 'status loading';
-            statusEl.textContent = 'Loading demo property images...';
-            
-            try {
-                // Import the demo property service
-                const { getDemoPropertyWithImages } = await import('./services/demoPropertyService.ts');
-                
-                // Load Beverly Hills demo property
-                const { property, images, imageUrls } = await getDemoPropertyWithImages('beverly-hills-mansion');
-                
-                // Display image preview
-                previewEl.innerHTML = imageUrls.map(url => 
-                    `<img src="${url}" alt="Property image">`
-                ).join('');
-                
-                statusEl.textContent = `Loaded ${imageUrls.length} images. Generating video...`;
-                
-                // Generate video using the URLs
-                const response = await fetch('/api/generate-remotion-video', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        images: imageUrls,
-                        propertyInfo: {
-                            address: property.address,
-                            price: `$${property.price.toLocaleString()}`,
-                            beds: property.bedrooms,
-                            baths: property.bathrooms,
-                            sqft: property.sqft
-                        },
-                        platform: "youtube",
-                        imageDuration: 4,
-                        transitionType: "fade"
-                    })
-                });
+      window.testDemoVideo = async function () {
+        const statusEl = document.getElementById("status");
+        const videoEl = document.getElementById("generated-video");
+        const previewEl = document.getElementById("image-preview");
 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
+        statusEl.className = "status loading";
+        statusEl.textContent = "Loading demo property images...";
 
-                const result = await response.json();
-                
-                if (result.success && result.videoUrl) {
-                    statusEl.className = 'status success';
-                    statusEl.textContent = '✓ Video generated successfully!';
-                    
-                    videoEl.src = result.videoUrl + '?t=' + Date.now();
-                    videoEl.style.display = 'block';
-                } else {
-                    throw new Error(result.error || 'Unknown error');
-                }
-            } catch (error) {
-                statusEl.className = 'status error';
-                statusEl.textContent = `✗ Error: ${error.message}`;
-                console.error('Error:', error);
-            }
+        try {
+          // Import the demo property service
+          const { getDemoPropertyWithImages } = await import(
+            "./services/demoPropertyService.ts"
+          );
+
+          // Load Beverly Hills demo property
+          const { property, images, imageUrls } =
+            await getDemoPropertyWithImages("beverly-hills-mansion");
+
+          // Display image preview
+          previewEl.innerHTML = imageUrls
+            .map((url) => `<img src="${url}" alt="Property image">`)
+            .join("");
+
+          statusEl.textContent = `Loaded ${imageUrls.length} images. Generating video...`;
+
+          // Generate video using the URLs
+          const response = await fetch("/api/generate-remotion-video", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              images: imageUrls,
+              propertyInfo: {
+                address: property.address,
+                price: `$${property.price.toLocaleString()}`,
+                beds: property.bedrooms,
+                baths: property.bathrooms,
+                sqft: property.sqft,
+              },
+              platform: "youtube",
+              imageDuration: 4,
+              transitionType: "fade",
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const result = await response.json();
+
+          if (result.success && result.videoUrl) {
+            statusEl.className = "status success";
+            statusEl.textContent = "✓ Video generated successfully!";
+
+            videoEl.src = result.videoUrl + "?t=" + Date.now();
+            videoEl.style.display = "block";
+          } else {
+            throw new Error(result.error || "Unknown error");
+          }
+        } catch (error) {
+          statusEl.className = "status error";
+          statusEl.textContent = `✗ Error: ${error.message}`;
+          console.error("Error:", error);
         }
+      };
     </script>
-</body>
+  </body>
 </html>

@@ -1,17 +1,26 @@
-import React, { useEffect, useState } from 'react';
-import { AILoadingState } from '../../shared/AILoadingStates';
-import { videoGenerationService, VideoAnalysis } from '../../../services/videoGenerationService';
-import { errorHandlingService, ErrorHandlingResult } from '../../../services/errorHandlingService';
-import { SparklesIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
-import Button from '../../shared/Button';
-import ErrorDisplay from '../../shared/ErrorDisplay';
+import React, { useEffect, useState } from "react";
+import { AILoadingState } from "../../shared/AILoadingStates";
+import {
+  videoGenerationService,
+  VideoAnalysis,
+} from "../../../services/videoGenerationService";
+import {
+  errorHandlingService,
+  ErrorHandlingResult,
+} from "../../../services/errorHandlingService";
+import { SparklesIcon, CheckCircleIcon } from "@heroicons/react/24/outline";
+import Button from "../../shared/Button";
+import ErrorDisplay from "../../shared/ErrorDisplay";
 
 interface VideoAnalysisStepProps {
   images: File[];
   onComplete: (analysis: VideoAnalysis) => void;
 }
 
-const VideoAnalysisStep: React.FC<VideoAnalysisStepProps> = ({ images, onComplete }) => {
+const VideoAnalysisStep: React.FC<VideoAnalysisStepProps> = ({
+  images,
+  onComplete,
+}) => {
   const [isAnalyzing, setIsAnalyzing] = useState(true);
   const [analysis, setAnalysis] = useState<VideoAnalysis | null>(null);
   const [error, setError] = useState<ErrorHandlingResult | null>(null);
@@ -29,10 +38,13 @@ const VideoAnalysisStep: React.FC<VideoAnalysisStepProps> = ({ images, onComplet
       setAnalysis(result);
       setIsAnalyzing(false);
     } catch (error) {
-      console.error('Analysis failed:', error);
+      console.error("Analysis failed:", error);
       setIsAnalyzing(false);
-      
-      const errorResult = errorHandlingService.handleError(error, 'VideoAnalysisStep');
+
+      const errorResult = errorHandlingService.handleError(
+        error,
+        "VideoAnalysisStep",
+      );
       setError(errorResult);
     }
   };
@@ -42,7 +54,7 @@ const VideoAnalysisStep: React.FC<VideoAnalysisStepProps> = ({ images, onComplet
     { text: "Identifying key features", duration: 700 },
     { text: "Evaluating image quality", duration: 600 },
     { text: "Optimizing composition", duration: 900 },
-    { text: "Analysis complete", duration: 500 }
+    { text: "Analysis complete", duration: 500 },
   ];
 
   if (isAnalyzing) {
@@ -58,8 +70,8 @@ const VideoAnalysisStep: React.FC<VideoAnalysisStepProps> = ({ images, onComplet
   }
 
   const handleRecoveryAction = async (action: any) => {
-    if (action.action === 'retry') {
-      setRetryCount(prev => prev + 1);
+    if (action.action === "retry") {
+      setRetryCount((prev) => prev + 1);
     }
     // Execute the action handler
     await action.handler();
@@ -69,10 +81,12 @@ const VideoAnalysisStep: React.FC<VideoAnalysisStepProps> = ({ images, onComplet
     return (
       <>
         <div className="text-center py-12">
-          <p className="text-red-400 mb-4">Analysis failed. Please see the error details above.</p>
-          <Button 
-            variant="gradient" 
-            onClick={() => setRetryCount(prev => prev + 1)}
+          <p className="text-red-400 mb-4">
+            Analysis failed. Please see the error details above.
+          </p>
+          <Button
+            variant="gradient"
+            onClick={() => setRetryCount((prev) => prev + 1)}
           >
             Try Again
           </Button>
@@ -91,7 +105,9 @@ const VideoAnalysisStep: React.FC<VideoAnalysisStepProps> = ({ images, onComplet
     <div className="space-y-8">
       <div className="text-center mb-8">
         <CheckCircleIcon className="h-16 w-16 text-emerald-400 mx-auto mb-4" />
-        <h3 className="text-2xl font-bold text-white mb-2">Analysis Complete!</h3>
+        <h3 className="text-2xl font-bold text-white mb-2">
+          Analysis Complete!
+        </h3>
         <p className="text-slate-400">AI has analyzed your property images</p>
       </div>
 

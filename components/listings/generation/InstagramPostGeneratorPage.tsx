@@ -1,17 +1,29 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { useAuth } from '../../../contexts/AuthContext';
-import * as listingService from '../../../services/listingService';
-import { ollamaService } from '../../../services/ollamaService';
-import { Listing } from '../../../types';
-import { TOOLKIT_TOOLS } from '../../../constants';
-import Button from '../../shared/Button';
-import Textarea from '../../shared/Textarea';
-import PropertySummaryHeader from './PropertySummaryHeader';
-import WorkflowNavigation from './WorkflowNavigation';
-import InstagramMockup from './InstagramMockup';
-import ModernDashboardLayout from '../../shared/ModernDashboardLayout';
-import { ArrowLeftIcon, SparklesIcon as SparklesOutlineIcon, ClipboardDocumentIcon, ArrowPathIcon, CheckIcon, ShareIcon } from '@heroicons/react/24/outline';
+import React, { useState, useEffect } from "react";
+import {
+  useParams,
+  useNavigate,
+  Link,
+  useSearchParams,
+} from "react-router-dom";
+import { useAuth } from "../../../contexts/AuthContext";
+import * as listingService from "../../../services/listingService";
+import { ollamaService } from "../../../services/ollamaService";
+import { Listing } from "../../../types";
+import { TOOLKIT_TOOLS } from "../../../constants";
+import Button from "../../shared/Button";
+import Textarea from "../../shared/Textarea";
+import PropertySummaryHeader from "./PropertySummaryHeader";
+import WorkflowNavigation from "./WorkflowNavigation";
+import InstagramMockup from "./InstagramMockup";
+import ModernDashboardLayout from "../../shared/ModernDashboardLayout";
+import {
+  ArrowLeftIcon,
+  SparklesIcon as SparklesOutlineIcon,
+  ClipboardDocumentIcon,
+  ArrowPathIcon,
+  CheckIcon,
+  ShareIcon,
+} from "@heroicons/react/24/outline";
 
 const InstagramPostGeneratorPage: React.FC = () => {
   const { id: listingId } = useParams<{ id: string }>();
@@ -20,35 +32,39 @@ const InstagramPostGeneratorPage: React.FC = () => {
   const [searchParams] = useSearchParams();
 
   const [listing, setListing] = useState<Listing | null>(null);
-  const [generatedCaption, setGeneratedCaption] = useState<string>('');
+  const [generatedCaption, setGeneratedCaption] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [isLoadingPage, setIsLoadingPage] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [charCount, setCharCount] = useState<number>(0);
 
   // Workflow management
-  const workflowParam = searchParams.get('workflow');
-  const workflowTools = workflowParam ? workflowParam.split(',') : [];
+  const workflowParam = searchParams.get("workflow");
+  const workflowTools = workflowParam ? workflowParam.split(",") : [];
   const isInWorkflow = workflowTools.length > 1;
 
   // Get previous step name for back navigation
   const getPreviousStepName = () => {
-    if (!isInWorkflow) return 'Property';
-    const currentIndex = workflowTools.indexOf('ig');
+    if (!isInWorkflow) return "Property";
+    const currentIndex = workflowTools.indexOf("ig");
     if (currentIndex > 0) {
       const previousToolId = workflowTools[currentIndex - 1];
-      const previousTool = TOOLKIT_TOOLS.find(tool => tool.id === previousToolId);
-      return previousTool?.name || 'Previous Step';
+      const previousTool = TOOLKIT_TOOLS.find(
+        (tool) => tool.id === previousToolId,
+      );
+      return previousTool?.name || "Previous Step";
     }
-    return 'Property';
+    return "Property";
   };
 
   const getPreviousStepPath = () => {
     if (!isInWorkflow) return `/listings/${listingId}`;
-    const currentIndex = workflowTools.indexOf('ig');
+    const currentIndex = workflowTools.indexOf("ig");
     if (currentIndex > 0) {
       const previousToolId = workflowTools[currentIndex - 1];
-      const previousTool = TOOLKIT_TOOLS.find(tool => tool.id === previousToolId);
+      const previousTool = TOOLKIT_TOOLS.find(
+        (tool) => tool.id === previousToolId,
+      );
       if (previousTool?.pathSuffix) {
         return `/listings/${listingId}${previousTool.pathSuffix}?workflow=${workflowParam}`;
       }
@@ -57,32 +73,44 @@ const InstagramPostGeneratorPage: React.FC = () => {
   };
 
   useEffect(() => {
-    if (!listingId) { setError("No listing ID."); setIsLoadingPage(false); return; }
-    listingService.getListingById(listingId)
-      .then(data => {
+    if (!listingId) {
+      setError("No listing ID.");
+      setIsLoadingPage(false);
+      return;
+    }
+    listingService
+      .getListingById(listingId)
+      .then((data) => {
         if (data && data.userId === user?.id) {
           setListing(data);
-          setGeneratedCaption(data.generatedInstagramCaption || "Your generated Instagram caption will appear here...");
-        } else { setError(data ? "Permission denied." : "Listing not found."); }
+          setGeneratedCaption(
+            data.generatedInstagramCaption ||
+              "Your generated Instagram caption will appear here...",
+          );
+        } else {
+          setError(data ? "Permission denied." : "Listing not found.");
+        }
       })
-      .catch(() => setError('Failed to fetch listing details.'))
+      .catch(() => setError("Failed to fetch listing details."))
       .finally(() => setIsLoadingPage(false));
   }, [listingId, user]);
 
-  useEffect(() => { setCharCount(generatedCaption.length); }, [generatedCaption]);
+  useEffect(() => {
+    setCharCount(generatedCaption.length);
+  }, [generatedCaption]);
 
   const handleGenerateCaption = async () => {
     if (!listing) return;
     setIsGenerating(true);
-    setGeneratedCaption('Generating your content...');
-    
+    setGeneratedCaption("Generating your content...");
+
     try {
       const aiCaption = await ollamaService.generateInstagramCaption(listing);
       setGeneratedCaption(aiCaption);
     } catch (error) {
-      console.error('Generation error:', error);
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      const mockCaption = `🏡✨ JUST LISTED! Beautiful ${listing.bedrooms}BR/${listing.bathrooms}BA home at ${listing.address.split(',')[0]}! \n\n💫 ${listing.squareFootage} sq ft of pure comfort\n🌟 Key features: ${listing.keyFeatures.split(',').slice(0,2).join(', ')}\n💰 Priced at $${listing.price.toLocaleString()}\n\n#RealEstate #JustListed #DreamHome #${listing.address.split(',')[1]?.trim().replace(/\s+/g, '') || 'NewListing'}`;
+      console.error("Generation error:", error);
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const mockCaption = `🏡✨ JUST LISTED! Beautiful ${listing.bedrooms}BR/${listing.bathrooms}BA home at ${listing.address.split(",")[0]}! \n\n💫 ${listing.squareFootage} sq ft of pure comfort\n🌟 Key features: ${listing.keyFeatures.split(",").slice(0, 2).join(", ")}\n💰 Priced at $${listing.price.toLocaleString()}\n\n#RealEstate #JustListed #DreamHome #${listing.address.split(",")[1]?.trim().replace(/\s+/g, "") || "NewListing"}`;
       setGeneratedCaption(mockCaption);
     } finally {
       setIsGenerating(false);
@@ -91,40 +119,55 @@ const InstagramPostGeneratorPage: React.FC = () => {
 
   const handleConfirmAndSave = async () => {
     if (!listingId || !listing || !user) return;
-    if (generatedCaption.includes("Your generated") || generatedCaption.includes("Generating your content")) {
-        alert("Please generate a caption before saving."); return;
+    if (
+      generatedCaption.includes("Your generated") ||
+      generatedCaption.includes("Generating your content")
+    ) {
+      alert("Please generate a caption before saving.");
+      return;
     }
-    
+
     try {
-      await listingService.updateListing(listingId, { ...listing, generatedInstagramCaption: generatedCaption, userId: user.id });
-      
+      await listingService.updateListing(listingId, {
+        ...listing,
+        generatedInstagramCaption: generatedCaption,
+        userId: user.id,
+      });
+
       // If in workflow, go to next tool
       if (isInWorkflow) {
-        const currentIndex = workflowTools.indexOf('ig');
+        const currentIndex = workflowTools.indexOf("ig");
         const nextToolId = workflowTools[currentIndex + 1];
-        
+
         if (nextToolId) {
-          const nextTool = TOOLKIT_TOOLS.find(tool => tool.id === nextToolId);
+          const nextTool = TOOLKIT_TOOLS.find((tool) => tool.id === nextToolId);
           if (nextTool && nextTool.pathSuffix) {
-            navigate(`/listings/${listingId}${nextTool.pathSuffix}?workflow=${workflowParam}`);
+            navigate(
+              `/listings/${listingId}${nextTool.pathSuffix}?workflow=${workflowParam}`,
+            );
             return;
           }
         }
       }
-      
+
       // Default: go back to listing
       navigate(`/listings/${listingId}`);
-    } catch (e) { alert("Failed to save caption."); }
+    } catch (e) {
+      alert("Failed to save caption.");
+    }
   };
 
   const handlePublishNow = () => {
-    alert("Publishing feature coming soon! For now, copy the content and post manually.");
+    alert(
+      "Publishing feature coming soon! For now, copy the content and post manually.",
+    );
   };
 
-  const handleCopy = () => { 
-    navigator.clipboard.writeText(generatedCaption)
+  const handleCopy = () => {
+    navigator.clipboard
+      .writeText(generatedCaption)
       .then(() => alert("Caption copied!"))
-      .catch(() => alert("Copy failed.")); 
+      .catch(() => alert("Copy failed."));
   };
 
   const handleRefresh = () => {
@@ -154,7 +197,7 @@ const InstagramPostGeneratorPage: React.FC = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-red-500/10 to-rose-500/10 rounded-3xl blur-xl"></div>
           <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8 text-center">
             <p className="text-red-400 mb-4">{error}</p>
-            <Button variant="glass" onClick={() => navigate('/dashboard')}>
+            <Button variant="glass" onClick={() => navigate("/dashboard")}>
               Go to Dashboard
             </Button>
           </div>
@@ -162,7 +205,7 @@ const InstagramPostGeneratorPage: React.FC = () => {
       </ModernDashboardLayout>
     );
   }
-  
+
   if (!listing) {
     return (
       <ModernDashboardLayout
@@ -181,8 +224,8 @@ const InstagramPostGeneratorPage: React.FC = () => {
 
   const headerActions = (
     <Link to={getPreviousStepPath()}>
-      <Button 
-        variant="glass" 
+      <Button
+        variant="glass"
         size="sm"
         leftIcon={<ArrowLeftIcon className="h-4 w-4" />}
       >
@@ -202,14 +245,14 @@ const InstagramPostGeneratorPage: React.FC = () => {
           <div className="relative group">
             <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-3xl blur-xl"></div>
             <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-6">
-              <WorkflowNavigation 
-                workflowTools={workflowTools} 
-                currentToolId="ig" 
+              <WorkflowNavigation
+                workflowTools={workflowTools}
+                currentToolId="ig"
               />
             </div>
           </div>
         )}
-        
+
         <div className="relative group">
           <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 rounded-3xl blur-xl"></div>
           <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-6">
@@ -223,20 +266,25 @@ const InstagramPostGeneratorPage: React.FC = () => {
             <div className="relative group sticky top-6">
               <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-3xl blur-xl"></div>
               <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8">
-                <h3 className="text-2xl font-bold text-white mb-6">Instagram Post Preview</h3>
+                <h3 className="text-2xl font-bold text-white mb-6">
+                  Instagram Post Preview
+                </h3>
                 <div className="mb-8">
-                  <InstagramMockup listingImage={listing.images?.[0]?.url} captionText={generatedCaption} />
+                  <InstagramMockup
+                    listingImage={listing.images?.[0]?.url}
+                    captionText={generatedCaption}
+                  />
                 </div>
-                <Button 
-                  onClick={handleGenerateCaption} 
-                  isLoading={isGenerating} 
-                  disabled={isGenerating} 
+                <Button
+                  onClick={handleGenerateCaption}
+                  isLoading={isGenerating}
+                  disabled={isGenerating}
                   variant="gradient"
-                  leftIcon={<SparklesOutlineIcon className="h-5 w-5" />} 
+                  leftIcon={<SparklesOutlineIcon className="h-5 w-5" />}
                   size="lg"
                   fullWidth
                 >
-                  {isGenerating ? 'Generating...' : 'Generate New Caption'}
+                  {isGenerating ? "Generating..." : "Generate New Caption"}
                 </Button>
               </div>
             </div>
@@ -249,8 +297,12 @@ const InstagramPostGeneratorPage: React.FC = () => {
               <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
                   <div className="mb-4 sm:mb-0">
-                    <h3 className="text-2xl font-bold text-white mb-2">Generated Instagram Caption</h3>
-                    <p className="text-slate-400">Edit and customize your generated content.</p>
+                    <h3 className="text-2xl font-bold text-white mb-2">
+                      Generated Instagram Caption
+                    </h3>
+                    <p className="text-slate-400">
+                      Edit and customize your generated content.
+                    </p>
                   </div>
                   <div className="flex items-center space-x-2">
                     <button
@@ -269,23 +321,31 @@ const InstagramPostGeneratorPage: React.FC = () => {
                     </button>
                   </div>
                 </div>
-                
+
                 <div className="space-y-6">
-                  <Textarea 
-                    value={generatedCaption} 
-                    onChange={(e) => setGeneratedCaption(e.target.value)} 
-                    placeholder="Instagram caption content..." 
-                    className="w-full" 
-                    rows={12} 
-                    disabled={isGenerating} 
-                    variant="gradient" 
+                  <Textarea
+                    value={generatedCaption}
+                    onChange={(e) => setGeneratedCaption(e.target.value)}
+                    placeholder="Instagram caption content..."
+                    className="w-full"
+                    rows={12}
+                    disabled={isGenerating}
+                    variant="gradient"
                   />
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-sm text-slate-400 mb-4 sm:mb-0">Character count: {charCount}</p>
+                    <p className="text-sm text-slate-400 mb-4 sm:mb-0">
+                      Character count: {charCount}
+                    </p>
                     <div className="flex flex-col sm:flex-row gap-3">
                       <Button
                         onClick={handlePublishNow}
-                        disabled={generatedCaption.includes("Your generated") || generatedCaption.includes("Generating your content") || isGenerating}
+                        disabled={
+                          generatedCaption.includes("Your generated") ||
+                          generatedCaption.includes(
+                            "Generating your content",
+                          ) ||
+                          isGenerating
+                        }
                         variant="gradient"
                         glowColor="purple"
                         leftIcon={<ShareIcon className="h-5 w-5" />}

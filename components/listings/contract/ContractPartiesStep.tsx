@@ -1,15 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { Contract, ContractParty, Listing } from '../../../types';
-import Button from '../../shared/Button';
-import { 
+import React, { useState, useEffect } from "react";
+import { Contract, ContractParty, Listing } from "../../../types";
+import Button from "../../shared/Button";
+import {
   UserGroupIcon,
   PlusIcon,
   TrashIcon,
   ScaleIcon,
   BuildingOfficeIcon,
   InformationCircleIcon,
-  ExclamationTriangleIcon
-} from '@heroicons/react/24/outline';
+  ExclamationTriangleIcon,
+} from "@heroicons/react/24/outline";
 
 interface ContractPartiesStepProps {
   listing: Listing;
@@ -24,29 +24,41 @@ const ContractPartiesStep: React.FC<ContractPartiesStepProps> = ({
   contractData,
   onUpdate,
   onNext,
-  onPrevious
+  onPrevious,
 }) => {
-  const [buyers, setBuyers] = useState<ContractParty[]>(contractData.buyers || []);
-  const [sellers, setSellers] = useState<ContractParty[]>(contractData.sellers || []);
-  const [listingAgent, setListingAgent] = useState<ContractParty | undefined>(contractData.listingAgent);
-  const [sellingAgent, setSellingAgent] = useState<ContractParty | undefined>(contractData.sellingAgent);
-  const [buyerAttorney, setBuyerAttorney] = useState<ContractParty | undefined>(contractData.buyerAttorney);
-  const [sellerAttorney, setSellerAttorney] = useState<ContractParty | undefined>(contractData.sellerAttorney);
+  const [buyers, setBuyers] = useState<ContractParty[]>(
+    contractData.buyers || [],
+  );
+  const [sellers, setSellers] = useState<ContractParty[]>(
+    contractData.sellers || [],
+  );
+  const [listingAgent, setListingAgent] = useState<ContractParty | undefined>(
+    contractData.listingAgent,
+  );
+  const [sellingAgent, setSellingAgent] = useState<ContractParty | undefined>(
+    contractData.sellingAgent,
+  );
+  const [buyerAttorney, setBuyerAttorney] = useState<ContractParty | undefined>(
+    contractData.buyerAttorney,
+  );
+  const [sellerAttorney, setSellerAttorney] = useState<
+    ContractParty | undefined
+  >(contractData.sellerAttorney);
 
   // Initialize with at least one buyer if none exist
   useEffect(() => {
     if (buyers.length === 0) {
       const initialBuyer: ContractParty = {
         id: `buyer_${Date.now()}`,
-        type: 'buyer',
-        firstName: '',
-        lastName: '',
-        email: '',
-        phone: '',
-        address: '',
-        city: '',
-        state: 'NC',
-        zipCode: ''
+        type: "buyer",
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+        address: "",
+        city: "",
+        state: "NC",
+        zipCode: "",
       };
       setBuyers([initialBuyer]);
     }
@@ -55,15 +67,15 @@ const ContractPartiesStep: React.FC<ContractPartiesStepProps> = ({
     if (sellers.length === 0) {
       const initialSeller: ContractParty = {
         id: `seller_${Date.now()}`,
-        type: 'seller',
-        firstName: '',
-        lastName: '',
-        email: '',
-        phone: '',
+        type: "seller",
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
         address: listing.address,
-        city: listing.city || '',
-        state: listing.state || 'NC',
-        zipCode: listing.zipCode || ''
+        city: listing.city || "",
+        state: listing.state || "NC",
+        zipCode: listing.zipCode || "",
       };
       setSellers([initialSeller]);
     }
@@ -77,22 +89,29 @@ const ContractPartiesStep: React.FC<ContractPartiesStepProps> = ({
       listingAgent,
       sellingAgent,
       buyerAttorney,
-      sellerAttorney
+      sellerAttorney,
     });
-  }, [buyers, sellers, listingAgent, sellingAgent, buyerAttorney, sellerAttorney]);
+  }, [
+    buyers,
+    sellers,
+    listingAgent,
+    sellingAgent,
+    buyerAttorney,
+    sellerAttorney,
+  ]);
 
   const addBuyer = () => {
     const newBuyer: ContractParty = {
       id: `buyer_${Date.now()}`,
-      type: 'buyer',
-      firstName: '',
-      lastName: '',
-      email: '',
-      phone: '',
-      address: '',
-      city: '',
-      state: 'NC',
-      zipCode: ''
+      type: "buyer",
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+      address: "",
+      city: "",
+      state: "NC",
+      zipCode: "",
     };
     setBuyers([...buyers, newBuyer]);
   };
@@ -103,9 +122,13 @@ const ContractPartiesStep: React.FC<ContractPartiesStepProps> = ({
     }
   };
 
-  const updateBuyer = (index: number, field: keyof ContractParty, value: string) => {
-    const updatedBuyers = buyers.map((buyer, i) => 
-      i === index ? { ...buyer, [field]: value } : buyer
+  const updateBuyer = (
+    index: number,
+    field: keyof ContractParty,
+    value: string,
+  ) => {
+    const updatedBuyers = buyers.map((buyer, i) =>
+      i === index ? { ...buyer, [field]: value } : buyer,
     );
     setBuyers(updatedBuyers);
   };
@@ -113,15 +136,15 @@ const ContractPartiesStep: React.FC<ContractPartiesStepProps> = ({
   const addSeller = () => {
     const newSeller: ContractParty = {
       id: `seller_${Date.now()}`,
-      type: 'seller',
-      firstName: '',
-      lastName: '',
-      email: '',
-      phone: '',
+      type: "seller",
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
       address: listing.address,
-      city: listing.city || '',
-      state: listing.state || 'NC',
-      zipCode: listing.zipCode || ''
+      city: listing.city || "",
+      state: listing.state || "NC",
+      zipCode: listing.zipCode || "",
     };
     setSellers([...sellers, newSeller]);
   };
@@ -132,23 +155,36 @@ const ContractPartiesStep: React.FC<ContractPartiesStepProps> = ({
     }
   };
 
-  const updateSeller = (index: number, field: keyof ContractParty, value: string) => {
-    const updatedSellers = sellers.map((seller, i) => 
-      i === index ? { ...seller, [field]: value } : seller
+  const updateSeller = (
+    index: number,
+    field: keyof ContractParty,
+    value: string,
+  ) => {
+    const updatedSellers = sellers.map((seller, i) =>
+      i === index ? { ...seller, [field]: value } : seller,
     );
     setSellers(updatedSellers);
   };
 
   const renderPersonForm = (
-    person: ContractParty, 
-    index: number, 
-    updateFn: (index: number, field: keyof ContractParty, value: string) => void,
+    person: ContractParty,
+    index: number,
+    updateFn: (
+      index: number,
+      field: keyof ContractParty,
+      value: string,
+    ) => void,
     canRemove: boolean,
-    removeFn?: (index: number) => void
+    removeFn?: (index: number) => void,
   ) => (
-    <div key={person.id} className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-xl p-6">
+    <div
+      key={person.id}
+      className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-xl p-6"
+    >
       <div className="flex justify-between items-center mb-4">
-        <h4 className="text-white font-semibold capitalize">{person.type} {index + 1}</h4>
+        <h4 className="text-white font-semibold capitalize">
+          {person.type} {index + 1}
+        </h4>
         {canRemove && removeFn && (
           <button
             onClick={() => removeFn(index)}
@@ -159,82 +195,96 @@ const ContractPartiesStep: React.FC<ContractPartiesStepProps> = ({
           </button>
         )}
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-2">First Name *</label>
+          <label className="block text-sm font-medium text-slate-300 mb-2">
+            First Name *
+          </label>
           <input
             type="text"
             value={person.firstName}
-            onChange={(e) => updateFn(index, 'firstName', e.target.value)}
+            onChange={(e) => updateFn(index, "firstName", e.target.value)}
             className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
             placeholder="Enter first name"
             required
           />
         </div>
-        
+
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-2">Last Name *</label>
+          <label className="block text-sm font-medium text-slate-300 mb-2">
+            Last Name *
+          </label>
           <input
             type="text"
             value={person.lastName}
-            onChange={(e) => updateFn(index, 'lastName', e.target.value)}
+            onChange={(e) => updateFn(index, "lastName", e.target.value)}
             className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
             placeholder="Enter last name"
             required
           />
         </div>
-        
+
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-2">Email</label>
+          <label className="block text-sm font-medium text-slate-300 mb-2">
+            Email
+          </label>
           <input
             type="email"
-            value={person.email || ''}
-            onChange={(e) => updateFn(index, 'email', e.target.value)}
+            value={person.email || ""}
+            onChange={(e) => updateFn(index, "email", e.target.value)}
             className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
             placeholder="Enter email address"
           />
         </div>
-        
+
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-2">Phone</label>
+          <label className="block text-sm font-medium text-slate-300 mb-2">
+            Phone
+          </label>
           <input
             type="tel"
-            value={person.phone || ''}
-            onChange={(e) => updateFn(index, 'phone', e.target.value)}
+            value={person.phone || ""}
+            onChange={(e) => updateFn(index, "phone", e.target.value)}
             className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
             placeholder="(xxx) xxx-xxxx"
           />
         </div>
-        
+
         <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-slate-300 mb-2">Address</label>
+          <label className="block text-sm font-medium text-slate-300 mb-2">
+            Address
+          </label>
           <input
             type="text"
-            value={person.address || ''}
-            onChange={(e) => updateFn(index, 'address', e.target.value)}
+            value={person.address || ""}
+            onChange={(e) => updateFn(index, "address", e.target.value)}
             className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
             placeholder="Street address"
           />
         </div>
-        
+
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-2">City</label>
+          <label className="block text-sm font-medium text-slate-300 mb-2">
+            City
+          </label>
           <input
             type="text"
-            value={person.city || ''}
-            onChange={(e) => updateFn(index, 'city', e.target.value)}
+            value={person.city || ""}
+            onChange={(e) => updateFn(index, "city", e.target.value)}
             className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
             placeholder="City"
           />
         </div>
-        
+
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">State</label>
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              State
+            </label>
             <select
-              value={person.state || 'NC'}
-              onChange={(e) => updateFn(index, 'state', e.target.value)}
+              value={person.state || "NC"}
+              onChange={(e) => updateFn(index, "state", e.target.value)}
               className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
             >
               <option value="NC">NC</option>
@@ -243,13 +293,15 @@ const ContractPartiesStep: React.FC<ContractPartiesStepProps> = ({
               <option value="GA">GA</option>
             </select>
           </div>
-          
+
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">ZIP</label>
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              ZIP
+            </label>
             <input
               type="text"
-              value={person.zipCode || ''}
-              onChange={(e) => updateFn(index, 'zipCode', e.target.value)}
+              value={person.zipCode || ""}
+              onChange={(e) => updateFn(index, "zipCode", e.target.value)}
               className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
               placeholder="12345"
             />
@@ -277,10 +329,16 @@ const ContractPartiesStep: React.FC<ContractPartiesStepProps> = ({
             Add Buyer
           </Button>
         </div>
-        
+
         <div className="space-y-4">
-          {buyers.map((buyer, index) => 
-            renderPersonForm(buyer, index, updateBuyer, buyers.length > 1, removeBuyer)
+          {buyers.map((buyer, index) =>
+            renderPersonForm(
+              buyer,
+              index,
+              updateBuyer,
+              buyers.length > 1,
+              removeBuyer,
+            ),
           )}
         </div>
       </div>
@@ -301,10 +359,16 @@ const ContractPartiesStep: React.FC<ContractPartiesStepProps> = ({
             Add Seller
           </Button>
         </div>
-        
+
         <div className="space-y-4">
-          {sellers.map((seller, index) => 
-            renderPersonForm(seller, index, updateSeller, sellers.length > 1, removeSeller)
+          {sellers.map((seller, index) =>
+            renderPersonForm(
+              seller,
+              index,
+              updateSeller,
+              sellers.length > 1,
+              removeSeller,
+            ),
           )}
         </div>
       </div>
@@ -316,26 +380,33 @@ const ContractPartiesStep: React.FC<ContractPartiesStepProps> = ({
           North Carolina Attorney Requirement
         </h4>
         <p className="text-amber-300 text-sm mb-4">
-          North Carolina law requires that an attorney licensed in North Carolina must oversee the closing of all real estate transactions. While not required at contract signing, having attorney information helps ensure a smooth closing process.
+          North Carolina law requires that an attorney licensed in North
+          Carolina must oversee the closing of all real estate transactions.
+          While not required at contract signing, having attorney information
+          helps ensure a smooth closing process.
         </p>
-        
+
         {/* Buyer Attorney */}
         <div className="mb-4">
-          <h5 className="text-white font-medium mb-2">Buyer's Attorney (Recommended)</h5>
+          <h5 className="text-white font-medium mb-2">
+            Buyer's Attorney (Recommended)
+          </h5>
           {!buyerAttorney ? (
             <Button
               variant="glass"
               size="sm"
-              onClick={() => setBuyerAttorney({
-                id: `buyer_attorney_${Date.now()}`,
-                type: 'attorney',
-                firstName: '',
-                lastName: '',
-                email: '',
-                phone: '',
-                barNumber: '',
-                firm: ''
-              })}
+              onClick={() =>
+                setBuyerAttorney({
+                  id: `buyer_attorney_${Date.now()}`,
+                  type: "attorney",
+                  firstName: "",
+                  lastName: "",
+                  email: "",
+                  phone: "",
+                  barNumber: "",
+                  firm: "",
+                })
+              }
               leftIcon={<PlusIcon className="h-4 w-4" />}
             >
               Add Buyer's Attorney
@@ -351,59 +422,101 @@ const ContractPartiesStep: React.FC<ContractPartiesStepProps> = ({
                   <TrashIcon className="h-4 w-4" />
                 </button>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1">First Name</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">
+                    First Name
+                  </label>
                   <input
                     type="text"
                     value={buyerAttorney.firstName}
-                    onChange={(e) => setBuyerAttorney({...buyerAttorney, firstName: e.target.value})}
+                    onChange={(e) =>
+                      setBuyerAttorney({
+                        ...buyerAttorney,
+                        firstName: e.target.value,
+                      })
+                    }
                     className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1">Last Name</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">
+                    Last Name
+                  </label>
                   <input
                     type="text"
                     value={buyerAttorney.lastName}
-                    onChange={(e) => setBuyerAttorney({...buyerAttorney, lastName: e.target.value})}
+                    onChange={(e) =>
+                      setBuyerAttorney({
+                        ...buyerAttorney,
+                        lastName: e.target.value,
+                      })
+                    }
                     className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1">Law Firm</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">
+                    Law Firm
+                  </label>
                   <input
                     type="text"
-                    value={buyerAttorney.firm || ''}
-                    onChange={(e) => setBuyerAttorney({...buyerAttorney, firm: e.target.value})}
+                    value={buyerAttorney.firm || ""}
+                    onChange={(e) =>
+                      setBuyerAttorney({
+                        ...buyerAttorney,
+                        firm: e.target.value,
+                      })
+                    }
                     className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1">Bar Number</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">
+                    Bar Number
+                  </label>
                   <input
                     type="text"
-                    value={buyerAttorney.barNumber || ''}
-                    onChange={(e) => setBuyerAttorney({...buyerAttorney, barNumber: e.target.value})}
+                    value={buyerAttorney.barNumber || ""}
+                    onChange={(e) =>
+                      setBuyerAttorney({
+                        ...buyerAttorney,
+                        barNumber: e.target.value,
+                      })
+                    }
                     className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1">Email</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">
+                    Email
+                  </label>
                   <input
                     type="email"
-                    value={buyerAttorney.email || ''}
-                    onChange={(e) => setBuyerAttorney({...buyerAttorney, email: e.target.value})}
+                    value={buyerAttorney.email || ""}
+                    onChange={(e) =>
+                      setBuyerAttorney({
+                        ...buyerAttorney,
+                        email: e.target.value,
+                      })
+                    }
                     className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1">Phone</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">
+                    Phone
+                  </label>
                   <input
                     type="tel"
-                    value={buyerAttorney.phone || ''}
-                    onChange={(e) => setBuyerAttorney({...buyerAttorney, phone: e.target.value})}
+                    value={buyerAttorney.phone || ""}
+                    onChange={(e) =>
+                      setBuyerAttorney({
+                        ...buyerAttorney,
+                        phone: e.target.value,
+                      })
+                    }
                     className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
@@ -419,20 +532,40 @@ const ContractPartiesStep: React.FC<ContractPartiesStepProps> = ({
           variant="glass"
           onClick={onPrevious}
           leftIcon={
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
             </svg>
           }
         >
           Previous
         </Button>
-        
+
         <Button
           variant="gradient"
           onClick={onNext}
           rightIcon={
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5l7 7-7 7"
+              />
             </svg>
           }
         >
