@@ -26,7 +26,7 @@ export interface ListingImage {
 export interface FlyerTemplate {
   id: string;
   name: string;
-  category: 'modern' | 'classic' | 'luxury' | 'minimal';
+  category: "modern" | "classic" | "luxury" | "minimal";
   thumbnail: string;
   description: string;
 }
@@ -66,10 +66,10 @@ export interface Listing {
   yearBuilt: number;
   price: number;
   keyFeatures: string;
-  images: ListingImage[]; 
+  images: ListingImage[];
   propertyType?: string;
-  listingType?: string; // 'sale' or 'rental' 
-  status?: 'active' | 'sold' | 'pending' | 'withdrawn' | 'coming_soon';
+  listingType?: string; // 'sale' or 'rental'
+  status?: "active" | "sold" | "pending" | "withdrawn" | "coming_soon";
   createdAt?: string;
   updatedAt?: string;
   generatedDescription?: string;
@@ -101,7 +101,7 @@ export interface Listing {
 // Contract Types
 export interface ContractParty {
   id: string;
-  type: 'buyer' | 'seller' | 'agent' | 'attorney';
+  type: "buyer" | "seller" | "agent" | "attorney";
   firstName: string;
   lastName: string;
   email?: string;
@@ -126,14 +126,21 @@ export interface ContractFinancials {
   earnestMoneyHolder?: string; // escrow agent
   downPaymentAmount?: number;
   downPaymentPercentage?: number;
-  financingType: 'cash' | 'conventional' | 'fha' | 'va' | 'usda' | 'seller' | 'other';
+  financingType:
+    | "cash"
+    | "conventional"
+    | "fha"
+    | "va"
+    | "usda"
+    | "seller"
+    | "other";
   loanAmount?: number;
-  closingCostsPaidBy: 'buyer' | 'seller' | 'split';
+  closingCostsPaidBy: "buyer" | "seller" | "split";
   sellerContribution?: number;
   homeWarranty?: {
     included: boolean;
     cost?: number;
-    paidBy?: 'buyer' | 'seller';
+    paidBy?: "buyer" | "seller";
     company?: string;
   };
 }
@@ -153,7 +160,7 @@ export interface ContractDates {
 }
 
 export interface ContractContingency {
-  type: 'inspection' | 'financing' | 'appraisal' | 'sale' | 'other';
+  type: "inspection" | "financing" | "appraisal" | "sale" | "other";
   included: boolean;
   deadline?: string;
   details?: string;
@@ -182,7 +189,7 @@ export interface ContractProperty {
   includedItems: string[];
   excludedItems: string[];
   // Condition
-  propertyCondition: 'as-is' | 'inspection-repairs' | 'seller-representations';
+  propertyCondition: "as-is" | "inspection-repairs" | "seller-representations";
   knownDefects?: string[];
   // Disclosures
   leadPaintDisclosure?: boolean; // required for pre-1978
@@ -191,7 +198,13 @@ export interface ContractProperty {
 }
 
 export interface ContractAddendum {
-  type: 'backup' | 'short-sale' | 'fha-va' | 'new-construction' | 'hoa' | 'custom';
+  type:
+    | "backup"
+    | "short-sale"
+    | "fha-va"
+    | "new-construction"
+    | "hoa"
+    | "custom";
   included: boolean;
   details?: string;
 }
@@ -231,8 +244,8 @@ export interface Contract {
   listingId?: string;
   templateId: string;
   state: string;
-  status: 'draft' | 'pending' | 'executed' | 'terminated' | 'expired';
-  contractType: 'purchase' | 'lease' | 'listing' | 'buyer-representation';
+  status: "draft" | "pending" | "executed" | "terminated" | "expired";
+  contractType: "purchase" | "lease" | "listing" | "buyer-representation";
   // Parties
   buyers: ContractParty[];
   sellers: ContractParty[];
@@ -266,12 +279,12 @@ export interface Contract {
   docxUrl?: string;
 }
 
-export type AuthFormMode = 'login' | 'signup';
+export type AuthFormMode = "login" | "signup";
 
 export enum AlertType {
-  SUCCESS = 'success',
-  ERROR = 'error',
-  INFO = 'info',
+  SUCCESS = "success",
+  ERROR = "error",
+  INFO = "info",
 }
 
 export interface AlertMessage {
@@ -283,15 +296,20 @@ export interface AlertMessage {
 export interface AiWorkflowTool {
   id: string;
   name: string;
-  pathSuffix?: string; 
-  enabled: boolean; 
+  pathSuffix?: string;
+  enabled: boolean;
 }
 
 export interface AiDesignStyle {
   id: string;
   name: string;
   description: string;
-  icon: ForwardRefExoticComponent<Omit<SVGProps<SVGSVGElement>, "ref"> & { title?: string | undefined; titleId?: string | undefined; } & RefAttributes<SVGSVGElement>>; // Heroicon type
+  icon: ForwardRefExoticComponent<
+    Omit<SVGProps<SVGSVGElement>, "ref"> & {
+      title?: string | undefined;
+      titleId?: string | undefined;
+    } & RefAttributes<SVGSVGElement>
+  >; // Heroicon type
 }
 
 export type DesignIdea = {
@@ -323,7 +341,11 @@ export interface ServiceProviderCertification {
 }
 
 export interface ServiceProviderInsurance {
-  type: 'general-liability' | 'professional-liability' | 'workers-comp' | 'bonded';
+  type:
+    | "general-liability"
+    | "professional-liability"
+    | "workers-comp"
+    | "bonded";
   carrier: string;
   policyNumber?: string;
   coverageAmount: number;
@@ -347,13 +369,13 @@ export interface ServiceProviderAvailability {
   nextAvailableDate: string;
   typicalBookingLead: number; // days
   workingHours: {
-    monday?: { start: string; end: string; };
-    tuesday?: { start: string; end: string; };
-    wednesday?: { start: string; end: string; };
-    thursday?: { start: string; end: string; };
-    friday?: { start: string; end: string; };
-    saturday?: { start: string; end: string; };
-    sunday?: { start: string; end: string; };
+    monday?: { start: string; end: string };
+    tuesday?: { start: string; end: string };
+    wednesday?: { start: string; end: string };
+    thursday?: { start: string; end: string };
+    friday?: { start: string; end: string };
+    saturday?: { start: string; end: string };
+    sunday?: { start: string; end: string };
   };
   emergencyAvailable: boolean;
   weekendAvailable: boolean;
@@ -361,7 +383,7 @@ export interface ServiceProviderAvailability {
 
 export interface ServiceProvider {
   id: string;
-  type: 'inspector' | 'contractor';
+  type: "inspector" | "contractor";
   businessName: string;
   contactName: string;
   email: string;
@@ -375,34 +397,34 @@ export interface ServiceProvider {
   serviceRadius: number; // miles
   latitude?: number;
   longitude?: number;
-  
+
   // Business info
   businessLicense: string;
   yearsInBusiness: number;
   employeeCount?: number;
-  businessType: 'sole-proprietorship' | 'llc' | 'corporation' | 'partnership';
-  
+  businessType: "sole-proprietorship" | "llc" | "corporation" | "partnership";
+
   // Ratings and reviews
   overallRating: number; // 1-5, calculated average
   totalReviews: number;
   reviews: ServiceProviderReview[];
-  
+
   // Certifications and insurance
   certifications: ServiceProviderCertification[];
   insurance: ServiceProviderInsurance[];
-  
+
   // Availability and pricing
   availability: ServiceProviderAvailability;
   hourlyRate?: number;
   minimumCharge?: number;
-  
+
   // Portfolio and past work
   portfolio: ServiceProviderPortfolioItem[];
-  
+
   // Service-specific fields (will be extended by Inspector/Contractor)
   specialties: string[];
   serviceAreas: string[]; // cities/counties served
-  
+
   // Metadata
   verified: boolean;
   lastUpdated: string;
@@ -412,14 +434,32 @@ export interface ServiceProvider {
 
 // Inspector-specific types
 export interface Inspector extends ServiceProvider {
-  type: 'inspector';
+  type: "inspector";
   inspectorLicense: string;
-  inspectionTypes: ('general' | 'pest' | 'termite' | 'radon' | 'mold' | 'lead' | 'asbestos' | 'septic' | 'well-water' | 'structural' | 'electrical' | 'plumbing' | 'hvac' | 'roof' | 'foundation' | 'pool' | 'commercial')[];
+  inspectionTypes: (
+    | "general"
+    | "pest"
+    | "termite"
+    | "radon"
+    | "mold"
+    | "lead"
+    | "asbestos"
+    | "septic"
+    | "well-water"
+    | "structural"
+    | "electrical"
+    | "plumbing"
+    | "hvac"
+    | "roof"
+    | "foundation"
+    | "pool"
+    | "commercial"
+  )[];
   equipmentOwned: string[]; // thermal camera, moisture meter, etc.
   reportTurnaroundHours: number; // typical hours to deliver report
   sampleReportUrl?: string;
   associatedRepairCompanies?: string[]; // contractor IDs for referrals
-  
+
   // Pricing specifics
   standardInspectionFee: number;
   additionalServiceFees: {
@@ -435,19 +475,48 @@ export interface Inspector extends ServiceProvider {
 
 // Contractor-specific types
 export interface Contractor extends ServiceProvider {
-  type: 'contractor';
+  type: "contractor";
   contractorLicense: string;
-  tradeSpecialties: ('general' | 'electrical' | 'plumbing' | 'hvac' | 'roofing' | 'flooring' | 'painting' | 'drywall' | 'carpentry' | 'masonry' | 'landscaping' | 'fencing' | 'windows' | 'doors' | 'kitchen' | 'bathroom' | 'basement' | 'deck' | 'siding' | 'insulation' | 'demolition')[];
-  projectTypes: ('repair' | 'renovation' | 'new-construction' | 'remodel' | 'maintenance' | 'emergency')[];
+  tradeSpecialties: (
+    | "general"
+    | "electrical"
+    | "plumbing"
+    | "hvac"
+    | "roofing"
+    | "flooring"
+    | "painting"
+    | "drywall"
+    | "carpentry"
+    | "masonry"
+    | "landscaping"
+    | "fencing"
+    | "windows"
+    | "doors"
+    | "kitchen"
+    | "bathroom"
+    | "basement"
+    | "deck"
+    | "siding"
+    | "insulation"
+    | "demolition"
+  )[];
+  projectTypes: (
+    | "repair"
+    | "renovation"
+    | "new-construction"
+    | "remodel"
+    | "maintenance"
+    | "emergency"
+  )[];
   materialSources: string[]; // where they source materials
   warrantyOffered: string; // warranty terms
   bondedAmount?: number;
-  
+
   // Project capabilities
   maxProjectValue: number;
   minProjectValue: number;
   simultaneousProjects: number;
-  
+
   // Pricing and quotes
   providesWrittenEstimates: boolean;
   estimateFee: number; // fee for estimates, 0 if free
@@ -458,11 +527,11 @@ export interface Contractor extends ServiceProvider {
 
 // Search and filter types
 export interface ServiceSearchCriteria {
-  serviceType: 'inspector' | 'contractor';
+  serviceType: "inspector" | "contractor";
   listingId?: string;
-  urgency: 'emergency' | 'asap' | 'within-week' | 'within-month' | 'flexible';
+  urgency: "emergency" | "asap" | "within-week" | "within-month" | "flexible";
   maxDistance: number; // miles from property
-  
+
   // Common filters
   minRating?: number;
   maxPrice?: number;
@@ -472,18 +541,24 @@ export interface ServiceSearchCriteria {
 }
 
 export interface InspectorSearchCriteria extends ServiceSearchCriteria {
-  serviceType: 'inspector';
+  serviceType: "inspector";
   inspectionTypes: string[];
-  propertyType: 'residential' | 'commercial';
+  propertyType: "residential" | "commercial";
   propertyAge?: number; // years
   squareFootage?: number;
   urgentIssues?: string[]; // specific concerns to address
 }
 
 export interface ContractorSearchCriteria extends ServiceSearchCriteria {
-  serviceType: 'contractor';
+  serviceType: "contractor";
   tradeNeeded: string[];
-  projectType: 'repair' | 'renovation' | 'new-construction' | 'remodel' | 'maintenance' | 'emergency';
+  projectType:
+    | "repair"
+    | "renovation"
+    | "new-construction"
+    | "remodel"
+    | "maintenance"
+    | "emergency";
   budgetRange: {
     min: number;
     max: number;
@@ -500,28 +575,34 @@ export interface ServiceAppointment {
   providerId: string;
   listingId: string;
   userId: string;
-  
-  appointmentType: 'inspection' | 'consultation' | 'estimate' | 'work-start';
+
+  appointmentType: "inspection" | "consultation" | "estimate" | "work-start";
   scheduledDate: string;
   scheduledTime: string;
   estimatedDuration: number; // minutes
-  
-  status: 'requested' | 'confirmed' | 'in-progress' | 'completed' | 'cancelled' | 'rescheduled';
-  
+
+  status:
+    | "requested"
+    | "confirmed"
+    | "in-progress"
+    | "completed"
+    | "cancelled"
+    | "rescheduled";
+
   // Contact preferences
-  contactMethod: 'phone' | 'email' | 'text';
+  contactMethod: "phone" | "email" | "text";
   clientNotes?: string;
   providerNotes?: string;
-  
+
   // Pricing (for estimates/quotes)
   estimatedCost?: number;
   finalCost?: number;
-  
+
   // Results (for inspections)
   reportUrl?: string;
   issuesFound?: string[];
   recommendedActions?: string[];
-  
+
   // Metadata
   createdAt: string;
   updatedAt: string;
@@ -533,7 +614,7 @@ export interface ServiceQuoteRequest {
   providerId: string;
   listingId: string;
   userId: string;
-  
+
   projectDescription: string;
   projectType: string;
   budgetRange?: {
@@ -541,17 +622,23 @@ export interface ServiceQuoteRequest {
     max: number;
   };
   timeframe: string;
-  
+
   // Quote details
-  quoteStatus: 'requested' | 'in-progress' | 'provided' | 'accepted' | 'declined' | 'expired';
+  quoteStatus:
+    | "requested"
+    | "in-progress"
+    | "provided"
+    | "accepted"
+    | "declined"
+    | "expired";
   quotedAmount?: number;
   quoteDetails?: string;
   quoteValidUntil?: string;
-  
+
   // Appointment scheduling
   siteVisitRequired: boolean;
   siteVisitScheduled?: string;
-  
+
   createdAt: string;
   updatedAt: string;
   respondedAt?: string;
@@ -567,10 +654,10 @@ export interface ServiceSearchResult {
 }
 
 export interface ServiceSearchFilters {
-  rating?: { min: number; max: number; };
-  pricing?: { min: number; max: number; };
-  distance?: { max: number; };
-  availability?: { withinDays: number; };
+  rating?: { min: number; max: number };
+  pricing?: { min: number; max: number };
+  distance?: { max: number };
+  availability?: { withinDays: number };
   certifications?: string[];
   specialties?: string[];
   verified?: boolean;
