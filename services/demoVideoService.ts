@@ -1,24 +1,23 @@
-import { VideoGenerationResult } from './videoGenerationService';
+import { VideoGenerationResult } from "./videoGenerationService";
 
 // Pre-made demo video information
 const DEMO_VIDEO_INFO = {
-  videoId: 'demo-beverly-hills-001',
-  fallbackVideoUrl: 'https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', // Public sample video as fallback
+  videoId: "demo-beverly-hills-001",
+  fallbackVideoUrl:
+    "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4", // Public sample video as fallback
   duration: 30,
-  resolution: '1920x1080',
+  resolution: "1920x1080",
   propertyInfo: {
-    address: '1245 Benedict Canyon Drive, Beverly Hills, CA 90210',
-    price: '$15,750,000',
+    address: "1245 Benedict Canyon Drive, Beverly Hills, CA 90210",
+    price: "$15,750,000",
     beds: 7,
     baths: 9,
-    sqft: 12500
-  }
+    sqft: 12500,
+  },
 };
 
 // Available demo voices
-const DEMO_VOICES = [
-  'nova', 'alloy', 'echo', 'fable', 'onyx', 'shimmer'
-];
+const DEMO_VOICES = ["nova", "alloy", "echo", "fable", "onyx", "shimmer"];
 
 export class DemoVideoService {
   private videoCache: Map<string, boolean> = new Map();
@@ -41,7 +40,7 @@ export class DemoVideoService {
 
     try {
       const videoUrl = this.getDemoVideoUrl(voiceId);
-      const response = await fetch(videoUrl, { method: 'HEAD' });
+      const response = await fetch(videoUrl, { method: "HEAD" });
       const exists = response.ok;
       this.videoCache.set(voiceId, exists);
       return exists;
@@ -57,20 +56,23 @@ export class DemoVideoService {
    */
   async getDemoVideo(
     propertyId: string,
-    voiceId: string = 'nova',
-    onProgress?: (progress: number, message: string) => void
+    voiceId: string = "nova",
+    onProgress?: (progress: number, message: string) => void,
   ): Promise<VideoGenerationResult> {
     onProgress?.(10, `Loading demo with ${voiceId} voice...`);
 
     // Check if pre-made video exists for this voice
     const videoExists = await this.checkDemoVideoExists(voiceId);
-    
+
     let videoUrl: string;
-    
+
     if (videoExists) {
       // Use pre-made demo video for this voice
       videoUrl = this.getDemoVideoUrl(voiceId);
-      onProgress?.(100, `✅ ${voiceId.charAt(0).toUpperCase() + voiceId.slice(1)} voice demo ready!`);
+      onProgress?.(
+        100,
+        `✅ ${voiceId.charAt(0).toUpperCase() + voiceId.slice(1)} voice demo ready!`,
+      );
       console.log(`✅ Using ${voiceId} voice demo: ${videoUrl}`);
     } else {
       // Fall back to sample video if specific voice demo doesn't exist
@@ -78,24 +80,24 @@ export class DemoVideoService {
       onProgress?.(100, `Using sample video (${voiceId} demo not available)`);
       console.log(`⚠️ ${voiceId} demo not found, using fallback`);
     }
-    
+
     return {
       videoId: `beverly-hills-${voiceId}`,
       masterVideoUrl: videoUrl,
       platformVersions: {
-        tiktok: { 
-          url: videoUrl, 
-          duration: 60 
+        tiktok: {
+          url: videoUrl,
+          duration: 60,
         },
-        instagram: { 
-          url: videoUrl, 
-          duration: 90 
+        instagram: {
+          url: videoUrl,
+          duration: 90,
         },
-        youtube: { 
-          url: videoUrl, 
-          duration: DEMO_VIDEO_INFO.duration 
-        }
-      }
+        youtube: {
+          url: videoUrl,
+          duration: DEMO_VIDEO_INFO.duration,
+        },
+      },
     };
   }
 
@@ -103,7 +105,7 @@ export class DemoVideoService {
    * Check if a pre-made demo video exists
    */
   hasDemoVideo(propertyId: string): boolean {
-    return propertyId === 'beverly-hills-mansion';
+    return propertyId === "beverly-hills-mansion";
   }
 
   /**

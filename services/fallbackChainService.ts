@@ -29,7 +29,7 @@ class FallbackChainService {
     maxRetries: 3,
     retryDelay: 1000,
     healthCheckInterval: 60000, // 1 minute
-    circuitBreakerThreshold: 5
+    circuitBreakerThreshold: 5,
   };
   private healthCheckIntervals: Map<string, NodeJS.Timeout> = new Map();
 
@@ -42,40 +42,46 @@ class FallbackChainService {
     }
 
     const existingProviders = this.providers.get(serviceType)!;
-    
+
     // Remove existing provider with same ID if it exists
-    const filteredProviders = existingProviders.filter(p => p.id !== provider.id);
-    
+    const filteredProviders = existingProviders.filter(
+      (p) => p.id !== provider.id,
+    );
+
     // Add new provider and sort by priority
     filteredProviders.push(provider);
     filteredProviders.sort((a, b) => a.priority - b.priority);
-    
+
     this.providers.set(serviceType, filteredProviders);
-    
+
     // Start health checks if configured
     if (provider.healthCheckUrl) {
       this.startHealthCheck(serviceType, provider.id);
     }
 
-    console.log(`📡 Registered ${provider.name} as provider for ${serviceType} (priority: ${provider.priority})`);
+    console.log(
+      `📡 Registered ${provider.name} as provider for ${serviceType} (priority: ${provider.priority})`,
+    );
   }
 
   /**
    * Execute a service with automatic fallback
    */
   async executeWithFallback<T>(
-    serviceType: string, 
+    serviceType: string,
     params: any,
-    onProviderChange?: (providerId: string, providerName: string) => void
+    onProviderChange?: (providerId: string, providerName: string) => void,
   ): Promise<T> {
     const providers = this.providers.get(serviceType);
-    
+
     if (!providers || providers.length === 0) {
-      throw new Error(`No providers registered for service type: ${serviceType}`);
+      throw new Error(
+        `No providers registered for service type: ${serviceType}`,
+      );
     }
 
     let lastError: Error | null = null;
-    
+
     for (const provider of providers) {
       // Skip if provider is in circuit breaker state
       if (!this.isProviderAvailable(provider)) {
@@ -85,7 +91,7 @@ class FallbackChainService {
 
       try {
         console.log(`🔄 Attempting ${serviceType} with ${provider.name}`);
-        
+
         if (onProviderChange) {
           onProviderChange(provider.id, provider.name);
         }
@@ -97,23 +103,22 @@ class FallbackChainService {
         // Success - reset failure count
         provider.failureCount = 0;
         provider.lastFailure = undefined;
-        
+
         console.log(`✅ ${provider.name} succeeded in ${duration}ms`);
         return result;
-
       } catch (error) {
         lastError = error as Error;
         console.error(`❌ ${provider.name} failed:`, error);
-        
+
         // Increment failure count
         provider.failureCount++;
         provider.lastFailure = new Date();
-        
+
         // Check if we should circuit break this provider
         if (provider.failureCount >= provider.maxFailures) {
           provider.isAvailable = false;
           console.warn(`🚨 Circuit breaker activated for ${provider.name}`);
-          
+
           // Schedule recovery attempt
           setTimeout(() => {
             provider.isAvailable = true;
@@ -121,14 +126,16 @@ class FallbackChainService {
             console.log(`🔋 Circuit breaker reset for ${provider.name}`);
           }, provider.cooldownPeriod);
         }
-        
+
         // Continue to next provider
         continue;
       }
     }
 
     // All providers failed
-    throw new Error(`All providers failed for ${serviceType}. Last error: ${lastError?.message}`);
+    throw new Error(
+      `All providers failed for ${serviceType}. Last error: ${lastError?.message}`,
+    );
   }
 
   /**
@@ -164,24 +171,29 @@ class FallbackChainService {
   /**
    * Perform health check for a specific provider
    */
-  private async performHealthCheck(serviceType: string, providerId: string): Promise<void> {
+  private async performHealthCheck(
+    serviceType: string,
+    providerId: string,
+  ): Promise<void> {
     const providers = this.providers.get(serviceType);
     if (!providers) return;
 
-    const provider = providers.find(p => p.id === providerId);
+    const provider = providers.find((p) => p.id === providerId);
     if (!provider || !provider.healthCheckUrl) return;
 
     try {
       const response = await fetch(provider.healthCheckUrl, {
-        method: 'HEAD',
-        timeout: 5000
+        method: "HEAD",
+        timeout: 5000,
       });
 
       if (response.ok) {
         if (!provider.isAvailable) {
           provider.isAvailable = true;
           provider.failureCount = 0;
-          console.log(`💚 Health check passed for ${provider.name} - provider restored`);
+          console.log(
+            `💚 Health check passed for ${provider.name} - provider restored`,
+          );
         }
       } else {
         throw new Error(`Health check failed with status: ${response.status}`);
@@ -190,10 +202,12 @@ class FallbackChainService {
       if (provider.isAvailable) {
         console.warn(`💔 Health check failed for ${provider.name}:`, error);
         provider.failureCount++;
-        
+
         if (provider.failureCount >= provider.maxFailures) {
           provider.isAvailable = false;
-          console.warn(`🚨 Provider ${provider.name} marked as unavailable due to health check failures`);
+          console.warn(
+            `🚨 Provider ${provider.name} marked as unavailable due to health check failures`,
+          );
         }
       }
     }
@@ -215,20 +229,22 @@ class FallbackChainService {
     activeProvider?: string;
   } {
     const providers = this.providers.get(serviceType) || [];
-    
-    const availableProvider = providers.find(p => this.isProviderAvailable(p));
-    
+
+    const availableProvider = providers.find((p) =>
+      this.isProviderAvailable(p),
+    );
+
     return {
       serviceType,
-      providers: providers.map(p => ({
+      providers: providers.map((p) => ({
         id: p.id,
         name: p.name,
         available: this.isProviderAvailable(p),
         failureCount: p.failureCount,
         lastFailure: p.lastFailure,
-        priority: p.priority
+        priority: p.priority,
       })),
-      activeProvider: availableProvider?.id
+      activeProvider: availableProvider?.id,
     };
   }
 
@@ -237,11 +253,11 @@ class FallbackChainService {
    */
   getSystemStatus(): Record<string, any> {
     const status: Record<string, any> = {};
-    
+
     for (const serviceType of this.providers.keys()) {
       status[serviceType] = this.getServiceStatus(serviceType);
     }
-    
+
     return status;
   }
 
@@ -252,7 +268,7 @@ class FallbackChainService {
     const providers = this.providers.get(serviceType);
     if (!providers) return false;
 
-    const provider = providers.find(p => p.id === providerId);
+    const provider = providers.find((p) => p.id === providerId);
     if (!provider) return false;
 
     provider.isAvailable = false;
@@ -270,7 +286,7 @@ class FallbackChainService {
     const providers = this.providers.get(serviceType);
     if (!providers) return false;
 
-    const provider = providers.find(p => p.id === providerId);
+    const provider = providers.find((p) => p.id === providerId);
     if (!provider) return false;
 
     provider.isAvailable = true;
@@ -284,18 +300,22 @@ class FallbackChainService {
   /**
    * Update provider priority
    */
-  updateProviderPriority(serviceType: string, providerId: string, newPriority: number): boolean {
+  updateProviderPriority(
+    serviceType: string,
+    providerId: string,
+    newPriority: number,
+  ): boolean {
     const providers = this.providers.get(serviceType);
     if (!providers) return false;
 
-    const provider = providers.find(p => p.id === providerId);
+    const provider = providers.find((p) => p.id === providerId);
     if (!provider) return false;
 
     provider.priority = newPriority;
-    
+
     // Re-sort providers by priority
     providers.sort((a, b) => a.priority - b.priority);
-    
+
     console.log(`📊 Updated ${provider.name} priority to ${newPriority}`);
     return true;
   }
@@ -315,22 +335,30 @@ class FallbackChainService {
    */
   getReliabilityRecommendations(): string[] {
     const recommendations: string[] = [];
-    
+
     for (const [serviceType, providers] of this.providers.entries()) {
-      const availableProviders = providers.filter(p => this.isProviderAvailable(p));
-      
+      const availableProviders = providers.filter((p) =>
+        this.isProviderAvailable(p),
+      );
+
       if (availableProviders.length === 0) {
-        recommendations.push(`🚨 No available providers for ${serviceType} - service will fail`);
+        recommendations.push(
+          `🚨 No available providers for ${serviceType} - service will fail`,
+        );
       } else if (availableProviders.length === 1) {
-        recommendations.push(`⚠️ Only one provider available for ${serviceType} - consider adding backup`);
+        recommendations.push(
+          `⚠️ Only one provider available for ${serviceType} - consider adding backup`,
+        );
       }
-      
-      const highFailureProviders = providers.filter(p => p.failureCount > 2);
+
+      const highFailureProviders = providers.filter((p) => p.failureCount > 2);
       if (highFailureProviders.length > 0) {
-        recommendations.push(`📈 High failure rate detected for ${serviceType} providers - check service health`);
+        recommendations.push(
+          `📈 High failure rate detected for ${serviceType} providers - check service health`,
+        );
       }
     }
-    
+
     return recommendations;
   }
 }
