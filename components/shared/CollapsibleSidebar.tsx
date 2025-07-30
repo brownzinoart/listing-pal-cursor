@@ -50,15 +50,15 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   return (
-    <div className={`fixed left-0 top-0 h-full z-40 transition-all duration-300 ${
+    <div className={`fixed left-0 top-0 h-full z-50 transition-all duration-300 ${
       isCollapsed ? 'w-20' : 'w-64'
-    } ${className}`}>
-      <div className="h-full bg-white/5 backdrop-blur-lg border-r border-white/10 relative">
+    } ${className}`} style={{ pointerEvents: 'auto' }}>
+      <div className="h-full bg-white/5 backdrop-blur-lg border-r border-white/10 relative" style={{ pointerEvents: 'auto' }}>
         
         {/* Floating Toggle Button - Positioned to align with header */}
         <button
           onClick={onToggleCollapse}
-          className="absolute -right-4 top-[24px] z-50 p-2 bg-white/10 backdrop-blur-lg border border-white/20 rounded-full text-white hover:bg-white/15 transition-all duration-200 shadow-lg hover:shadow-blue-500/25"
+          className="absolute top-[24px] -right-4 z-60 p-2 bg-white/30 border border-white/40 rounded-full text-white hover:bg-white/40 transition-all duration-200 shadow-lg hover:shadow-blue-500/25"
           title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {isCollapsed ? (
@@ -82,14 +82,14 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
             </Link>
           )}
           {isCollapsed && (
-            <div className="flex items-center h-full px-6">
-              <div className="h-10 w-auto" />
+            <div className="flex items-center h-full justify-center">
+              {/* Empty space when collapsed - logo is completely hidden */}
             </div>
           )}
         </div>
 
         {/* Navigation Links */}
-        <nav className="p-4 space-y-2">
+        <nav className={`${isCollapsed ? 'p-2' : 'p-4'} space-y-2`}>
           {NAV_LINKS.map((link) => {
             const isActive = location.pathname === link.path;
             const IconComponent = link.icon;
@@ -98,15 +98,30 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
               <Link
                 key={link.key}
                 to={link.path}
-                className={`flex items-center p-3 rounded-xl transition-colors duration-150 group ${
+                onMouseEnter={() => console.log(`Hover: ${link.label}`)}
+                onClick={(e) => {
+                  console.log(`Navigation click: ${link.label} -> ${link.path}`);
+                  console.log('Event target:', e.target);
+                  console.log('Current target:', e.currentTarget);
+                }}
+                className={`flex items-center p-3 rounded-xl transition-colors duration-150 group relative ${
+                  isCollapsed ? 'justify-center' : ''
+                } ${
                   isActive 
                     ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-white border border-blue-500/30' 
                     : 'text-slate-400 hover:text-white hover:bg-white/10 border border-transparent'
                 }`}
                 title={isCollapsed ? link.label : undefined}
+                style={{ 
+                  minWidth: isCollapsed ? '48px' : 'auto',
+                  pointerEvents: 'auto',
+                  cursor: 'pointer',
+                  position: 'relative',
+                  zIndex: 55
+                }}
               >
                 <IconComponent className={`h-5 w-5 ${isActive ? 'text-blue-400' : ''} ${
-                  isCollapsed ? '' : 'mr-3'
+                  isCollapsed ? 'mx-auto' : 'mr-3'
                 }`} />
                 {!isCollapsed && (
                   <span className="font-medium">{link.label}</span>

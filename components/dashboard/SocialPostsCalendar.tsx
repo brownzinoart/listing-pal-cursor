@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { FaFacebook, FaInstagram, FaTwitter } from 'react-icons/fa';
 import { SocialPost } from './SocialPostsDashboard';
@@ -61,9 +61,9 @@ const SocialPostsCalendar: React.FC<SocialPostsCalendarProps> = ({ posts, onPost
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
 
-  const navigateMonth = (direction: number) => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + direction, 1));
-  };
+  const navigateMonth = useCallback((direction: number) => {
+    setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() + direction, 1));
+  }, []);
 
   const getPlatformIcon = (platform: SocialPost['platform']) => {
     switch (platform) {
@@ -109,7 +109,7 @@ const SocialPostsCalendar: React.FC<SocialPostsCalendarProps> = ({ posts, onPost
                 <ChevronLeftIcon className="h-5 w-5 text-brand-text-secondary" />
               </button>
               <button
-                onClick={() => setCurrentDate(new Date())}
+                onClick={useCallback(() => setCurrentDate(new Date()), [])}
                 className="px-3 py-1 text-sm text-brand-text-secondary hover:text-brand-text-primary hover:bg-brand-panel rounded-md transition-colors"
               >
                 Today
@@ -142,7 +142,7 @@ const SocialPostsCalendar: React.FC<SocialPostsCalendarProps> = ({ posts, onPost
               return (
                 <div
                   key={index}
-                  onClick={() => setSelectedDate(date)}
+                  onClick={useCallback(() => setSelectedDate(date), [date])}
                   className={`
                     min-h-[80px] p-2 rounded-lg border cursor-pointer transition-all
                     ${isCurrentMonth(date) ? 'bg-brand-panel' : 'bg-brand-background opacity-50'}

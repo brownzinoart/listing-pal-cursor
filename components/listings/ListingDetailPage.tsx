@@ -4,8 +4,7 @@ import * as listingService from '../../services/listingService';
 import { Listing, AiDesignStyle } from '../../types';
 import { AI_DESIGN_STYLES } from '../../constants';
 import { useAuth } from '../../contexts/AuthContext';
-import { useLayout } from '../../contexts/LayoutContext';
-import CollapsibleSidebar from '../shared/CollapsibleSidebar';
+import ModernDashboardLayout from '../shared/ModernDashboardLayout';
 import AiWorkflowPlaceholder from './AiWorkflowPlaceholder';
 import NeighborhoodInsights from '../shared/NeighborhoodInsights';
 import SocialMediaMockup from './generation/SocialMediaMockups';
@@ -123,7 +122,6 @@ const FormattedKeyFeatures: React.FC<{ content: string }> = ({ content }) => {
 const ListingDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
-  const { isSidebarCollapsed, toggleSidebar, getMainContentMargin } = useLayout();
   const navigate = useNavigate();
   const [listing, setListing] = useState<Listing | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -190,53 +188,62 @@ const ListingDetailPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen w-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 fixed inset-0 overflow-auto">
-        <CollapsibleSidebar
-          isCollapsed={isSidebarCollapsed}
-          onToggleCollapse={toggleSidebar}
-        />
-        <div className={`transition-all duration-300 ${getMainContentMargin()} min-h-full flex items-center justify-center`}>
+      <ModernDashboardLayout
+        title="Loading Listing..."
+        breadcrumbs={[
+          { label: 'Dashboard', href: '/dashboard' },
+          { label: 'Listings', href: '/dashboard' },
+          { label: 'Loading...' }
+        ]}
+      >
+        <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="w-12 h-12 border-4 border-blue-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
             <p className="text-white text-lg">Loading...</p>
           </div>
         </div>
-      </div>
+      </ModernDashboardLayout>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen w-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 fixed inset-0 overflow-auto">
-        <CollapsibleSidebar
-          isCollapsed={isSidebarCollapsed}
-          onToggleCollapse={toggleSidebar}
-        />
-        <div className={`transition-all duration-300 ${getMainContentMargin()} min-h-full flex items-center justify-center`}>
+      <ModernDashboardLayout
+        title="Error Loading Listing"
+        breadcrumbs={[
+          { label: 'Dashboard', href: '/dashboard' },
+          { label: 'Listings', href: '/dashboard' },
+          { label: 'Error' }
+        ]}
+      >
+        <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-6">
               <p className="text-red-400">{error}</p>
             </div>
           </div>
         </div>
-      </div>
+      </ModernDashboardLayout>
     );
   }
 
   if (!listing) {
     return (
-      <div className="min-h-screen w-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 fixed inset-0 overflow-auto">
-        <CollapsibleSidebar
-          isCollapsed={isSidebarCollapsed}
-          onToggleCollapse={toggleSidebar}
-        />
-        <div className={`transition-all duration-300 ${getMainContentMargin()} min-h-full flex items-center justify-center`}>
+      <ModernDashboardLayout
+        title="Loading Listing..."
+        breadcrumbs={[
+          { label: 'Dashboard', href: '/dashboard' },
+          { label: 'Listings', href: '/dashboard' },
+          { label: 'Loading...' }
+        ]}
+      >
+        <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="w-12 h-12 border-4 border-blue-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
             <p className="text-white text-lg">Loading listing...</p>
           </div>
         </div>
-      </div>
+      </ModernDashboardLayout>
     );
   }
 
@@ -244,50 +251,34 @@ const ListingDetailPage: React.FC = () => {
   const hasMultipleImages = listing.images && listing.images.length > 1;
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 fixed inset-0 overflow-auto">
-      {/* Collapsible Sidebar Navigation */}
-      <CollapsibleSidebar
-        isCollapsed={isSidebarCollapsed}
-        onToggleCollapse={toggleSidebar}
-      />
-
-      {/* Main Content */}
-      <div className={`transition-all duration-300 ${getMainContentMargin()} min-h-full`}>
-        <div className="p-6">
-          <div className="w-full space-y-8">
-            
-            {/* Header with Breadcrumb */}
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <div className="flex items-center text-slate-400 text-sm mb-2">
-                  <span>Dashboard</span>
-                  <span className="mx-2">›</span>
-                  <span>Listings</span>
-                  <span className="mx-2">›</span>
-                  <span className="text-blue-400">{listing.address.split(',')[0]}</span>
-                </div>
-                <h1 className="text-3xl font-bold text-white">{listing.address.split(',')[0]}</h1>
-                <p className="text-slate-400 mt-2">{listing.address.split(',').slice(1).join(',').trim()}</p>
-              </div>
-              
-              <div className="flex items-center space-x-4">
-                <PDFExportButton 
-                  listing={listing}
-                  variant="glass"
-                  size="lg"
-                />
-                <Link to={`/listings/${listing.id}/edit`}>
-                  <Button 
-                    variant="glass" 
-                    glowColor="blue"
-                    leftIcon={<PencilSquareIcon className="w-4 h-4" />}
-                    size="lg"
-                  >
-                    Edit Details
-                  </Button>
-                </Link>
-              </div>
-            </div>
+    <ModernDashboardLayout
+      title={listing.address.split(',')[0]}
+      subtitle={listing.address.split(',').slice(1).join(',').trim()}
+      breadcrumbs={[
+        { label: 'Dashboard', href: '/dashboard' },
+        { label: 'Listings', href: '/dashboard' },
+        { label: listing.address.split(',')[0] }
+      ]}
+      actions={
+        <>
+          <PDFExportButton 
+            listing={listing}
+            variant="glass"
+            size="lg"
+          />
+          <Link to={`/listings/${listing.id}/edit`}>
+            <Button 
+              variant="glass" 
+              glowColor="blue"
+              leftIcon={<PencilSquareIcon className="w-4 h-4" />}
+              size="lg"
+            >
+              Edit Details
+            </Button>
+          </Link>
+        </>
+      }
+    >
 
             {/* Main Content Area */}
         <div id="pdf-export-content">
@@ -1000,10 +991,7 @@ const ListingDetailPage: React.FC = () => {
               </div>
             </div>
         </div> {/* Close pdf-export-content */}
-          </div>
-        </div>
-      </div>
-    </div>
+    </ModernDashboardLayout>
   );
 };
 

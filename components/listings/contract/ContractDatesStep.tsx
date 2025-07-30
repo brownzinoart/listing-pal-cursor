@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Contract, ContractDates, Listing } from '../../../types';
 import Button from '../../shared/Button';
 import { 
@@ -74,13 +74,17 @@ const ContractDatesStep: React.FC<ContractDatesStepProps> = ({
     }
   }, []);
 
-  // Update contract data whenever dates change
+  // Update contract data whenever dates change (debounced)
   useEffect(() => {
-    onUpdate({ dates });
-  }, [dates]);
+    const timeoutId = setTimeout(() => {
+      onUpdate({ dates });
+    }, 100);
+    
+    return () => clearTimeout(timeoutId);
+  }, [dates, onUpdate]);
 
-  // Validate dates
-  useEffect(() => {
+  // Validate dates (memoized)
+  const validationErrorsMemo = useMemo(() => {
     const errors: string[] = [];
     const today = new Date().toISOString().split('T')[0];
     
@@ -104,21 +108,25 @@ const ContractDatesStep: React.FC<ContractDatesStepProps> = ({
       errors.push('Possession date cannot be before closing date');
     }
     
-    setValidationErrors(errors);
+    return errors;
   }, [dates]);
+  
+  useEffect(() => {
+    setValidationErrors(validationErrorsMemo);
+  }, [validationErrorsMemo]);
 
-  const updateDate = (field: keyof ContractDates, value: string) => {
+  const updateDate = useCallback((field: keyof ContractDates, value: string) => {
     setDates(prev => ({ ...prev, [field]: value }));
-  };
+  }, []);
 
-  const applySuggested = (field: keyof ContractDates) => {
+  const applySuggested = useCallback((field: keyof ContractDates) => {
     if (dates.offerDate) {
       const suggested = calculateSuggestedDates(dates.offerDate);
       if (suggested[field]) {
         updateDate(field, suggested[field]);
       }
     }
-  };
+  }, [dates.offerDate, updateDate]);
 
   const formatDateForDisplay = (dateString: string) => {
     if (!dateString) return '';

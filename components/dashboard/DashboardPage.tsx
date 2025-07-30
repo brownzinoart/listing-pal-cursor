@@ -48,6 +48,11 @@ const RESOURCE_CARDS = [
     title: 'Contractor Search',
     description: 'Locate trusted contractors for repairs and renovations.',
   },
+  {
+    key: '180-day-workflow',
+    title: '180-Day Workflow Guide',
+    description: 'Complete step-by-step real estate transaction workflow from listing to closing.',
+  },
   // Add more resources as needed
 ];
 
@@ -509,6 +514,61 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ section }) => {
                           if (listingId) {
                             console.log('Navigating to contract wizard for listing:', listingId);
                             navigate(`/listings/${listingId}/contract/basic`);
+                          } else {
+                            console.error('Listing ID is undefined');
+                            alert('Error: Invalid listing data. Please try again.');
+                          }
+                        } else {
+                          console.log('Multiple listings found, showing selection modal');
+                          setShowContractHelper(true);
+                        }
+                      } else if (card.key === '180-day-workflow') {
+                        // Navigate to the 180-day workflow guide
+                        navigate('/dashboard/resources/workflow');
+                      } else if (card.key === 'inspector-search') {
+                        console.log('Inspector Search clicked, listings:', listings);
+                        
+                        if (isLoading) {
+                          console.log('Still loading listings...');
+                          return;
+                        }
+                        
+                        // Direct navigation based on listings count
+                        if (listings.length === 0) {
+                          console.log('No listings found, navigating to create new listing');
+                          navigate('/listings/new');
+                        } else if (listings.length === 1) {
+                          const listingId = listings[0].id;
+                          console.log('Single listing found, navigating to inspector search');
+                          
+                          if (listingId) {
+                            navigate(`/listings/${listingId}/inspector/criteria`);
+                          } else {
+                            console.error('Listing ID is undefined');
+                            alert('Error: Invalid listing data. Please try again.');
+                          }
+                        } else {
+                          console.log('Multiple listings found, showing selection modal');
+                          setShowContractHelper(true);
+                        }
+                      } else if (card.key === 'contractor-search') {
+                        console.log('Contractor Search clicked, listings:', listings);
+                        
+                        if (isLoading) {
+                          console.log('Still loading listings...');
+                          return;
+                        }
+                        
+                        // Direct navigation based on listings count
+                        if (listings.length === 0) {
+                          console.log('No listings found, navigating to create new listing');
+                          navigate('/listings/new');
+                        } else if (listings.length === 1) {
+                          const listingId = listings[0].id;
+                          console.log('Single listing found, navigating to contractor search');
+                          
+                          if (listingId) {
+                            navigate(`/listings/${listingId}/contractor/scope`);
                           } else {
                             console.error('Listing ID is undefined');
                             alert('Error: Invalid listing data. Please try again.');

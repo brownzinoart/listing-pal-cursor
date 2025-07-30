@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Navbar from './components/shared/Navbar';
 import LoginPage from './components/auth/LoginPage';
 import SignupPage from './components/auth/SignupPage';
@@ -25,6 +25,9 @@ import PortfolioAnalyticsNoCharts from './components/dashboard/PortfolioAnalytic
 import PortfolioAnalyticsMinimal from './components/dashboard/PortfolioAnalyticsMinimal';
 import ModernPortfolioAnalytics from './components/dashboard/ModernPortfolioAnalytics';
 import ContractWizard from './components/listings/contract/ContractWizard';
+import InspectorSearchWizard from './components/listings/inspector/InspectorSearchWizard';
+import ContractorSearchWizard from './components/listings/contractor/ContractorSearchWizard';
+import RealEstateWorkflow from './components/shared/RealEstateWorkflow';
 import { OllamaStatusProvider } from './contexts/OllamaStatusContext';
 import { LayoutProvider } from './contexts/LayoutContext';
 
@@ -43,10 +46,29 @@ const PrivateRoute: React.FC<{ children: React.ReactElement }> = ({ children }) 
 };
 
 const AppRoutes = () => {
+  const location = useLocation();
+  
+  // Pages that use ModernDashboardLayout shouldn't show the old Navbar
+  const usesModernLayout = [
+    '/dashboard',
+    '/dashboard/portfolio',
+    '/dashboard/ads',
+    '/dashboard/social', 
+    '/dashboard/videos',
+    '/dashboard/interior',
+    '/dashboard/descriptions',
+    '/dashboard/email',
+    '/dashboard/print',
+    '/dashboard/resources',
+    '/dashboard/settings'
+  ].some(path => location.pathname === path) || 
+  location.pathname.startsWith('/dashboard/resources/') ||
+  location.pathname.startsWith('/listings/');
+
   return (
     <div className="min-h-screen flex flex-col bg-brand-background overflow-x-hidden">
-      <Navbar />
-      <main className="flex-grow container mx-auto px-4 py-8 overflow-hidden">
+      {!usesModernLayout && <Navbar />}
+      <main className={`flex-grow ${!usesModernLayout ? 'container mx-auto px-4 py-8' : ''} overflow-hidden`}>
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
@@ -62,6 +84,7 @@ const AppRoutes = () => {
           <Route path="/dashboard/email" element={<PrivateRoute><DashboardPage section="email" /></PrivateRoute>} />
           <Route path="/dashboard/print" element={<PrivateRoute><DashboardPage section="print" /></PrivateRoute>} />
           <Route path="/dashboard/resources" element={<PrivateRoute><DashboardPage section="resources" /></PrivateRoute>} />
+          <Route path="/dashboard/resources/workflow" element={<PrivateRoute><RealEstateWorkflow /></PrivateRoute>} />
           <Route path="/dashboard/settings" element={<PrivateRoute><DashboardPage section="settings" /></PrivateRoute>} />
           <Route path="/listings/new" element={<PrivateRoute><ListingFormPage /></PrivateRoute>} />
           <Route path="/listings/:id/edit" element={<PrivateRoute><ListingFormPage /></PrivateRoute>} />
@@ -74,6 +97,26 @@ const AppRoutes = () => {
           <Route
             path="/listings/:id/contract/:stepId"
             element={<PrivateRoute><ContractWizard /></PrivateRoute>}
+          />
+          
+          {/* Inspector Search Wizard Routes */}
+          <Route
+            path="/listings/:id/inspector"
+            element={<PrivateRoute><InspectorSearchWizard /></PrivateRoute>}
+          />
+          <Route
+            path="/listings/:id/inspector/:stepId"
+            element={<PrivateRoute><InspectorSearchWizard /></PrivateRoute>}
+          />
+          
+          {/* Contractor Search Wizard Routes */}
+          <Route
+            path="/listings/:id/contractor"
+            element={<PrivateRoute><ContractorSearchWizard /></PrivateRoute>}
+          />
+          <Route
+            path="/listings/:id/contractor/:stepId"
+            element={<PrivateRoute><ContractorSearchWizard /></PrivateRoute>}
           />
           
           <Route 
