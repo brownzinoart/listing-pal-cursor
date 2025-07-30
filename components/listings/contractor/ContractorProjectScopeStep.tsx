@@ -1,7 +1,7 @@
-import React from 'react';
-import { ContractorSearchCriteria, Listing } from '../../../types';
-import Button from '../../shared/Button';
-import { 
+import React from "react";
+import { ContractorSearchCriteria, Listing } from "../../../types";
+import Button from "../../shared/Button";
+import {
   ArrowRightIcon,
   WrenchScrewdriverIcon,
   HomeIcon,
@@ -9,8 +9,8 @@ import {
   SparklesIcon,
   PaintBrushIcon,
   BoltIcon,
-  CogIcon
-} from '@heroicons/react/24/outline';
+  CogIcon,
+} from "@heroicons/react/24/outline";
 
 interface ContractorProjectScopeStepProps {
   listing: Listing;
@@ -22,53 +22,53 @@ interface ContractorProjectScopeStepProps {
 
 const PROJECT_TYPES = [
   {
-    id: 'kitchen-renovation',
-    label: 'Kitchen Renovation',
+    id: "kitchen-renovation",
+    label: "Kitchen Renovation",
     icon: HomeIcon,
-    description: 'Complete or partial kitchen remodel'
+    description: "Complete or partial kitchen remodel",
   },
   {
-    id: 'bathroom-renovation',
-    label: 'Bathroom Renovation', 
+    id: "bathroom-renovation",
+    label: "Bathroom Renovation",
     icon: SparklesIcon,
-    description: 'Bathroom remodel and upgrades'
+    description: "Bathroom remodel and upgrades",
   },
   {
-    id: 'flooring',
-    label: 'Flooring Installation',
+    id: "flooring",
+    label: "Flooring Installation",
     icon: BuildingOfficeIcon,
-    description: 'Hardwood, tile, carpet, or vinyl flooring'
+    description: "Hardwood, tile, carpet, or vinyl flooring",
   },
   {
-    id: 'painting',
-    label: 'Interior/Exterior Painting',
+    id: "painting",
+    label: "Interior/Exterior Painting",
     icon: PaintBrushIcon,
-    description: 'Interior and exterior painting services'
+    description: "Interior and exterior painting services",
   },
   {
-    id: 'electrical',
-    label: 'Electrical Work',
+    id: "electrical",
+    label: "Electrical Work",
     icon: BoltIcon,
-    description: 'Wiring, outlets, lighting, electrical repairs'
+    description: "Wiring, outlets, lighting, electrical repairs",
   },
   {
-    id: 'plumbing',
-    label: 'Plumbing Services',
+    id: "plumbing",
+    label: "Plumbing Services",
     icon: CogIcon,
-    description: 'Pipe repair, fixture installation, drain cleaning'
+    description: "Pipe repair, fixture installation, drain cleaning",
   },
   {
-    id: 'general-repairs',
-    label: 'General Repairs',
+    id: "general-repairs",
+    label: "General Repairs",
     icon: WrenchScrewdriverIcon,
-    description: 'Maintenance and repair work'
+    description: "Maintenance and repair work",
   },
   {
-    id: 'custom',
-    label: 'Other/Custom Project',
+    id: "custom",
+    label: "Other/Custom Project",
     icon: CogIcon,
-    description: 'Describe your specific project needs'
-  }
+    description: "Describe your specific project needs",
+  },
 ];
 
 const ContractorProjectScopeStep: React.FC<ContractorProjectScopeStepProps> = ({
@@ -76,7 +76,7 @@ const ContractorProjectScopeStep: React.FC<ContractorProjectScopeStepProps> = ({
   searchCriteria,
   onUpdate,
   onNext,
-  onPrevious
+  onPrevious,
 }) => {
   const handleProjectTypeSelect = (projectType: string) => {
     onUpdate({ projectType });
@@ -88,13 +88,17 @@ const ContractorProjectScopeStep: React.FC<ContractorProjectScopeStepProps> = ({
 
   const isProjectSelected = Boolean(searchCriteria.projectType);
   const hasDescription = Boolean(searchCriteria.projectDescription?.trim());
-  const canContinue = isProjectSelected && (searchCriteria.projectType !== 'custom' || hasDescription);
+  const canContinue =
+    isProjectSelected &&
+    (searchCriteria.projectType !== "custom" || hasDescription);
 
   return (
     <div className="space-y-8">
       {/* Header */}
       <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
-        <h3 className="text-lg font-semibold text-white mb-2">What type of project do you need help with?</h3>
+        <h3 className="text-lg font-semibold text-white mb-2">
+          What type of project do you need help with?
+        </h3>
         <p className="text-slate-400">
           Select the type of work you need done at {listing.address}
         </p>
@@ -105,27 +109,32 @@ const ContractorProjectScopeStep: React.FC<ContractorProjectScopeStepProps> = ({
         {PROJECT_TYPES.map((type) => {
           const Icon = type.icon;
           const isSelected = searchCriteria.projectType === type.id;
-          
+
           return (
             <button
               key={type.id}
               onClick={() => handleProjectTypeSelect(type.id)}
               className={`
                 p-6 rounded-2xl border transition-all duration-200 text-left
-                ${isSelected
-                  ? 'bg-orange-500/20 border-orange-500/50 ring-2 ring-orange-400/30'
-                  : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
+                ${
+                  isSelected
+                    ? "bg-orange-500/20 border-orange-500/50 ring-2 ring-orange-400/30"
+                    : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20"
                 }
               `}
             >
               <div className="flex items-start space-x-4">
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                  isSelected ? 'bg-orange-500/30' : 'bg-orange-500/20'
-                }`}>
+                <div
+                  className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                    isSelected ? "bg-orange-500/30" : "bg-orange-500/20"
+                  }`}
+                >
                   <Icon className="h-6 w-6 text-orange-400" />
                 </div>
                 <div className="flex-1">
-                  <h4 className="text-white font-semibold mb-2">{type.label}</h4>
+                  <h4 className="text-white font-semibold mb-2">
+                    {type.label}
+                  </h4>
                   <p className="text-slate-400 text-sm">{type.description}</p>
                 </div>
               </div>
@@ -137,32 +146,41 @@ const ContractorProjectScopeStep: React.FC<ContractorProjectScopeStepProps> = ({
       {/* Project Description (always show, required for custom) */}
       <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
         <h4 className="text-white font-semibold mb-4">
-          {searchCriteria.projectType === 'custom' ? 'Describe Your Project *' : 'Additional Project Details (Optional)'}
+          {searchCriteria.projectType === "custom"
+            ? "Describe Your Project *"
+            : "Additional Project Details (Optional)"}
         </h4>
         <textarea
-          value={searchCriteria.projectDescription || ''}
+          value={searchCriteria.projectDescription || ""}
           onChange={(e) => handleDescriptionChange(e.target.value)}
           placeholder={
-            searchCriteria.projectType === 'custom'
-              ? 'Please describe the work you need done in detail...'
-              : 'Add any specific details about your project, materials preferences, timeline, or special requirements...'
+            searchCriteria.projectType === "custom"
+              ? "Please describe the work you need done in detail..."
+              : "Add any specific details about your project, materials preferences, timeline, or special requirements..."
           }
           className="w-full h-32 bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 resize-none"
         />
-        {searchCriteria.projectType === 'custom' && !hasDescription && (
-          <p className="text-orange-400 text-sm mt-2">* Description required for custom projects</p>
+        {searchCriteria.projectType === "custom" && !hasDescription && (
+          <p className="text-orange-400 text-sm mt-2">
+            * Description required for custom projects
+          </p>
         )}
       </div>
 
       {/* Selected Project Summary */}
       {isProjectSelected && (
         <div className="bg-orange-500/10 border border-orange-500/20 rounded-2xl p-6">
-          <h4 className="text-orange-400 font-semibold mb-2">Project Summary</h4>
+          <h4 className="text-orange-400 font-semibold mb-2">
+            Project Summary
+          </h4>
           <div className="flex items-center space-x-3">
             <WrenchScrewdriverIcon className="h-5 w-5 text-orange-400" />
             <div>
               <p className="text-white font-medium">
-                {PROJECT_TYPES.find(t => t.id === searchCriteria.projectType)?.label}
+                {
+                  PROJECT_TYPES.find((t) => t.id === searchCriteria.projectType)
+                    ?.label
+                }
               </p>
               <p className="text-slate-400 text-sm">at {listing.address}</p>
             </div>

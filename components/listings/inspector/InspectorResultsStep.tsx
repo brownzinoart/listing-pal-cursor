@@ -1,17 +1,22 @@
-import React, { useState } from 'react';
-import { InspectorSearchCriteria, Listing, ServiceSearchResult, Inspector } from '../../../types';
-import Button from '../../shared/Button';
-import { 
-  ArrowRightIcon, 
-  ArrowLeftIcon, 
+import React, { useState } from "react";
+import {
+  InspectorSearchCriteria,
+  Listing,
+  ServiceSearchResult,
+  Inspector,
+} from "../../../types";
+import Button from "../../shared/Button";
+import {
+  ArrowRightIcon,
+  ArrowLeftIcon,
   StarIcon,
   MapPinIcon,
   ClockIcon,
   ShieldCheckIcon,
   CheckCircleIcon,
   AdjustmentsHorizontalIcon,
-  MagnifyingGlassIcon
-} from '@heroicons/react/24/outline';
+  MagnifyingGlassIcon,
+} from "@heroicons/react/24/outline";
 
 interface InspectorResultsStepProps {
   listing: Listing;
@@ -36,31 +41,35 @@ const InspectorResultsStep: React.FC<InspectorResultsStepProps> = ({
   onSearch,
   onSelect,
   onNext,
-  onPrevious
+  onPrevious,
 }) => {
-  const [sortBy, setSortBy] = useState<'rating' | 'price' | 'distance' | 'availability'>('rating');
+  const [sortBy, setSortBy] = useState<
+    "rating" | "price" | "distance" | "availability"
+  >("rating");
   const [showFilters, setShowFilters] = useState(false);
 
   const handleInspectorToggle = (inspectorId: string) => {
     const newSelected = selectedInspectors.includes(inspectorId)
-      ? selectedInspectors.filter(id => id !== inspectorId)
+      ? selectedInspectors.filter((id) => id !== inspectorId)
       : [...selectedInspectors, inspectorId];
     onSelect(newSelected);
   };
 
   const sortedResults = [...searchResults].sort((a, b) => {
     switch (sortBy) {
-      case 'rating':
+      case "rating":
         return b.provider.overallRating - a.provider.overallRating;
-      case 'price':
+      case "price":
         const aPrice = (a.provider as Inspector).standardInspectionFee;
         const bPrice = (b.provider as Inspector).standardInspectionFee;
         return aPrice - bPrice;
-      case 'distance':
+      case "distance":
         return a.distance - b.distance;
-      case 'availability':
-        return new Date(a.provider.availability.nextAvailableDate).getTime() - 
-               new Date(b.provider.availability.nextAvailableDate).getTime();
+      case "availability":
+        return (
+          new Date(a.provider.availability.nextAvailableDate).getTime() -
+          new Date(b.provider.availability.nextAvailableDate).getTime()
+        );
       default:
         return 0;
     }
@@ -72,7 +81,7 @@ const InspectorResultsStep: React.FC<InspectorResultsStepProps> = ({
         {[1, 2, 3, 4, 5].map((star) => (
           <StarIcon
             key={star}
-            className={`h-4 w-4 ${star <= rating ? 'text-yellow-400 fill-current' : 'text-slate-400'}`}
+            className={`h-4 w-4 ${star <= rating ? "text-yellow-400 fill-current" : "text-slate-400"}`}
           />
         ))}
         <span className="text-white font-semibold ml-2">{rating}</span>
@@ -81,10 +90,10 @@ const InspectorResultsStep: React.FC<InspectorResultsStepProps> = ({
   };
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', { 
-      style: 'currency', 
-      currency: 'USD', 
-      minimumFractionDigits: 0 
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 0,
     }).format(price);
   };
 
@@ -94,8 +103,12 @@ const InspectorResultsStep: React.FC<InspectorResultsStepProps> = ({
         <div className="bg-white/5 rounded-2xl p-12 border border-white/10">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-400 mx-auto mb-4"></div>
-            <h3 className="text-lg font-semibold text-white mb-2">Searching for Inspectors</h3>
-            <p className="text-slate-400">Finding the best certified inspectors in your area...</p>
+            <h3 className="text-lg font-semibold text-white mb-2">
+              Searching for Inspectors
+            </h3>
+            <p className="text-slate-400">
+              Finding the best certified inspectors in your area...
+            </p>
           </div>
         </div>
       </div>
@@ -108,12 +121,15 @@ const InspectorResultsStep: React.FC<InspectorResultsStepProps> = ({
       <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
           <div>
-            <h3 className="text-lg font-semibold text-white mb-2">Found {searchResults.length} Certified Inspectors</h3>
+            <h3 className="text-lg font-semibold text-white mb-2">
+              Found {searchResults.length} Certified Inspectors
+            </h3>
             <p className="text-slate-400">
-              Showing inspectors within {searchCriteria.maxDistance} miles of {listing.address}
+              Showing inspectors within {searchCriteria.maxDistance} miles of{" "}
+              {listing.address}
             </p>
           </div>
-          
+
           <div className="flex items-center gap-3">
             <button
               onClick={() => setShowFilters(!showFilters)}
@@ -122,7 +138,7 @@ const InspectorResultsStep: React.FC<InspectorResultsStepProps> = ({
               <AdjustmentsHorizontalIcon className="h-4 w-4" />
               Filters
             </button>
-            
+
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
@@ -133,7 +149,7 @@ const InspectorResultsStep: React.FC<InspectorResultsStepProps> = ({
               <option value="distance">Sort by Distance</option>
               <option value="availability">Sort by Availability</option>
             </select>
-            
+
             <Button
               variant="glass"
               onClick={onSearch}
@@ -158,9 +174,10 @@ const InspectorResultsStep: React.FC<InspectorResultsStepProps> = ({
               onClick={() => handleInspectorToggle(inspector.id)}
               className={`
                 relative p-6 rounded-2xl border cursor-pointer transition-all duration-200 hover:scale-[1.02]
-                ${isSelected
-                  ? 'bg-blue-500/20 border-blue-500/50 ring-2 ring-blue-400/30'
-                  : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
+                ${
+                  isSelected
+                    ? "bg-blue-500/20 border-blue-500/50 ring-2 ring-blue-400/30"
+                    : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20"
                 }
               `}
             >
@@ -180,11 +197,15 @@ const InspectorResultsStep: React.FC<InspectorResultsStepProps> = ({
                     </span>
                   </div>
                   <div>
-                    <h4 className="text-white font-bold text-lg">{inspector.businessName}</h4>
-                    <p className="text-slate-400 text-sm">{inspector.contactName}</p>
+                    <h4 className="text-white font-bold text-lg">
+                      {inspector.businessName}
+                    </h4>
+                    <p className="text-slate-400 text-sm">
+                      {inspector.contactName}
+                    </p>
                   </div>
                 </div>
-                
+
                 {inspector.verified && (
                   <div className="flex items-center space-x-1 text-emerald-400">
                     <ShieldCheckIcon className="h-4 w-4" />
@@ -196,25 +217,33 @@ const InspectorResultsStep: React.FC<InspectorResultsStepProps> = ({
               {/* Rating and Reviews */}
               <div className="flex items-center justify-between mb-4">
                 {renderStarRating(inspector.overallRating)}
-                <span className="text-slate-400 text-sm">({inspector.totalReviews} reviews)</span>
+                <span className="text-slate-400 text-sm">
+                  ({inspector.totalReviews} reviews)
+                </span>
               </div>
 
               {/* Key Info */}
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div className="flex items-center space-x-2">
                   <MapPinIcon className="h-4 w-4 text-slate-400" />
-                  <span className="text-slate-300 text-sm">{result.distance} mi away</span>
+                  <span className="text-slate-300 text-sm">
+                    {result.distance} mi away
+                  </span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <ClockIcon className="h-4 w-4 text-slate-400" />
-                  <span className="text-slate-300 text-sm">{result.estimatedResponseTime}</span>
+                  <span className="text-slate-300 text-sm">
+                    {result.estimatedResponseTime}
+                  </span>
                 </div>
               </div>
 
               {/* Pricing */}
               <div className="bg-white/5 rounded-lg p-3 mb-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-300 text-sm">Standard Inspection</span>
+                  <span className="text-slate-300 text-sm">
+                    Standard Inspection
+                  </span>
                   <span className="text-emerald-400 font-bold">
                     {formatPrice(inspector.standardInspectionFee)}
                   </span>
@@ -248,7 +277,9 @@ const InspectorResultsStep: React.FC<InspectorResultsStepProps> = ({
               <div className="text-center pt-3 border-t border-white/10">
                 <p className="text-slate-400 text-xs mb-1">Next Available</p>
                 <p className="text-white font-semibold">
-                  {new Date(inspector.availability.nextAvailableDate).toLocaleDateString()}
+                  {new Date(
+                    inspector.availability.nextAvailableDate,
+                  ).toLocaleDateString()}
                 </p>
               </div>
 
@@ -275,11 +306,7 @@ const InspectorResultsStep: React.FC<InspectorResultsStepProps> = ({
                 Compare credentials, pricing, and reviews side-by-side
               </p>
             </div>
-            <Button
-              variant="glass"
-              onClick={() => onSelect([])}
-              size="sm"
-            >
+            <Button variant="glass" onClick={() => onSelect([])} size="sm">
               Clear Selection
             </Button>
           </div>
