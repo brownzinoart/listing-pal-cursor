@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Complete PDF Generation Test</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <h1>Complete PDF Generation Test</h1>
+  <button id="testBtn">Test Complete PDF</button>
+  <div id="status"></div>
+  
+  <script>
+    document.getElementById('testBtn').addEventListener('click', async () => {
+      const status = document.getElementById('status');
+      status.innerHTML = 'Generating complete PDF...';
+      
+      try {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF();
+        
+        // Test data
+        const mockData = {
+          property: {
+            address: '123 Sunset Boulevard',
+            city: 'Beverly Hills',
+            state: 'CA',
+            zip: '90210',
+            price: 2500000,
+            bedrooms: 4,
+            bathrooms: 3,
+            sqft: 3200,
+            yearBuilt: 2018,
+            propertyType: 'Single Family Home',
+            propertyDescription: 'Stunning modern home with panoramic city views...',
+            neighborhood: 'West Beverly Hills',
+            images: []
+          },
+          agent: {
+            name: 'Michael Scott',
+            email: 'michael.scott@dundermifflin.com',
+            phone: '(555) 123-4567',
+            brokerage: 'Dunder Mifflin Realty'
+          },
+          generatedContent: {
+            socialPosts: {
+              facebook: 'Check out this amazing property!',
+              instagram: 'Dream home alert! 🏡',
+              twitter: 'New listing in Beverly Hills!'
+            },
+            emailCampaign: {
+              subject: 'Exclusive Property Alert',
+              body: 'I wanted to share this exceptional property...'
+            }
+          }
+        };
+        
+        // Page 1: Cover page
+        pdf.setFillColor(248, 250, 252);
+        pdf.rect(0, 0, 210, 297, 'F');
+        
+        // Header
+        pdf.setFillColor(74, 85, 199);
+        pdf.rect(0, 0, 210, 40, 'F');
+        
+        pdf.setTextColor(255, 255, 255);
+        pdf.setFontSize(24);
+        pdf.text(mockData.property.address, 105, 20, { align: 'center' });
+        pdf.setFontSize(14);
+        pdf.text(`${mockData.property.city}, ${mockData.property.state} ${mockData.property.zip}`, 105, 30, { align: 'center' });
+        
+        // Agent info
+        pdf.setFillColor(255, 255, 255);
+        pdf.roundedRect(20, 50, 170, 50, 5, 5, 'F');
+        
+        pdf.setTextColor(26, 32, 44);
+        pdf.setFontSize(16);
+        pdf.text(mockData.agent.name, 30, 65);
+        pdf.setFontSize(12);
+        pdf.setTextColor(74, 85, 104);
+        pdf.text(mockData.agent.email, 30, 75);
+        pdf.text(mockData.agent.phone, 30, 85);
+        pdf.text(mockData.agent.brokerage || '', 30, 95);
+        
+        // Property highlights
+        pdf.setFillColor(255, 255, 255);
+        pdf.roundedRect(20, 110, 170, 80, 5, 5, 'F');
+        
+        pdf.setTextColor(26, 32, 44);
+        pdf.setFontSize(18);
+        pdf.text('Property Highlights', 30, 125);
+        
+        pdf.setFontSize(14);
+        pdf.text(`$${mockData.property.price.toLocaleString()}`, 30, 140);
+        pdf.text(`${mockData.property.bedrooms} Bedrooms | ${mockData.property.bathrooms} Bathrooms`, 30, 150);
+        pdf.text(`${mockData.property.sqft.toLocaleString()} sq ft`, 30, 160);
+        pdf.text(`Built in ${mockData.property.yearBuilt}`, 30, 170);
+        pdf.text(mockData.property.propertyType, 30, 180);
+        
+        // Footer
+        pdf.setTextColor(113, 128, 150);
+        pdf.setFontSize(10);
+        pdf.text('Powered by ListingPal', 105, 280, { align: 'center' });
+        
+        // Page 2: Social Media
+        pdf.addPage();
+        pdf.setFillColor(248, 250, 252);
+        pdf.rect(0, 0, 210, 297, 'F');
+        
+        pdf.setTextColor(26, 32, 44);
+        pdf.setFontSize(24);
+        pdf.text('Social Media Posts', 105, 30, { align: 'center' });
+        
+        // Facebook post
+        pdf.setFillColor(255, 255, 255);
+        pdf.roundedRect(20, 50, 170, 60, 5, 5, 'F');
+        pdf.setFontSize(16);
+        pdf.setTextColor(59, 89, 152);
+        pdf.text('Facebook', 30, 65);
+        pdf.setFontSize(12);
+        pdf.setTextColor(74, 85, 104);
+        const fbLines = pdf.splitTextToSize(mockData.generatedContent.socialPosts.facebook, 150);
+        pdf.text(fbLines, 30, 80);
+        
+        // Instagram post
+        pdf.setFillColor(255, 255, 255);
+        pdf.roundedRect(20, 120, 170, 60, 5, 5, 'F');
+        pdf.setFontSize(16);
+        pdf.setTextColor(225, 48, 108);
+        pdf.text('Instagram', 30, 135);
+        pdf.setFontSize(12);
+        pdf.setTextColor(74, 85, 104);
+        const igLines = pdf.splitTextToSize(mockData.generatedContent.socialPosts.instagram, 150);
+        pdf.text(igLines, 30, 150);
+        
+        // Save PDF
+        pdf.save('complete-listing-test.pdf');
+        
+        status.innerHTML = '✅ Complete PDF downloaded successfully!';
+      } catch (error) {
+        status.innerHTML = '❌ Error: ' + error.message;
+        console.error(error);
+      }
+    });
+  </script>
+</body>
+</html>

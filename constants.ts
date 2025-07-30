@@ -1,4 +1,4 @@
-import { LightBulbIcon, SparklesIcon as SparklesIconOutline, HomeModernIcon, SunIcon, PaintBrushIcon, WrenchScrewdriverIcon, ChatBubbleLeftRightIcon, DocumentTextIcon, EnvelopeIcon, PhotoIcon, MegaphoneIcon, CurrencyDollarIcon, PrinterIcon } from '@heroicons/react/24/outline';
+import { LightBulbIcon, SparklesIcon as SparklesIconOutline, HomeModernIcon, SunIcon, PaintBrushIcon, WrenchScrewdriverIcon, ChatBubbleLeftRightIcon, DocumentTextIcon, EnvelopeIcon, PhotoIcon, MegaphoneIcon, CurrencyDollarIcon, PrinterIcon, DocumentCheckIcon } from '@heroicons/react/24/outline';
 import { AiDesignStyle, AiWorkflowTool } from './types';
 
 
@@ -15,6 +15,7 @@ export const TOOLKIT_TOOLS = [
   { id: "interior", name: "Interior Reimagined", pathSuffix: "/ai/room-redesign", enabled: true, color: "bg-pink-600", icon: LightBulbIcon, subtitle: "AI interior styling" },
   { id: "paid_ads", name: "Paid Ad Campaigns", pathSuffix: "/generate/paid-ad", enabled: true, color: "bg-green-600", icon: CurrencyDollarIcon, subtitle: "Generate paid ad copy" },
   { id: "print", name: "Print Materials", pathSuffix: "/print", enabled: true, color: "bg-indigo-600", icon: PrinterIcon, subtitle: "Lawn signs, postcards & flyers" },
+  { id: "contract", name: "Contract Wizard", pathSuffix: "/contract", enabled: true, color: "bg-amber-600", icon: DocumentCheckIcon, subtitle: "Generate purchase contracts" },
 ];
 
 export const DESCRIPTION_STYLES = [

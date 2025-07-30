@@ -51,38 +51,6 @@ const RESOURCE_CARDS = [
   // Add more resources as needed
 ];
 
-// Mock contract templates by state
-const CONTRACT_TEMPLATES: { [key: string]: { name: string; fields: { key: string; label: string; type: string; }[] } } = {
-  CA: {
-    name: 'California Residential Purchase Agreement',
-    fields: [
-      { key: 'buyer', label: 'Buyer Name', type: 'text' },
-      { key: 'seller', label: 'Seller Name', type: 'text' },
-      { key: 'price', label: 'Purchase Price', type: 'number' },
-      { key: 'address', label: 'Property Address', type: 'text' },
-    ],
-  },
-  NY: {
-    name: 'New York Residential Contract',
-    fields: [
-      { key: 'buyer', label: 'Buyer Name', type: 'text' },
-      { key: 'seller', label: 'Seller Name', type: 'text' },
-      { key: 'price', label: 'Purchase Price', type: 'number' },
-      { key: 'address', label: 'Property Address', type: 'text' },
-      { key: 'attorney', label: 'Attorney Name', type: 'text' },
-    ],
-  },
-  TX: {
-    name: 'Texas One to Four Family Residential Contract',
-    fields: [
-      { key: 'buyer', label: 'Buyer Name', type: 'text' },
-      { key: 'seller', label: 'Seller Name', type: 'text' },
-      { key: 'price', label: 'Purchase Price', type: 'number' },
-      { key: 'address', label: 'Property Address', type: 'text' },
-      { key: 'optionFee', label: 'Option Fee', type: 'number' },
-    ],
-  },
-};
 
 interface DashboardPageProps {
   section?: string;
@@ -95,6 +63,25 @@ function getFirstName() {
   return 'Pavano';
 }
 
+// Get motivational message based on time of day
+function getMotivationalMessage() {
+  const hour = new Date().getHours();
+  
+  if (hour >= 5 && hour < 12) {
+    // Morning (5 AM - 11:59 AM)
+    return "Rise and shine, let's get after it!";
+  } else if (hour >= 12 && hour < 18) {
+    // Afternoon (12 PM - 5:59 PM)
+    return "Keep the momentum rolling!";
+  } else if (hour >= 18 && hour < 24) {
+    // Evening (6 PM - 11:59 PM)
+    return "Finish strong - every hour counts!";
+  } else {
+    // Late Night/Early Morning (12 AM - 4:59 AM)
+    return "Night owl advantage - while others sleep, you succeed!";
+  }
+}
+
 const DashboardPage: React.FC<DashboardPageProps> = ({ section }) => {
   const { user } = useAuth();
   const location = useLocation();
@@ -103,8 +90,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ section }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showContractHelper, setShowContractHelper] = useState(false);
-  const [selectedState, setSelectedState] = useState('CA');
-  const [contractFields, setContractFields] = useState<Record<string, string | number>>({});
+  const [selectedListingForContract, setSelectedListingForContract] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     // Default to cards on mobile, allow saved preference on desktop
     if (typeof window !== 'undefined') {
@@ -116,7 +102,6 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ section }) => {
     }
     return 'cards';
   });
-  const contractTemplate = CONTRACT_TEMPLATES[selectedState];
 
   // Save view preference to localStorage
   useEffect(() => {
@@ -160,7 +145,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ section }) => {
   // Get page title and subtitle based on section
   const getPageInfo = () => {
     const pageMap: { [key: string]: { title: string; subtitle: string } } = {
-      'dashboard': { title: 'Dashboard Home', subtitle: 'Manage your property listings and business' },
+      'dashboard': { title: 'Good Morning, Pavano', subtitle: getMotivationalMessage() },
       'descriptions': { title: 'Listing Descriptions', subtitle: 'AI-powered property descriptions and content' },
       'social': { title: 'Social Media Posts', subtitle: 'Create engaging social content for your listings' },
       'videos': { title: 'Video Studio', subtitle: 'Create AI-powered property videos' },
@@ -398,17 +383,8 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ section }) => {
                 <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                   <div>
                     {/* Personalized Greeting */}
-                    <h1 className="text-3xl font-bold text-white">
-                      {(() => {
-                        const hour = new Date().getHours();
-                        let greeting = 'Welcome Back';
-                        if (hour < 12) greeting = 'Good Morning';
-                        else if (hour < 18) greeting = 'Good Afternoon';
-                        else greeting = 'Good Evening';
-                        return `${greeting}, Pavano`;
-                      })()}
-                    </h1>
-                    <p className="text-slate-400 mt-2">Manage your property listings and grow your business</p>
+                    <h1 className="text-3xl font-bold text-white">Dashboard Home</h1>
+                    <p className="text-slate-400 mt-2">Manage your property listings and business</p>
                   </div>
                   <Link to="/listings/new">
                     <Button variant="glass" glowColor="emerald" leftIcon={<PlusIcon className="h-5 w-5"/>} className="w-full sm:w-auto">
@@ -512,7 +488,37 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ section }) => {
                   <div
                     key={card.key}
                     className="relative cursor-pointer transform transition-transform duration-200 hover:scale-105"
-                    onClick={() => card.key === 'contract-helper' ? setShowContractHelper(true) : null}
+                    onClick={() => {
+                      if (card.key === 'contract-helper') {
+                        console.log('Contract Helper clicked, listings:', listings);
+                        console.log('Loading state:', isLoading);
+                        
+                        if (isLoading) {
+                          console.log('Still loading listings...');
+                          return;
+                        }
+                        
+                        // Direct navigation based on listings count
+                        if (listings.length === 0) {
+                          console.log('No listings found, navigating to create new listing');
+                          navigate('/listings/new');
+                        } else if (listings.length === 1) {
+                          const listingId = listings[0].id;
+                          console.log('Single listing found, ID:', listingId);
+                          
+                          if (listingId) {
+                            console.log('Navigating to contract wizard for listing:', listingId);
+                            navigate(`/listings/${listingId}/contract/basic`);
+                          } else {
+                            console.error('Listing ID is undefined');
+                            alert('Error: Invalid listing data. Please try again.');
+                          }
+                        } else {
+                          console.log('Multiple listings found, showing selection modal');
+                          setShowContractHelper(true);
+                        }
+                      }
+                    }}
                   >
                     <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 hover:bg-white/15 hover:border-white/30 transition-all duration-200">
                       <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center mb-4">
@@ -531,54 +537,90 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ section }) => {
                 ))}
               </div>
             </div>
-            {/* Contract Helper Modal */}
+            {/* Contract Helper Modal - Listing Selection */}
             <Dialog open={showContractHelper} onClose={() => setShowContractHelper(false)} className="fixed z-50 inset-0 overflow-y-auto">
               <div className="flex items-center justify-center min-h-screen px-4">
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
-                <div className="relative bg-slate-800 border border-white/20 rounded-2xl shadow-2xl max-w-lg w-full mx-auto p-8 z-10">
-                  <Dialog.Title className="text-2xl font-bold mb-6 text-white">Contract Helper</Dialog.Title>
-                  <div className="mb-6">
-                    <label className="block text-sm font-medium mb-2 text-slate-300">Select State</label>
-                    <select
-                      className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                      value={selectedState}
-                      onChange={e => setSelectedState(e.target.value)}
-                    >
-                      {Object.keys(CONTRACT_TEMPLATES).map(state => (
-                        <option key={state} value={state}>{state}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold mb-4 text-white">{contractTemplate.name}</h3>
-                    <form className="space-y-4">
-                      {contractTemplate.fields.map((field: any) => (
-                        <div key={field.key}>
-                          <label className="block text-sm font-medium text-slate-300 mb-2">{field.label}</label>
-                          <input
-                            type={field.type}
-                            className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                            value={contractFields[field.key] || ''}
-                            onChange={e => setContractFields(f => ({ ...f, [field.key]: e.target.value }))}
-                          />
-                        </div>
-                      ))}
-                    </form>
-                  </div>
-                  <div className="flex justify-end gap-3">
-                    <button
-                      className="px-6 py-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-300 hover:bg-slate-600 hover:text-white transition-all"
-                      onClick={() => setShowContractHelper(false)}
-                    >
-                      Close
-                    </button>
-                    <button
-                      className="px-6 py-3 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold hover:from-emerald-600 hover:to-teal-600 transition-all"
-                      onClick={() => setShowContractHelper(false)}
-                    >
-                      Save
-                    </button>
-                  </div>
+                <div className="relative bg-slate-800 border border-white/20 rounded-2xl shadow-2xl max-w-2xl w-full mx-auto p-8 z-10">
+                  <Dialog.Title className="text-2xl font-bold mb-6 text-white">Create Contract</Dialog.Title>
+                  
+                  {listings.length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-slate-300 mb-4">You need at least one listing to create a contract.</p>
+                      <Button
+                        variant="gradient"
+                        onClick={() => {
+                          setShowContractHelper(false);
+                          navigate('/listings/new');
+                        }}
+                      >
+                        Create a Listing First
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-slate-300 mb-6">Select a listing to create a contract for:</p>
+                      <div className="space-y-3 max-h-96 overflow-y-auto">
+                        {listings.map(listing => (
+                          <div
+                            key={listing.id}
+                            onClick={() => setSelectedListingForContract(listing.id)}
+                            className={`
+                              p-4 rounded-lg border cursor-pointer transition-all duration-200
+                              ${selectedListingForContract === listing.id
+                                ? 'bg-emerald-500/20 border-emerald-500/50'
+                                : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
+                              }
+                            `}
+                          >
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <h4 className="text-white font-semibold">{listing.address}</h4>
+                                <p className="text-slate-400 text-sm mt-1">
+                                  {listing.bedrooms} bed / {listing.bathrooms} bath / {listing.squareFootage?.toLocaleString()} sq ft
+                                </p>
+                                <p className="text-emerald-400 font-semibold mt-1">
+                                  ${listing.price.toLocaleString()}
+                                </p>
+                              </div>
+                              {listing.images && listing.images.length > 0 && (
+                                <img 
+                                  src={listing.images[0].url} 
+                                  alt={listing.address}
+                                  className="w-20 h-20 rounded-lg object-cover ml-4"
+                                />
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      <div className="flex justify-end gap-3 mt-6">
+                        <Button
+                          variant="glass"
+                          onClick={() => {
+                            setShowContractHelper(false);
+                            setSelectedListingForContract(null);
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          variant="gradient"
+                          disabled={!selectedListingForContract}
+                          onClick={() => {
+                            if (selectedListingForContract) {
+                              navigate(`/listings/${selectedListingForContract}/contract/basic`);
+                              setShowContractHelper(false);
+                              setSelectedListingForContract(null);
+                            }
+                          }}
+                        >
+                          Start Contract Wizard
+                        </Button>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </Dialog>

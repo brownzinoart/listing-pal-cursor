@@ -28,16 +28,14 @@ import { DEMO_PROPERTIES, getDemoPropertyWithImages, DemoProperty } from '../../
 
 type WizardStep = 'property' | 'upload' | 'analysis' | 'script' | 'generation' | 'publish' | 'complete';
 
-// ElevenLabs voice options
+// OpenAI TTS voice options
 const VOICE_OPTIONS = [
-  { id: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel', gender: 'female', style: 'Professional', accent: 'American' },
-  { id: 'pNInz6obpgDQGcFmaJgB', name: 'Adam', gender: 'male', style: 'Deep', accent: 'American' },
-  { id: 'Yko7PKHZNXotIFUBG7I9', name: 'Nicole', gender: 'female', style: 'Young', accent: 'American' },
-  { id: 'TxGEqnHWrfWFTfGW9XjX', name: 'Josh', gender: 'male', style: 'Mature', accent: 'American' },
-  { id: 'flq6f7yk4E4fJM5XTYuZ', name: 'Emily', gender: 'female', style: 'Warm', accent: 'American' },
-  { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Sarah', gender: 'female', style: 'Soft', accent: 'American' },
-  { id: 'MF3mGyEYCl7XYWbV9V6O', name: 'Daniel', gender: 'male', style: 'Strong', accent: 'British' },
-  { id: 'pqHfZKP75CvOlQylNhV4', name: 'Bill', gender: 'male', style: 'Documentary', accent: 'American' }
+  { id: 'nova', name: 'Nova', gender: 'female', style: 'Professional', accent: 'American', description: 'Clear and professional female voice' },
+  { id: 'alloy', name: 'Alloy', gender: 'neutral', style: 'Versatile', accent: 'American', description: 'Balanced and versatile voice' },
+  { id: 'echo', name: 'Echo', gender: 'male', style: 'Authoritative', accent: 'American', description: 'Strong and confident male voice' },
+  { id: 'fable', name: 'Fable', gender: 'male', style: 'Storytelling', accent: 'British', description: 'Warm storytelling voice with British accent' },
+  { id: 'onyx', name: 'Onyx', gender: 'male', style: 'Deep', accent: 'American', description: 'Deep and resonant male voice' },
+  { id: 'shimmer', name: 'Shimmer', gender: 'female', style: 'Bright', accent: 'American', description: 'Bright and energetic female voice' }
 ];
 
 interface VideoCreationSectionProps {
@@ -50,10 +48,11 @@ const VideoCreationSection: React.FC<VideoCreationSectionProps> = ({ onClose, te
   const [currentStep, setCurrentStep] = useState<WizardStep>('property');
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
   const [uploadedImages, setUploadedImages] = useState<File[]>([]);
+  const [imageUrls, setImageUrls] = useState<string[]>([]); // Store URLs for video generation
   const [analysis, setAnalysis] = useState<VideoAnalysis | null>(null);
   const [script, setScript] = useState<VideoScript | null>(null);
   const [generatedVideo, setGeneratedVideo] = useState<VideoGenerationResult | null>(null);
-  const [selectedVoice, setSelectedVoice] = useState(VOICE_OPTIONS[0].id);
+  const [selectedVoice, setSelectedVoice] = useState('nova'); // Default to Nova (professional female voice)
   const [selectedPlatforms, setSelectedPlatforms] = useState(() => {
     if (template === 'Quick Preview') {
       return { tiktok: true, instagram: true, youtube: false };
@@ -132,9 +131,10 @@ const VideoCreationSection: React.FC<VideoCreationSectionProps> = ({ onClose, te
     setIsLoadingDemo(true);
     setSelectedDemoProperty(propertyId);
     try {
-      const { property: demoProperty, images } = await getDemoPropertyWithImages(propertyId);
+      const { property: demoProperty, images, imageUrls } = await getDemoPropertyWithImages(propertyId);
       setSelectedListing(demoProperty);
       setUploadedImages(images);
+      setImageUrls(imageUrls); // Store the URLs for video generation
       
       // Initialize load status for demo images
       const newStatus: {[key: number]: 'loading' | 'loaded' | 'error'} = {};
@@ -166,36 +166,84 @@ const VideoCreationSection: React.FC<VideoCreationSectionProps> = ({ onClose, te
       return;
     }
 
-    // For demo purposes, create a sample audio URL
-    // In production, this would be actual voice sample URLs from ElevenLabs
-    const sampleText = "Welcome to this beautiful property featuring modern amenities and stunning views.";
-    const demoAudioUrl = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?text=${encodeURIComponent(sampleText)}`;
-    
     try {
       setPlayingVoice(voiceId);
       
-      // For demo, we'll use a placeholder audio or synthesize
-      // In production, you'd have pre-generated voice samples
-      const audio = new Audio();
+      // Generate voice preview using OpenAI TTS
+      const sampleText = "Welcome to this stunning Beverly Hills mansion featuring modern luxury amenities and breathtaking views.";
       
-      // Use a demo audio file or text-to-speech API
-      // For now, we'll simulate with a timeout
-      setTimeout(() => {
-        setPlayingVoice(null);
-      }, 3000); // Simulate 3-second sample
+      // Call backend API directly for TTS
+      const response = await fetch('/api/generate-tts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: sampleText,
+          voice: voiceId,
+          speed: 1.0,
+          model: 'tts-1'
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate voice preview');
+      }
+
+      const result = await response.json();
+      
+      if (result.audioBase64) {
+        const audio = new Audio(result.audioBase64);
+        setCurrentAudio(audio);
+        
+        audio.onended = () => {
+          setPlayingVoice(null);
+          setCurrentAudio(null);
+        };
+        
+        audio.onerror = () => {
+          console.error('Audio playback failed');
+          setPlayingVoice(null);
+          setCurrentAudio(null);
+        };
+        
+        await audio.play();
+      } else {
+        // Fallback to simulated preview if TTS fails
+        setTimeout(() => {
+          setPlayingVoice(null);
+        }, 3000);
+      }
       
     } catch (error) {
-      console.error('Failed to play voice sample:', error);
-      setPlayingVoice(null);
+      console.error('Failed to generate voice preview:', error);
+      // Fallback to simulated preview
+      setTimeout(() => {
+        setPlayingVoice(null);
+      }, 3000);
     }
   };
 
   const renderStepContent = () => {
     switch (currentStep) {
       case 'property':
-        // Combine user listings with demo properties for the dropdown
+        // Featured Beverly Hills mansion as primary demo
+        const beverlyHillsDemo = DEMO_PROPERTIES.find(demo => demo.id === 'beverly-hills-mansion');
+        
+        // Combine featured demo with other properties
         const allProperties = [
-          ...DEMO_PROPERTIES.map(demo => ({
+          // Featured demo property first
+          ...(beverlyHillsDemo ? [{
+            ...beverlyHillsDemo,
+            id: `demo-${beverlyHillsDemo.id}`,
+            userId: 'demo',
+            status: 'featured' as const,
+            description: '🌟 Featured Demo - Modern luxury estate with professional images ready for instant video creation',
+            features: ['Professional Photos', 'AI-Ready', 'Premium Features', 'Instant Setup'],
+            imageUrl: '/api/placeholder/400/300'
+          }] : []),
+          // Other demo properties
+          ...DEMO_PROPERTIES.filter(demo => demo.id !== 'beverly-hills-mansion').map(demo => ({
             ...demo,
             id: `demo-${demo.id}`,
             userId: 'demo',
@@ -204,16 +252,52 @@ const VideoCreationSection: React.FC<VideoCreationSectionProps> = ({ onClose, te
             features: ['Professional Photos', 'AI-Ready', 'Instant Setup'],
             imageUrl: '/api/placeholder/400/300'
           })),
+          // User listings
           ...listings
         ];
 
         return (
           <div className="space-y-8">
-            <div className="text-center">
+            <div className="text-center mb-8">
               <h3 className="text-2xl font-bold text-white mb-3">Choose Your Property</h3>
-              <p className="text-slate-400 max-w-2xl mx-auto">
-                Select a property to create an AI-powered video. Demo properties include professional images and are ready to use instantly.
+              <p className="text-slate-400 max-w-2xl mx-auto mb-6">
+                Select a property to create an AI-powered video. Our featured demo property includes professional images and is ready to use instantly.
               </p>
+              
+              {/* Quick Start with Beverly Hills Demo */}
+              {beverlyHillsDemo && (
+                <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20 rounded-2xl p-6 mb-8">
+                  <h4 className="text-white font-semibold mb-2">🚀 Quick Start Demo</h4>
+                  <p className="text-slate-300 mb-4">Try our featured Beverly Hills mansion demo with professional images</p>
+                  <Button
+                    variant="gradient"
+                    onClick={async () => {
+                      setIsLoadingDemo(true);
+                      setSelectedDemoProperty('beverly-hills-mansion');
+                      try {
+                        const { property: demoProperty, images, imageUrls } = await getDemoPropertyWithImages('beverly-hills-mansion');
+                        setSelectedListing(demoProperty);
+                        setUploadedImages(images);
+                        setImageUrls(imageUrls);
+                        
+                        // Pre-set platforms for demo (but not voice - let user choose)
+                        setSelectedPlatforms({ tiktok: true, instagram: true, youtube: true });
+                        
+                        // Go to upload step to allow voice selection
+                        setCurrentStep('upload');
+                      } catch (error) {
+                        console.error('Failed to load demo property:', error);
+                        alert('Failed to load demo. Please try again.');
+                      } finally {
+                        setIsLoadingDemo(false);
+                      }
+                    }}
+                    disabled={isLoadingDemo}
+                  >
+                    {isLoadingDemo ? 'Loading Demo...' : 'Start with Beverly Hills Demo'}
+                  </Button>
+                </div>
+              )}
             </div>
 
             <div className="bg-white/5 border border-white/20 rounded-2xl p-8">
@@ -228,9 +312,10 @@ const VideoCreationSection: React.FC<VideoCreationSectionProps> = ({ onClose, te
                     setIsLoadingDemo(true);
                     setSelectedDemoProperty(demoId);
                     try {
-                      const { property: demoProperty, images } = await getDemoPropertyWithImages(demoId);
+                      const { property: demoProperty, images, imageUrls } = await getDemoPropertyWithImages(demoId);
                       setSelectedListing(demoProperty);
                       setUploadedImages(images);
+                      setImageUrls(imageUrls); // Store URLs for video generation
                       setCurrentStep('upload');
                     } catch (error) {
                       console.error('Failed to load demo property:', error);
@@ -363,6 +448,9 @@ const VideoCreationSection: React.FC<VideoCreationSectionProps> = ({ onClose, te
                               <p className="text-xs text-slate-400">
                                 {voice.style} • {voice.accent}
                               </p>
+                              <p className="text-xs text-slate-500 mt-1">
+                                {voice.description}
+                              </p>
                             </div>
                           </div>
                         </button>
@@ -489,12 +577,16 @@ const VideoCreationSection: React.FC<VideoCreationSectionProps> = ({ onClose, te
         return (
           <VideoGenerationStep
             images={uploadedImages}
+            imageUrls={imageUrls.length > 0 ? imageUrls : undefined}
             script={script}
             platforms={selectedPlatforms}
             onComplete={(video) => {
               setGeneratedVideo(video);
               handleNext();
             }}
+            isDemoProperty={!!selectedDemoProperty}
+            demoPropertyId={selectedDemoProperty || undefined}
+            selectedVoiceId={selectedVoice}
           />
         );
 

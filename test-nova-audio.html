@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Nova Audio Test</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 800px; 
+            margin: 50px auto; 
+            padding: 20px;
+            background: #1e293b;
+            color: white;
+        }
+        video { 
+            width: 100%; 
+            margin: 20px 0; 
+            border-radius: 8px;
+        }
+        button {
+            background: #6366f1;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        button:hover { background: #4f46e5; }
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        .success { background: #22c55e; }
+        .error { background: #ef4444; }
+        .info { background: #3b82f6; }
+    </style>
+</head>
+<body>
+    <h1>🎙️ Nova Voice Demo Test</h1>
+    
+    <div id="status" class="status info">
+        Ready to test Nova voice demo
+    </div>
+    
+    <button onclick="testNovaDemo()">Test Nova Demo with Audio</button>
+    <button onclick="generateNovaWithAudio()">Generate Fresh Nova Video</button>
+    
+    <video id="demo-video" controls>
+        Your browser does not support video.
+    </video>
+
+    <script>
+        const statusEl = document.getElementById('status');
+        const videoEl = document.getElementById('demo-video');
+        
+        // Test existing Nova demo
+        async function testNovaDemo() {
+            statusEl.className = 'status info';
+            statusEl.textContent = 'Testing existing Nova demo...';
+            
+            try {
+                // Test if Nova demo exists and has audio
+                const videoUrl = '/demo-videos/beverly-hills-nova.mp4';
+                videoEl.src = videoUrl + '?t=' + Date.now();
+                
+                statusEl.className = 'status success';
+                statusEl.textContent = '✅ Nova demo loaded - check if audio plays!';
+                
+                // Auto-play to test audio
+                setTimeout(() => {
+                    videoEl.play().catch(e => {
+                        console.log('Autoplay blocked, click play manually');
+                    });
+                }, 500);
+                
+            } catch (error) {
+                statusEl.className = 'status error';
+                statusEl.textContent = '❌ Error loading Nova demo: ' + error.message;
+            }
+        }
+        
+        // Generate new Nova video with audio
+        async function generateNovaWithAudio() {
+            statusEl.className = 'status info';
+            statusEl.textContent = 'Generating Nova demo with audio...';
+            
+            try {
+                // Step 1: Generate audio
+                statusEl.textContent = '🎙️ Generating Nova voiceover...';
+                
+                const ttsResponse = await fetch('/api/generate-tts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        text: 'Welcome to this stunning Beverly Hills mansion featuring modern luxury amenities and breathtaking views. The grand living room features floor-to-ceiling windows with panoramic city views.',
+                        voice: 'nova',
+                        speed: 1.0,
+                        model: 'tts-1'
+                    })
+                });
+                
+                if (!ttsResponse.ok) {
+                    throw new Error('TTS generation failed');
+                }
+                
+                const ttsResult = await ttsResponse.json();
+                
+                if (ttsResult.audioBase64) {
+                    statusEl.className = 'status success';
+                    statusEl.textContent = '✅ Nova audio generated! This proves TTS works.';
+                    
+                    // Play the audio to test
+                    const audio = new Audio(ttsResult.audioBase64);
+                    audio.play();
+                } else {
+                    throw new Error('No audio generated');
+                }
+                
+            } catch (error) {
+                statusEl.className = 'status error';
+                statusEl.textContent = '❌ Error: ' + error.message;
+                console.error(error);
+            }
+        }
+        
+        // Auto-test on load
+        window.addEventListener('load', () => {
+            testNovaDemo();
+        });
+    </script>
+</body>
+</html>

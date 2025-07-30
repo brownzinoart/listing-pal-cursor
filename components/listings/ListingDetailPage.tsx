@@ -10,6 +10,7 @@ import AiWorkflowPlaceholder from './AiWorkflowPlaceholder';
 import NeighborhoodInsights from '../shared/NeighborhoodInsights';
 import SocialMediaMockup from './generation/SocialMediaMockups';
 import Button from '../shared/Button';
+import PDFExportButton from './PDFExportButton';
 import { ArrowLeftIcon, PencilSquareIcon, PhotoIcon, ChevronLeftIcon, ChevronRightIcon, BuildingOfficeIcon } from '@heroicons/react/24/solid';
 
 // Component to format key features with markdown-style rendering
@@ -270,6 +271,11 @@ const ListingDetailPage: React.FC = () => {
               </div>
               
               <div className="flex items-center space-x-4">
+                <PDFExportButton 
+                  listing={listing}
+                  variant="glass"
+                  size="lg"
+                />
                 <Link to={`/listings/${listing.id}/edit`}>
                   <Button 
                     variant="glass" 
@@ -284,6 +290,7 @@ const ListingDetailPage: React.FC = () => {
             </div>
 
             {/* Main Content Area */}
+        <div id="pdf-export-content">
         {/* Property Gallery Layout */}
         <div className="relative group mb-12">
           <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-3xl blur-xl"></div>
@@ -986,12 +993,13 @@ const ListingDetailPage: React.FC = () => {
         )}
 
             {/* Content Generation Tools */}
-            <div className="relative group">
+            <div className="relative group mt-16">
               <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-3xl blur-xl"></div>
               <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8">
                 <AiWorkflowPlaceholder listing={listing} />
               </div>
             </div>
+        </div> {/* Close pdf-export-content */}
           </div>
         </div>
       </div>

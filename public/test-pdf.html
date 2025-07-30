@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test PDF Generation</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <h1>Test PDF Generation</h1>
+  <button id="testBtn">Test PDF Download</button>
+  <div id="status"></div>
+  
+  <script>
+    document.getElementById('testBtn').addEventListener('click', async () => {
+      const status = document.getElementById('status');
+      status.innerHTML = 'Testing PDF generation...';
+      
+      try {
+        // Test basic jsPDF functionality
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF();
+        
+        // Test roundedRect
+        pdf.setFillColor(248, 250, 252);
+        pdf.roundedRect(10, 10, 100, 50, 5, 5, 'F');
+        
+        pdf.setFontSize(16);
+        pdf.text('PDF Download Test', 20, 35);
+        
+        // Try to save
+        pdf.save('test-download.pdf');
+        
+        status.innerHTML = '✅ PDF downloaded successfully! Check your downloads folder.';
+      } catch (error) {
+        status.innerHTML = '❌ Error: ' + error.message;
+        console.error(error);
+      }
+    });
+  </script>
+</body>
+</html>

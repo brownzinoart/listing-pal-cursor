@@ -254,6 +254,7 @@ export async function convertImagesToFiles(images: PropertyImage[]): Promise<Fil
 export async function getDemoPropertyWithImages(propertyId?: string): Promise<{
   property: DemoProperty;
   images: File[];
+  imageUrls: string[];
 }> {
   // Select property
   const property = propertyId 
@@ -272,10 +273,23 @@ export async function getDemoPropertyWithImages(propertyId?: string): Promise<{
     property.imageUrl = propertyImages[0].url;
   }
 
-  // Convert to File objects
+  // Extract URLs for video generation
+  const imageUrls = propertyImages.map(img => img.url);
+
+  // Convert to File objects for UI display
   const imageFiles = await convertImagesToFiles(propertyImages);
 
-  return { property, images: imageFiles };
+  return { property, images: imageFiles, imageUrls };
+}
+
+/**
+ * Extract URLs from demo property images
+ * Helper function to get URLs when we already have the property
+ */
+export function getImageUrlsFromProperty(propertyId: string): string[] {
+  // Return the fallback images for the demo properties
+  // These are always available and don't require API calls
+  return Object.values(FALLBACK_IMAGES);
 }
 
 /**

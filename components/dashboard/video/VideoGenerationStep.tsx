@@ -3,9 +3,11 @@ import { VideoScript, VideoGenerationResult, videoGenerationService } from '../.
 import { ProgressBar, PlatformProgress, VideoProcessingSteps } from '../../shared/VideoProgressIndicator';
 import { VideoCameraIcon, CheckCircleIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 import Button from '../../shared/Button';
+import { demoVideoService } from '../../../services/demoVideoService';
 
 interface VideoGenerationStepProps {
   images: File[];
+  imageUrls?: string[]; // Optional URLs for demo properties
   script: VideoScript;
   platforms: {
     tiktok: boolean;
@@ -13,13 +15,20 @@ interface VideoGenerationStepProps {
     youtube: boolean;
   };
   onComplete: (video: VideoGenerationResult) => void;
+  isDemoProperty?: boolean; // Flag to use pre-made demo video
+  demoPropertyId?: string; // Which demo property
+  selectedVoiceId?: string; // Selected voice for demo
 }
 
 const VideoGenerationStep: React.FC<VideoGenerationStepProps> = ({ 
   images, 
+  imageUrls,
   script, 
   platforms,
-  onComplete 
+  onComplete,
+  isDemoProperty = false,
+  demoPropertyId,
+  selectedVoiceId = 'nova'
 }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [masterProgress, setMasterProgress] = useState(0);
@@ -47,15 +56,45 @@ const VideoGenerationStep: React.FC<VideoGenerationStepProps> = ({
         await new Promise(resolve => setTimeout(resolve, 1000));
         setCurrentStep(1);
 
-        // Step 2: Generate master video
-        const video = await videoGenerationService.generateVideo(
-          images,
-          script,
-          (progress, message) => {
-            setMasterProgress(progress);
-            setMasterMessage(message);
-          }
-        );
+        // Step 2: Check if we should use pre-made demo video
+        let video: VideoGenerationResult;
+        
+        if (isDemoProperty && demoPropertyId && demoVideoService.hasDemoVideo(demoPropertyId)) {
+          // Use pre-made demo video with selected voice
+          setMasterMessage(`Preparing demo with ${selectedVoiceId} voice...`);
+          setMasterProgress(20);
+          
+          video = await demoVideoService.getDemoVideo(
+            demoPropertyId, 
+            selectedVoiceId,
+            (progress, message) => {
+              setMasterProgress(20 + (progress * 0.8)); // Scale progress from 20-100
+              setMasterMessage(message);
+            }
+          );
+          
+          setMasterMessage(`Demo video ready with ${selectedVoiceId} voice!`);
+        } else {
+          // Generate video normally
+          video = imageUrls && imageUrls.length > 0
+            ? await videoGenerationService.generateVideoWithUrls(
+                imageUrls,
+                script,
+                (progress, message) => {
+                  setMasterProgress(progress);
+                  setMasterMessage(message);
+                }
+              )
+            : await videoGenerationService.generateVideo(
+                images,
+                script,
+                (progress, message) => {
+                  setMasterProgress(progress);
+                  setMasterMessage(message);
+                }
+              );
+        }
+        
         setGeneratedVideo(video);
         setCurrentStep(2);
 
@@ -116,7 +155,9 @@ const VideoGenerationStep: React.FC<VideoGenerationStepProps> = ({
           {generatedVideo.masterVideoUrl ? (
             <div className="space-y-4">
               <div className="aspect-video bg-slate-900 rounded-lg overflow-hidden">
-                {generatedVideo.masterVideoUrl.startsWith('blob:') || generatedVideo.masterVideoUrl.startsWith('http') ? (
+                {generatedVideo.masterVideoUrl.startsWith('blob:') || 
+                 generatedVideo.masterVideoUrl.startsWith('http') || 
+                 generatedVideo.masterVideoUrl.startsWith('/') ? (
                   <video
                     controls
                     className="w-full h-full"
@@ -136,7 +177,7 @@ const VideoGenerationStep: React.FC<VideoGenerationStepProps> = ({
               </div>
               
               <div className="flex gap-2">
-                {generatedVideo.masterVideoUrl.startsWith('blob:') && (
+                {(generatedVideo.masterVideoUrl.startsWith('blob:') || generatedVideo.masterVideoUrl.startsWith('/')) && (
                   <Button
                     variant="secondary"
                     size="sm"
@@ -169,7 +210,7 @@ const VideoGenerationStep: React.FC<VideoGenerationStepProps> = ({
                   <p className="text-white font-medium capitalize mb-2">{platform}</p>
                   <p className="text-slate-400 text-sm mb-3">Duration: {version.duration}s</p>
                   <CheckCircleIcon className="h-8 w-8 text-emerald-400 mx-auto mb-3" />
-                  {version.url.startsWith('blob:') && (
+                  {(version.url.startsWith('blob:') || version.url.startsWith('/')) && (
                     <Button
                       variant="ghost"
                       size="sm"

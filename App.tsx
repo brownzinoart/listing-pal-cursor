@@ -24,6 +24,7 @@ import PortfolioAnalyticsProgressive from './components/dashboard/PortfolioAnaly
 import PortfolioAnalyticsNoCharts from './components/dashboard/PortfolioAnalyticsNoCharts';
 import PortfolioAnalyticsMinimal from './components/dashboard/PortfolioAnalyticsMinimal';
 import ModernPortfolioAnalytics from './components/dashboard/ModernPortfolioAnalytics';
+import ContractWizard from './components/listings/contract/ContractWizard';
 import { OllamaStatusProvider } from './contexts/OllamaStatusContext';
 import { LayoutProvider } from './contexts/LayoutContext';
 
@@ -64,7 +65,17 @@ const AppRoutes = () => {
           <Route path="/dashboard/settings" element={<PrivateRoute><DashboardPage section="settings" /></PrivateRoute>} />
           <Route path="/listings/new" element={<PrivateRoute><ListingFormPage /></PrivateRoute>} />
           <Route path="/listings/:id/edit" element={<PrivateRoute><ListingFormPage /></PrivateRoute>} />
-          <Route path="/listings/:id" element={<PrivateRoute><ListingDetailPage /></PrivateRoute>} />
+          
+          {/* Contract Wizard Routes - Must come before generic :id route */}
+          <Route
+            path="/listings/:id/contract"
+            element={<PrivateRoute><ContractWizard /></PrivateRoute>}
+          />
+          <Route
+            path="/listings/:id/contract/:stepId"
+            element={<PrivateRoute><ContractWizard /></PrivateRoute>}
+          />
+          
           <Route 
             path="/listings/:id/generate/description" 
             element={<PrivateRoute><ListingDescriptionGeneratorPage /></PrivateRoute>} 
@@ -105,6 +116,9 @@ const AppRoutes = () => {
             path="/listings/:id/preselect-batch"
             element={<PrivateRoute><PreselectBatchPage /></PrivateRoute>}
           />
+          
+          {/* Generic listing detail route - Must come AFTER all specific routes */}
+          <Route path="/listings/:id" element={<PrivateRoute><ListingDetailPage /></PrivateRoute>} />
           
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>

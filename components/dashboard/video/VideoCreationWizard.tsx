@@ -12,11 +12,12 @@ import {
 } from '@heroicons/react/24/outline';
 import { Listing } from '../../../types';
 import PropertySelector from '../../shared/PropertySelector';
-// import VideoAnalysisStep from './VideoAnalysisStep';
-// import VideoScriptEditor from './VideoScriptEditor';
-// import VideoGenerationStep from './VideoGenerationStep';
-// import VideoPlatformPublisher from './VideoPlatformPublisher';
+import VideoAnalysisStep from './VideoAnalysisStep';
+import VideoScriptEditor from './VideoScriptEditor';
+import VideoGenerationStep from './VideoGenerationStep';
+import VideoPlatformPublisher from './VideoPlatformPublisher';
 import { videoGenerationService, VideoAnalysis, VideoScript, VideoGenerationResult } from '../../../services/videoGenerationService';
+import { resourceManagementService } from '../../../services/resourceManagementService';
 
 interface VideoCreationWizardProps {
   isOpen: boolean;
@@ -59,6 +60,23 @@ const VideoCreationWizard: React.FC<VideoCreationWizardProps> = ({
     { key: 'generation', label: 'Generate Video', icon: <VideoCameraIcon className="h-5 w-5" /> },
     { key: 'publish', label: 'Publish', icon: <CheckCircleIcon className="h-5 w-5" /> }
   ];
+
+  // Cleanup resources when component unmounts or modal closes
+  React.useEffect(() => {
+    return () => {
+      // Cleanup when component unmounts
+      console.log('🧹 VideoCreationWizard unmounting, cleaning up resources');
+      resourceManagementService.cleanupOldResources();
+    };
+  }, []);
+
+  // Cleanup when modal closes
+  React.useEffect(() => {
+    if (!isOpen) {
+      console.log('🧹 VideoCreationWizard closed, cleaning up resources');
+      resourceManagementService.cleanupOldResources();
+    }
+  }, [isOpen]);
 
   const getCurrentStepIndex = () => steps.findIndex(s => s.key === currentStep);
 
@@ -252,79 +270,50 @@ const VideoCreationWizard: React.FC<VideoCreationWizardProps> = ({
 
       case 'analysis':
         return (
-          <div className="text-center py-12">
-            <h3 className="text-white text-lg mb-4">AI Analysis (Coming Soon)</h3>
-            <p className="text-slate-400 mb-6">AI is analyzing your property images...</p>
-            <Button variant="gradient" onClick={() => {
-              // Mock analysis result
-              setAnalysis({
-                detectedRooms: ['Living Room', 'Kitchen', 'Bedroom'],
-                keyFeatures: ['Hardwood Floors', 'Modern Kitchen', 'Large Windows'],
-                imageQuality: { overall: 90, lighting: 85, composition: 95 },
-                suggestedOrder: [0, 1, 2]
-              });
+          <VideoAnalysisStep
+            images={uploadedImages}
+            onComplete={(result) => {
+              setAnalysis(result);
               handleNext();
-            }}>
-              Continue with Mock Analysis
-            </Button>
-          </div>
+            }}
+          />
         );
 
       case 'script':
+        if (!selectedListing || !analysis) return null;
         return (
-          <div className="text-center py-12">
-            <h3 className="text-white text-lg mb-4">Script Generation (Coming Soon)</h3>
-            <p className="text-slate-400 mb-6">AI is generating your video script...</p>
-            <Button variant="gradient" onClick={() => {
-              // Mock script result
-              setScript({
-                intro: "Welcome to this beautiful property",
-                scenes: [
-                  { imageIndex: 0, narration: "This stunning living room features...", duration: 10 },
-                  { imageIndex: 1, narration: "The modern kitchen includes...", duration: 10 }
-                ],
-                outro: "Contact us today to schedule a viewing",
-                totalDuration: 30
-              });
+          <VideoScriptEditor
+            listing={selectedListing}
+            analysis={analysis}
+            onComplete={(result) => {
+              setScript(result);
               handleNext();
-            }}>
-              Continue with Mock Script
-            </Button>
-          </div>
+            }}
+          />
         );
 
       case 'generation':
+        if (!script) return null;
         return (
-          <div className="text-center py-12">
-            <h3 className="text-white text-lg mb-4">Video Generation (Coming Soon)</h3>
-            <p className="text-slate-400 mb-6">AI is creating your video...</p>
-            <Button variant="gradient" onClick={() => {
-              // Mock video result
-              setGeneratedVideo({
-                videoId: 'mock-video-123',
-                masterVideoUrl: '/api/placeholder/video/mock.mp4',
-                platformVersions: {
-                  tiktok: { url: '/api/placeholder/video/tiktok.mp4', duration: 60 },
-                  instagram: { url: '/api/placeholder/video/instagram.mp4', duration: 90 },
-                  youtube: { url: '/api/placeholder/video/youtube.mp4', duration: 120 }
-                }
-              });
+          <VideoGenerationStep
+            images={uploadedImages}
+            script={script}
+            platforms={selectedPlatforms}
+            onComplete={(video) => {
+              setGeneratedVideo(video);
               handleNext();
-            }}>
-              Continue with Mock Video
-            </Button>
-          </div>
+            }}
+          />
         );
 
       case 'publish':
+        if (!generatedVideo) return null;
         return (
-          <div className="text-center py-12">
-            <h3 className="text-white text-lg mb-4">Publishing (Coming Soon)</h3>
-            <p className="text-slate-400 mb-6">Publishing your video to social platforms...</p>
-            <Button variant="gradient" onClick={() => setCurrentStep('complete')}>
-              Complete Mock Publishing
-            </Button>
-          </div>
+          <VideoPlatformPublisher
+            video={generatedVideo}
+            platforms={selectedPlatforms}
+            onComplete={() => setCurrentStep('complete')}
+          />
         );
 
       case 'complete':
@@ -474,7 +463,7 @@ const VideoCreationWizard: React.FC<VideoCreationWizardProps> = ({
           </div>
 
           {/* Footer */}
-          {currentStep !== 'complete' && currentStep !== 'analysis' && currentStep !== 'generation' && currentStep !== 'publish' && (
+          {currentStep !== 'complete' && currentStep !== 'analysis' && currentStep !== 'script' && currentStep !== 'generation' && currentStep !== 'publish' && (
             <div className="bg-white/5 border-t border-white/10 px-8 py-6 flex justify-between">
               <Button
                 variant="ghost"

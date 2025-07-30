@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo Video Player Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1e293b;
+            color: white;
+        }
+        .video-container {
+            background: #334155;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+        video {
+            width: 100%;
+            max-width: 800px;
+            margin: 20px auto;
+            display: block;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success {
+            background: #22c55e;
+        }
+        .error {
+            background: #ef4444;
+        }
+        .info {
+            background: #3b82f6;
+        }
+        .property-info {
+            background: #475569;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        button {
+            background: #6366f1;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #4f46e5;
+        }
+    </style>
+</head>
+<body>
+    <h1>Demo Video Player Test</h1>
+    
+    <div class="video-container">
+        <h2>Beverly Hills Mansion Demo Video</h2>
+        
+        <div class="property-info">
+            <h3>Property Details:</h3>
+            <p>📍 Address: 1245 Benedict Canyon Drive, Beverly Hills, CA 90210</p>
+            <p>💰 Price: $15,750,000</p>
+            <p>🛏️ Bedrooms: 7 | 🛁 Bathrooms: 9 | 📐 Square Feet: 12,500</p>
+        </div>
+        
+        <div id="status"></div>
+        
+        <button onclick="loadDemoVideo()">Load Pre-made Demo Video</button>
+        <button onclick="loadFallbackVideo()">Load Fallback Sample Video</button>
+        
+        <video id="demo-video" controls style="display:none;">
+            Your browser does not support the video tag.
+        </video>
+    </div>
+
+    <script type="module">
+        window.loadDemoVideo = async function() {
+            const statusEl = document.getElementById('status');
+            const videoEl = document.getElementById('demo-video');
+            
+            statusEl.className = 'status info';
+            statusEl.textContent = 'Loading demo video service...';
+            
+            try {
+                // Import the demo video service
+                const { demoVideoService } = await import('./services/demoVideoService.ts');
+                
+                statusEl.textContent = 'Fetching demo video...';
+                
+                // Get the demo video
+                const videoResult = await demoVideoService.getDemoVideo('beverly-hills-mansion');
+                
+                statusEl.className = 'status success';
+                statusEl.textContent = '✓ Demo video loaded successfully!';
+                
+                // Display the video
+                videoEl.src = videoResult.masterVideoUrl;
+                videoEl.style.display = 'block';
+                
+                console.log('Video Result:', videoResult);
+                
+                // Show video info
+                const infoDiv = document.createElement('div');
+                infoDiv.className = 'property-info';
+                infoDiv.innerHTML = `
+                    <h4>Video Information:</h4>
+                    <p>Video ID: ${videoResult.videoId}</p>
+                    <p>URL: ${videoResult.masterVideoUrl}</p>
+                    <p>Platform Versions: TikTok (${videoResult.platformVersions.tiktok?.duration}s), 
+                       Instagram (${videoResult.platformVersions.instagram?.duration}s), 
+                       YouTube (${videoResult.platformVersions.youtube?.duration}s)</p>
+                `;
+                statusEl.after(infoDiv);
+                
+            } catch (error) {
+                statusEl.className = 'status error';
+                statusEl.textContent = `✗ Error: ${error.message}`;
+                console.error('Error:', error);
+            }
+        };
+        
+        window.loadFallbackVideo = function() {
+            const videoEl = document.getElementById('demo-video');
+            const statusEl = document.getElementById('status');
+            
+            // Direct fallback video URL
+            const fallbackUrl = 'https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
+            
+            statusEl.className = 'status info';
+            statusEl.textContent = 'Loading fallback sample video...';
+            
+            videoEl.src = fallbackUrl;
+            videoEl.style.display = 'block';
+            
+            videoEl.onloadedmetadata = () => {
+                statusEl.className = 'status success';
+                statusEl.textContent = '✓ Fallback video loaded successfully!';
+            };
+            
+            videoEl.onerror = () => {
+                statusEl.className = 'status error';
+                statusEl.textContent = '✗ Failed to load fallback video';
+            };
+        };
+        
+        // Auto-load demo video on page load
+        window.addEventListener('load', () => {
+            loadDemoVideo();
+        });
+    </script>
+</body>
+</html>

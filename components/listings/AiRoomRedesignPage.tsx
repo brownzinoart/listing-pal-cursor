@@ -9,7 +9,9 @@ import Button from '../shared/Button';
 import Input from '../shared/Input';
 import AiDesignStyleCard from './generation/AiDesignStyleCard';
 import WorkflowNavigation from './generation/WorkflowNavigation';
-import { ArrowLeftIcon, PhotoIcon, CameraIcon, SparklesIcon, InformationCircleIcon, ArrowPathIcon } from '@heroicons/react/24/solid';
+import PropertySummaryHeader from './generation/PropertySummaryHeader';
+import ModernDashboardLayout from '../shared/ModernDashboardLayout';
+import { ArrowLeftIcon, PhotoIcon, CameraIcon, SparklesIcon, InformationCircleIcon, ArrowPathIcon, CheckIcon } from '@heroicons/react/24/outline';
 
 // Room type options from the API
 const ROOM_TYPES = [
@@ -241,28 +243,50 @@ const AiRoomRedesignPage: React.FC = () => {
   };
 
   if (isLoadingPage) {
-    return <div className="flex justify-center items-center h-[calc(100vh-10rem)]"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-primary"></div></div>;
+    return (
+      <ModernDashboardLayout
+        title="AI Room Redesign"
+        subtitle="Transform your spaces with AI-powered interior design"
+      >
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-400"></div>
+        </div>
+      </ModernDashboardLayout>
+    );
   }
 
   if (error && !listing) { // Show general error if listing also fails to load
     return (
-      <div className="text-center py-10">
-        <p className="text-brand-danger bg-red-900/30 p-4 rounded-md max-w-md mx-auto">{error}</p>
-        <Link to="/dashboard" className="mt-4 inline-block">
-          <Button variant="secondary">Go to Dashboard</Button>
-        </Link>
-      </div>
+      <ModernDashboardLayout
+        title="AI Room Redesign"
+        subtitle="Transform your spaces with AI-powered interior design"
+      >
+        <div className="relative group">
+          <div className="absolute inset-0 bg-gradient-to-r from-red-500/10 to-rose-500/10 rounded-3xl blur-xl"></div>
+          <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8 text-center">
+            <p className="text-red-400 mb-4">{error}</p>
+            <Button variant="glass" onClick={() => navigate('/dashboard')}>
+              Go to Dashboard
+            </Button>
+          </div>
+        </div>
+      </ModernDashboardLayout>
     );
   }
   
   if (!listing) {
     return (
-      <div className="text-center py-10">
-        <p className="text-brand-warning">Listing not found.</p>
-        <Link to="/dashboard" className="mt-4 inline-block">
-          <Button variant="secondary">Go to Dashboard</Button>
-        </Link>
-      </div>
+      <ModernDashboardLayout
+        title="AI Room Redesign"
+        subtitle="Transform your spaces with AI-powered interior design"
+      >
+        <div className="relative group">
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-500/10 to-gray-500/10 rounded-3xl blur-xl"></div>
+          <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8 text-center">
+            <p className="text-slate-400">Listing data is unavailable.</p>
+          </div>
+        </div>
+      </ModernDashboardLayout>
     );
   }
 
@@ -304,235 +328,275 @@ const AiRoomRedesignPage: React.FC = () => {
     }
   };
 
+  const headerActions = (
+    <Link to={getPreviousStepPath()}>
+      <Button 
+        variant="glass" 
+        size="sm"
+        leftIcon={<ArrowLeftIcon className="h-4 w-4" />}
+      >
+        Back to {getPreviousStepName()}
+      </Button>
+    </Link>
+  );
+
   return (
-    <div className="min-h-screen bg-brand-background">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="mb-6">
-          <Link to={getPreviousStepPath()} className="inline-flex items-center text-sm text-brand-text-secondary hover:text-brand-primary transition-colors group">
-            <ArrowLeftIcon className="h-4 w-4 mr-2 group-hover:text-brand-primary" />
-            Back
-          </Link>
-        </div>
-        <h1 className="text-3xl font-bold text-brand-text-primary mb-6">Interior Reimagined</h1>
-        
+    <ModernDashboardLayout
+      title="AI Room Redesign"
+      subtitle="Transform your spaces with AI-powered interior design"
+      actions={headerActions}
+    >
+      <div className="space-y-8">
         {isInWorkflow && (
-          <div className="mb-8">
-            <WorkflowNavigation 
-              workflowTools={workflowTools} 
-              currentToolId="interior"
-            />
+          <div className="relative group">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-3xl blur-xl"></div>
+            <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-6">
+              <WorkflowNavigation 
+                workflowTools={workflowTools} 
+                currentToolId="interior"
+              />
+            </div>
           </div>
         )}
         
-        <p className="text-brand-text-secondary mb-1 mt-1">For: {listing.address.split(',')[0]}</p>
-        <p className="text-brand-text-tertiary mb-2 text-sm">Upload a clear photo of the room you want to redesign and generate a new look.</p>
-        <p className="text-brand-text-tertiary mb-8 text-xs">💡 Tip: Photos taken with your phone camera work perfectly! Just make sure the room is well-lit and clearly visible.</p>
-
-      {/* Main Content: Upload & Output */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        {/* Left: Image Upload & Preview */}
-        <div className="bg-brand-panel p-6 rounded-lg shadow-xl border border-brand-border">
-          <h2 className="text-xl font-semibold text-brand-text-primary mb-4">Upload Your Room Photo</h2>
-          
-          {!uploadedImage ? (
-            <div>
-              {/* Image Upload Options */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                {/* Traditional Upload */}
-                <label htmlFor="room-image-upload" className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-brand-border rounded-md cursor-pointer hover:border-brand-primary transition-colors">
-                  <PhotoIcon className="h-8 w-8 text-brand-text-tertiary mb-2" />
-                  <span className="text-sm text-brand-text-secondary font-medium">Upload Photo</span>
-                  <span className="text-xs text-brand-text-tertiary mt-1">PNG, JPG, WEBP up to 5MB</span>
-                </label>
-                <input type="file" id="room-image-upload" accept="image/png, image/jpeg, image/webp" onChange={handleImageUpload} className="hidden" />
-                
-                {/* Mobile Camera */}
-                <label htmlFor="mobile-camera-upload" className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-brand-border rounded-md cursor-pointer hover:border-brand-primary transition-colors">
-                  <CameraIcon className="h-8 w-8 text-brand-text-tertiary mb-2" />
-                  <span className="text-sm text-brand-text-secondary font-medium">Take Photo</span>
-                  <span className="text-xs text-brand-text-tertiary mt-1">Mobile camera</span>
-                </label>
-                <input type="file" id="mobile-camera-upload" accept="image/*" capture="environment" onChange={handleImageUpload} className="hidden" />
-              </div>
-              
-              <div className="flex-1">
-                <Input 
-                    type="text"
-                    placeholder="e.g., add a modern coffee table and a large plant"
-                    value={designPrompt}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) => setDesignPrompt(e.target.value)}
-                    className="w-full text-sm"
-                    variant="gradient"
-                />
-              </div>
-            </div>
-          ) : (
-            <div>
-              <div className="relative">
-                <img src={uploadedImage} alt="Uploaded room" className="w-full rounded-md shadow-md border border-brand-border" />
-                <button
-                  onClick={() => {
-                    setUploadedImage(null);
-                    setUploadedImageFile(null);
-                    setUploadedImageName(null);
-                    setGeneratedRedesign(null);
-                  }}
-                  className="absolute top-2 right-2 p-2 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors"
-                >
-                  <ArrowPathIcon className="h-4 w-4" />
-                </button>
-              </div>
-              <p className="text-sm text-brand-text-secondary mt-2 text-center">{uploadedImageName}</p>
-              
-              <div className="mt-4">
-                <Input 
-                    type="text"
-                    placeholder="e.g., add a modern coffee table and a large plant"
-                    value={designPrompt}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) => setDesignPrompt(e.target.value)}
-                    className="w-full text-sm"
-                    variant="gradient"
-                />
-              </div>
-            </div>
-          )}
-          
-          {fileError && <p className="text-xs text-brand-danger mt-2">{fileError}</p>}
+        <div className="relative group">
+          <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 rounded-3xl blur-xl"></div>
+          <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-6">
+            <PropertySummaryHeader listing={listing} />
+          </div>
         </div>
 
-        {/* Right: Output Area */}
-        <div className="bg-brand-panel p-6 rounded-lg shadow-xl border border-brand-border">
-          <h2 className="text-xl font-semibold text-brand-text-primary mb-4">Your Redesigned Room</h2>
-          
-          {!generatedRedesign ? (
-            <div className="flex flex-col items-center justify-center h-64 border-2 border-dashed border-brand-border rounded-md">
-              <SparklesIcon className="h-12 w-12 text-brand-text-tertiary mb-4" />
-              <p className="text-brand-text-secondary text-center">
-                Upload a room photo and select your style to see the AI-generated redesign here
-              </p>
-            </div>
-          ) : (
-            <div>
-              <div className="relative">
-                <img src={generatedRedesign} alt="Redesigned room" className="w-full rounded-md shadow-md border border-brand-primary" />
-                <div className="absolute top-2 left-2 bg-brand-primary text-white px-2 py-1 rounded text-xs font-medium">
-                  {AI_DESIGN_STYLES.find(s => s.id === selectedDesignStyle)?.name || 'Redesigned'}
+        {/* Main Content: Upload & Output */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+          {/* Left: Image Upload & Preview */}
+          <div className="relative group">
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-3xl blur-xl"></div>
+            <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8">
+              <div className="flex items-center mb-6">
+                <PhotoIcon className="h-6 w-6 text-purple-400 mr-3" />
+                <h3 className="text-2xl font-bold text-white">Upload Room Photo</h3>
+              </div>
+              <p className="text-slate-400 mb-6">Upload a clear photo of the room you want to redesign. Photos taken with your phone camera work perfectly!</p>
+              
+              {!uploadedImage ? (
+                <div className="space-y-6">
+                  {/* Image Upload Options */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Traditional Upload */}
+                    <label htmlFor="room-image-upload" className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-white/20 rounded-xl cursor-pointer hover:border-purple-400/50 hover:bg-white/5 transition-all duration-200">
+                      <PhotoIcon className="h-8 w-8 text-slate-400 mb-2" />
+                      <span className="text-sm text-white font-medium">Upload Photo</span>
+                      <span className="text-xs text-slate-400 mt-1">PNG, JPG, WEBP up to 5MB</span>
+                    </label>
+                    <input type="file" id="room-image-upload" accept="image/png, image/jpeg, image/webp" onChange={handleImageUpload} className="hidden" />
+                    
+                    {/* Mobile Camera */}
+                    <label htmlFor="mobile-camera-upload" className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-white/20 rounded-xl cursor-pointer hover:border-purple-400/50 hover:bg-white/5 transition-all duration-200">
+                      <CameraIcon className="h-8 w-8 text-slate-400 mb-2" />
+                      <span className="text-sm text-white font-medium">Take Photo</span>
+                      <span className="text-xs text-slate-400 mt-1">Mobile camera</span>
+                    </label>
+                    <input type="file" id="mobile-camera-upload" accept="image/*" capture="environment" onChange={handleImageUpload} className="hidden" />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-2">Custom Instructions (Optional)</label>
+                    <Input 
+                        type="text"
+                        placeholder="e.g., add a modern coffee table and a large plant"
+                        value={designPrompt}
+                        onChange={(e: ChangeEvent<HTMLInputElement>) => setDesignPrompt(e.target.value)}
+                        className="w-full text-sm"
+                        variant="gradient"
+                    />
+                  </div>
                 </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="relative">
+                    <img src={uploadedImage} alt="Uploaded room" className="w-full rounded-xl shadow-lg border border-white/20" />
+                    <button
+                      onClick={() => {
+                        setUploadedImage(null);
+                        setUploadedImageFile(null);
+                        setUploadedImageName(null);
+                        setGeneratedRedesign(null);
+                      }}
+                      className="absolute top-3 right-3 p-2 bg-black/60 hover:bg-black/80 text-white rounded-xl transition-all duration-200 backdrop-blur-sm"
+                    >
+                      <ArrowPathIcon className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <p className="text-sm text-slate-300 text-center">{uploadedImageName}</p>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-2">Custom Instructions (Optional)</label>
+                    <Input 
+                        type="text"
+                        placeholder="e.g., add a modern coffee table and a large plant"
+                        value={designPrompt}
+                        onChange={(e: ChangeEvent<HTMLInputElement>) => setDesignPrompt(e.target.value)}
+                        className="w-full text-sm"
+                        variant="gradient"
+                    />
+                  </div>
+                </div>
+              )}
+              
+              {fileError && <p className="text-xs text-red-400 mt-2">{fileError}</p>}
+            </div>
+          </div>
+
+          {/* Right: Output Area */}
+          <div className="relative group">
+            <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-cyan-500/10 rounded-3xl blur-xl"></div>
+            <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8">
+              <div className="flex items-center mb-6">
+                <SparklesIcon className="h-6 w-6 text-indigo-400 mr-3" />
+                <h3 className="text-2xl font-bold text-white">Redesigned Room</h3>
               </div>
               
+              {!generatedRedesign ? (
+                <div className="flex flex-col items-center justify-center h-64 border-2 border-dashed border-white/20 rounded-xl">
+                  <SparklesIcon className="h-12 w-12 text-slate-400 mb-4" />
+                  <p className="text-slate-400 text-center">
+                    Upload a room photo and select your style to see the AI-generated redesign here
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <div className="relative">
+                    <img src={generatedRedesign} alt="Redesigned room" className="w-full rounded-xl shadow-lg border border-indigo-400/50" />
+                    <div className="absolute top-3 left-3 bg-indigo-500/90 backdrop-blur-sm text-white px-3 py-1 rounded-lg text-xs font-medium">
+                      {AI_DESIGN_STYLES.find(s => s.id === selectedDesignStyle)?.name || 'Redesigned'}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
-        </div>
-      </div>
-
-      {/* Selection Process */}
-      <div className="bg-brand-panel p-6 rounded-lg shadow-xl border border-brand-border mb-8">
-        <h2 className="text-xl font-semibold text-brand-text-primary mb-4">Select Room Type & Design Style</h2>
-        
-        {/* Tab Navigation */}
-        <div className="flex justify-between items-center border-b border-brand-border mb-6">
-          <div className="flex">
-            <button
-              onClick={() => setActiveTab('roomtype')}
-              className={`px-4 py-2 font-medium text-sm transition-colors border-b-2 ${
-                activeTab === 'roomtype'
-                  ? 'border-brand-primary text-brand-primary'
-                  : 'border-transparent text-brand-text-secondary hover:text-brand-text-primary'
-              }`}
-            >
-              Room Type
-              {selectedRoomType && (
-                <span className="ml-2 inline-block w-2 h-2 bg-brand-primary rounded-full"></span>
-              )}
-            </button>
-            <button
-              onClick={() => setActiveTab('style')}
-              className={`px-4 py-2 font-medium text-sm transition-colors border-b-2 ml-6 ${
-                activeTab === 'style'
-                  ? 'border-brand-primary text-brand-primary'
-                  : 'border-transparent text-brand-text-secondary hover:text-brand-text-primary'
-              }`}
-            >
-              Design Style
-              {selectedDesignStyle && (
-                <span className="ml-2 inline-block w-2 h-2 bg-brand-primary rounded-full"></span>
-              )}
-            </button>
           </div>
-          
-          {/* Generate/Regenerate & Save Buttons */}
-          <div className="pb-2 flex gap-2">
-            <Button
-              onClick={handleGenerateRedesign}
-              isLoading={isGenerating}
-              disabled={!uploadedImage || !selectedRoomType || !selectedDesignStyle || isGenerating}
-              className="bg-brand-primary hover:bg-opacity-80 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-              leftIcon={isGenerating ? undefined : (generatedRedesign ? <ArrowPathIcon className="h-4 w-4" /> : <SparklesIcon className="h-4 w-4" />)}
-              size="sm"
-            >
-              {isGenerating ? 'Generating...' : (generatedRedesign ? 'Regenerate' : 'Generate')}
-            </Button>
+        </div>
+
+        {/* Selection Process */}
+        <div className="relative group">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-3xl blur-xl"></div>
+          <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8">
+            <h3 className="text-2xl font-bold text-white mb-6">Select Room Type & Design Style</h3>
             
-            <Button
-              onClick={handleConfirmAndSave}
-              disabled={!uploadedImage || !selectedRoomType || !selectedDesignStyle || !generatedRedesign || isGenerating}
-              variant="secondary"
-              className="border-brand-primary text-brand-primary hover:bg-brand-primary hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
-              size="sm"
-            >
-              {isInWorkflow ? 'Continue' : 'Save'}
-            </Button>
-          </div>
-        </div>
-
-        {/* Tab Content */}
-        {activeTab === 'roomtype' && (
-          <div>
-            <h3 className="text-lg font-medium text-brand-text-primary mb-4">Choose the room type:</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {ROOM_TYPES.map(roomType => (
+            {/* Tab Navigation */}
+            <div className="flex justify-between items-center border-b border-white/20 mb-6">
+              <div className="flex">
                 <button
-                  key={roomType.id}
-                  onClick={() => {
-                    setSelectedRoomType(roomType.id);
-                    setActiveTab('style'); // Auto-advance to next tab
-                  }}
-                  className={`p-4 rounded-lg border-2 transition-all text-center ${
-                    selectedRoomType === roomType.id
-                      ? 'border-brand-primary bg-brand-primary/10 text-brand-primary'
-                      : 'border-brand-border text-brand-text-secondary hover:border-brand-primary/50'
+                  onClick={() => setActiveTab('roomtype')}
+                  className={`px-4 py-2 font-medium text-sm transition-colors border-b-2 ${
+                    activeTab === 'roomtype'
+                      ? 'border-blue-400 text-blue-400'
+                      : 'border-transparent text-slate-400 hover:text-white'
                   }`}
                 >
-                  <div className="text-2xl mb-2">{roomType.icon}</div>
-                  <div className="text-sm font-medium leading-tight">{roomType.name}</div>
+                  Room Type
+                  {selectedRoomType && (
+                    <span className="ml-2 inline-block w-2 h-2 bg-blue-400 rounded-full"></span>
+                  )}
                 </button>
-              ))}
+                <button
+                  onClick={() => setActiveTab('style')}
+                  className={`px-4 py-2 font-medium text-sm transition-colors border-b-2 ml-6 ${
+                    activeTab === 'style'
+                      ? 'border-blue-400 text-blue-400'
+                      : 'border-transparent text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Design Style
+                  {selectedDesignStyle && (
+                    <span className="ml-2 inline-block w-2 h-2 bg-blue-400 rounded-full"></span>
+                  )}
+                </button>
+              </div>
+              
+              {/* Generate/Regenerate & Save Buttons */}
+              <div className="pb-2 flex gap-3">
+                <Button
+                  onClick={handleGenerateRedesign}
+                  isLoading={isGenerating}
+                  disabled={!uploadedImage || !selectedRoomType || !selectedDesignStyle || isGenerating}
+                  variant="gradient"
+                  leftIcon={isGenerating ? undefined : (generatedRedesign ? <ArrowPathIcon className="h-5 w-5" /> : <SparklesIcon className="h-5 w-5" />)}
+                  size="lg"
+                >
+                  {isGenerating ? 'Generating...' : (generatedRedesign ? 'Regenerate' : 'Generate Redesign')}
+                </Button>
+                
+                <Button
+                  onClick={handleConfirmAndSave}
+                  disabled={!uploadedImage || !selectedRoomType || !selectedDesignStyle || !generatedRedesign || isGenerating}
+                  variant="glow"
+                  glowColor="emerald"
+                  leftIcon={<CheckIcon className="h-5 w-5" />}
+                  size="lg"
+                >
+                  {isInWorkflow ? 'Continue' : 'Save & Continue'}
+                </Button>
+              </div>
             </div>
-          </div>
-        )}
 
-        {activeTab === 'style' && (
-          <div>
-            <h3 className="text-lg font-medium text-brand-text-primary mb-4">Choose your design style:</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-80 overflow-y-auto pr-2">
-              {AI_DESIGN_STYLES.map(style => (
-                <AiDesignStyleCard 
-                  key={style.id} 
-                  style={style} 
-                  isSelected={selectedDesignStyle === style.id}
-                  onSelect={() => setSelectedDesignStyle(style.id)}
-                />
-              ))}
+            {/* Tab Content */}
+            {activeTab === 'roomtype' && (
+              <div>
+                <h4 className="text-lg font-medium text-white mb-4">Choose the room type:</h4>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {ROOM_TYPES.map(roomType => (
+                    <button
+                      key={roomType.id}
+                      onClick={() => {
+                        setSelectedRoomType(roomType.id);
+                        setActiveTab('style'); // Auto-advance to next tab
+                      }}
+                      className={`p-4 rounded-xl border-2 transition-all text-center ${
+                        selectedRoomType === roomType.id
+                          ? 'border-blue-400 bg-blue-400/20 text-blue-400'
+                          : 'border-white/20 text-slate-300 hover:border-blue-400/50 hover:bg-white/5'
+                      }`}
+                    >
+                      <div className="text-2xl mb-2">{roomType.icon}</div>
+                      <div className="text-sm font-medium leading-tight">{roomType.name}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'style' && (
+              <div>
+                <h4 className="text-lg font-medium text-white mb-4">Choose your design style:</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-80 overflow-y-auto pr-2">
+                  {AI_DESIGN_STYLES.map(style => (
+                    <AiDesignStyleCard 
+                      key={style.id} 
+                      style={style} 
+                      isSelected={selectedDesignStyle === style.id}
+                      onSelect={() => setSelectedDesignStyle(style.id)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+        
+        {error && !isGenerating && (
+          <div className="relative group">
+            <div className="absolute inset-0 bg-gradient-to-r from-red-500/10 to-rose-500/10 rounded-3xl blur-xl"></div>
+            <div className="relative bg-white/5 backdrop-blur-lg border border-red-500/20 rounded-3xl p-6">
+              <div className="flex items-center text-red-400">
+                <InformationCircleIcon className="h-5 w-5 mr-3 flex-shrink-0"/>
+                <p className="text-sm">{error}</p>
+              </div>
             </div>
           </div>
         )}
       </div>
-      
-      {error && !isGenerating && <div className="my-4 p-3 bg-brand-danger/20 text-brand-danger text-sm rounded-md flex items-center"><InformationCircleIcon className="h-5 w-5 mr-2"/>{error}</div>}
-
-
-      </div>
-    </div>
+    </ModernDashboardLayout>
   );
 };
 

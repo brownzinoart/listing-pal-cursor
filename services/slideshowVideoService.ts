@@ -1,5 +1,6 @@
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { fetchFile, toBlobURL } from '@ffmpeg/util';
+import { resourceManagementService } from './resourceManagementService';
 
 /**
  * Slideshow Video Service
@@ -14,6 +15,8 @@ export class SlideshowVideoService {
   private ctx: CanvasRenderingContext2D;
   private mediaRecorder: MediaRecorder | null = null;
   private chunks: Blob[] = [];
+  private canvasResourceId: string | null = null;
+  private ffmpegResourceId: string | null = null;
 
   constructor() {
     this.canvas = document.createElement('canvas');
@@ -22,6 +25,13 @@ export class SlideshowVideoService {
     const ctx = this.canvas.getContext('2d');
     if (!ctx) throw new Error('Could not get canvas context');
     this.ctx = ctx;
+    
+    // Register canvas for resource management
+    this.canvasResourceId = resourceManagementService.registerResource(
+      'canvas', 
+      this.canvas,
+      { width: this.canvas.width, height: this.canvas.height }
+    );
   }
 
   /**
@@ -47,6 +57,13 @@ export class SlideshowVideoService {
       
       this.ffmpegLoaded = true;
       console.log('✅ FFmpeg.wasm loaded successfully');
+      
+      // Register FFmpeg instance for resource management
+      this.ffmpegResourceId = resourceManagementService.registerResource(
+        'ffmpeg_instance',
+        this.ffmpeg,
+        { loaded: true, baseURL }
+      );
     } catch (error) {
       console.error('❌ Failed to load FFmpeg.wasm:', error);
       throw error;
@@ -84,18 +101,38 @@ export class SlideshowVideoService {
       
       // If no audio, return the video as-is
       if (!audioUrl) {
-        return URL.createObjectURL(videoBlob);
+        const videoUrl = URL.createObjectURL(videoBlob);
+        // Register blob URL for cleanup
+        resourceManagementService.registerResource(
+          'blob_url',
+          videoUrl,
+          { type: 'video', size: videoBlob.size }
+        );
+        return videoUrl;
       }
       
       // If we have audio, use FFmpeg to merge them
       console.log('🎵 Merging audio with video using FFmpeg...');
       try {
         const mergedBlob = await this.mergeAudioVideo(videoBlob, audioUrl);
-        return URL.createObjectURL(mergedBlob);
+        const mergedUrl = URL.createObjectURL(mergedBlob);
+        // Register merged blob URL for cleanup
+        resourceManagementService.registerResource(
+          'blob_url',
+          mergedUrl,
+          { type: 'video_with_audio', size: mergedBlob.size }
+        );
+        return mergedUrl;
       } catch (ffmpegError) {
         console.warn('⚠️ FFmpeg merge failed, returning video without audio:', ffmpegError);
         // Fallback: return video without audio if FFmpeg fails
-        return URL.createObjectURL(videoBlob);
+        const fallbackUrl = URL.createObjectURL(videoBlob);
+        resourceManagementService.registerResource(
+          'blob_url',
+          fallbackUrl,
+          { type: 'video_fallback', size: videoBlob.size }
+        );
+        return fallbackUrl;
       }
       
     } catch (error) {
@@ -463,10 +500,31 @@ export class SlideshowVideoService {
    * Clean up resources
    */
   cleanup() {
+    console.log('🧹 Cleaning up SlideshowVideoService resources');
+    
+    // Stop media recorder
     if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
       this.mediaRecorder.stop();
     }
     this.chunks = [];
+
+    // Clean up registered resources
+    if (this.canvasResourceId) {
+      resourceManagementService.cleanupResource(this.canvasResourceId);
+      this.canvasResourceId = null;
+    }
+
+    if (this.ffmpegResourceId) {
+      resourceManagementService.cleanupResource(this.ffmpegResourceId);
+      this.ffmpegResourceId = null;
+    }
+
+    // Reset FFmpeg instance
+    this.ffmpeg = null;
+    this.ffmpegLoaded = false;
+
+    // Clean up all video-related blob URLs
+    resourceManagementService.cleanupResourcesByType('blob_url');
   }
 }
 

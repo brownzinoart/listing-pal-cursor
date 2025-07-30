@@ -11,7 +11,8 @@ import Textarea from '../../shared/Textarea';
 import PropertySummaryHeader from './PropertySummaryHeader';
 import WorkflowNavigation from './WorkflowNavigation';
 import AdCreativeMockup from './AdCreativeMockup';
-import { ArrowLeftIcon, SparklesIcon as SparklesOutlineIcon, CheckIcon, LockClosedIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import ModernDashboardLayout from '../../shared/ModernDashboardLayout';
+import { ArrowLeftIcon, SparklesIcon as SparklesOutlineIcon, CheckIcon, LockClosedIcon, ArrowPathIcon, MegaphoneIcon } from '@heroicons/react/24/outline';
 import { FaFacebook, FaLinkedin, FaGoogle } from 'react-icons/fa';
 import { InformationCircleIcon } from '@heroicons/react/24/outline';
 
@@ -237,203 +238,306 @@ const PaidAdGeneratorPage: React.FC = () => {
         return `/listings/${listingId}`;
     };
 
-    if (isLoadingPage) return <div className="flex justify-center items-center h-64"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-primary"></div></div>;
-    if (error && !listing) return <div className="text-center py-10"><p className="text-brand-danger p-4">{error}</p><Button onClick={() => navigate('/dashboard')}>Dashboard</Button></div>;
-    if (!listing) return <p className="text-center">Listing not found.</p>;
+    const headerActions = (
+        <Link to={getPreviousStepPath()}>
+            <Button 
+                variant="glass" 
+                size="sm"
+                leftIcon={<ArrowLeftIcon className="h-4 w-4" />}
+            >
+                Back
+            </Button>
+        </Link>
+    );
+
+    if (isLoadingPage) {
+        return (
+            <ModernDashboardLayout
+                title="Generate Paid Ad Campaign"
+                subtitle="Create targeted advertising content for your property"
+            >
+                <div className="flex justify-center items-center h-64">
+                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-400"></div>
+                </div>
+            </ModernDashboardLayout>
+        );
+    }
+    
+    if (error && !listing) {
+        return (
+            <ModernDashboardLayout
+                title="Generate Paid Ad Campaign"
+                subtitle="Create targeted advertising content for your property"
+            >
+                <div className="relative group">
+                    <div className="absolute inset-0 bg-gradient-to-r from-red-500/10 to-rose-500/10 rounded-3xl blur-xl"></div>
+                    <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8 text-center">
+                        <p className="text-red-400 mb-4">{error}</p>
+                        <Button variant="glass" onClick={() => navigate('/dashboard')}>
+                            Go to Dashboard
+                        </Button>
+                    </div>
+                </div>
+            </ModernDashboardLayout>
+        );
+    }
+    
+    if (!listing) {
+        return (
+            <ModernDashboardLayout
+                title="Generate Paid Ad Campaign"
+                subtitle="Create targeted advertising content for your property"
+            >
+                <div className="relative group">
+                    <div className="absolute inset-0 bg-gradient-to-r from-slate-500/10 to-gray-500/10 rounded-3xl blur-xl"></div>
+                    <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8 text-center">
+                        <p className="text-slate-400">Listing data is unavailable.</p>
+                    </div>
+                </div>
+            </ModernDashboardLayout>
+        );
+    }
 
     return (
-        <div className="min-h-screen bg-brand-background">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                <div className="mb-6">
-                    <Link to={getPreviousStepPath()} className="inline-flex items-center text-sm text-brand-text-secondary hover:text-brand-primary transition-colors group">
-                        <ArrowLeftIcon className="h-4 w-4 mr-2 group-hover:text-brand-primary" />
-                        Back
-                    </Link>
+        <ModernDashboardLayout
+            title="Generate Paid Ad Campaign"
+            subtitle="Create targeted advertising content for your property"
+            actions={headerActions}
+        >
+            <div className="space-y-8">
+                {isInWorkflow && (
+                    <div className="relative group">
+                        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-3xl blur-xl"></div>
+                        <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-6">
+                            <WorkflowNavigation workflowTools={workflowTools} currentToolId={currentToolId} />
+                        </div>
+                    </div>
+                )}
+                
+                <div className="relative group">
+                    <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 rounded-3xl blur-xl"></div>
+                    <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-6">
+                        <PropertySummaryHeader listing={listing} />
+                    </div>
                 </div>
-                <h1 className="text-3xl font-bold text-brand-text-primary mb-6">Generate Paid Ad Campaign</h1>
-                {isInWorkflow && <div className="mb-8"><WorkflowNavigation workflowTools={workflowTools} currentToolId={currentToolId} /></div>}
-                <div className="mb-8"><PropertySummaryHeader listing={listing} /></div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
                     {/* Left Column - Configuration */}
-                    <div className="lg:col-span-1 space-y-6">
+                    <div className="xl:col-span-1 space-y-6">
                         {/* Platform Selection */}
-                        <div className="bg-brand-panel p-6 rounded-lg border border-brand-border">
-                            <h3 className="text-lg font-semibold text-brand-text-primary mb-4">1. Select Platform</h3>
-                            <div className="space-y-3">
-                                {AD_PLATFORMS.map(platform => (
-                                    <button 
-                                        key={platform.id} 
-                                        onClick={() => setActivePlatform(platform.id)} 
-                                        className={`w-full flex items-center justify-between p-3 rounded-lg border-2 transition-all ${activePlatform === platform.id ? 'border-brand-primary bg-brand-primary/10' : 'border-brand-border hover:border-brand-primary/50'}`}
-                                    >
-                                        <div className="flex items-center">
-                                            <platform.icon className={`h-5 w-5 mr-3 flex-shrink-0 ${activePlatform === platform.id ? 'text-brand-primary' : 'text-brand-text-secondary'}`} />
-                                            <span className="font-medium text-brand-text-primary text-sm">{platform.name}</span>
-                                        </div>
-                                        {finalizedPlatforms.has(platform.id) && <CheckIcon className="h-4 w-4 text-green-500 flex-shrink-0" />}
-                                    </button>
-                                ))}
+                        <div className="relative group">
+                            <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-3xl blur-xl"></div>
+                            <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-6">
+                                <div className="flex items-center mb-4">
+                                    <MegaphoneIcon className="h-5 w-5 text-purple-400 mr-2" />
+                                    <h3 className="text-lg font-semibold text-white">1. Select Platform</h3>
+                                </div>
+                                <div className="space-y-3">
+                                    {AD_PLATFORMS.map(platform => (
+                                        <button 
+                                            key={platform.id} 
+                                            onClick={() => setActivePlatform(platform.id)} 
+                                            className={`w-full flex items-center justify-between p-3 rounded-xl border-2 transition-all ${
+                                                activePlatform === platform.id 
+                                                    ? 'border-purple-400 bg-purple-400/20' 
+                                                    : 'border-white/20 hover:border-purple-400/50 hover:bg-white/5'
+                                            }`}
+                                        >
+                                            <div className="flex items-center">
+                                                <platform.icon className={`h-5 w-5 mr-3 flex-shrink-0 ${
+                                                    activePlatform === platform.id ? 'text-purple-400' : 'text-slate-400'
+                                                }`} />
+                                                <span className="font-medium text-white text-sm">{platform.name}</span>
+                                            </div>
+                                            {finalizedPlatforms.has(platform.id) && <CheckIcon className="h-4 w-4 text-emerald-400 flex-shrink-0" />}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                         </div>
 
                         {/* Objective Selection */}
-                        <div className="bg-brand-panel p-6 rounded-lg border border-brand-border">
-                            <h3 className="text-lg font-semibold text-brand-text-primary mb-4">2. Campaign Objective</h3>
-                            <div className="space-y-3">
-                                {AD_OBJECTIVES.map(objective => (
-                                    <button 
-                                        key={objective.id} 
-                                        onClick={() => setSelectedObjective(objective.id)} 
-                                        className={`w-full text-left p-3 rounded-lg border-2 transition-all ${selectedObjective === objective.id ? 'border-brand-primary bg-brand-primary/10' : 'border-brand-border hover:border-brand-primary/50'}`}
-                                    >
-                                        <div className="font-medium text-brand-text-primary text-sm">{objective.name}</div>
-                                        <div className="text-xs text-brand-text-secondary mt-1">{objective.description}</div>
-                                    </button>
-                                ))}
+                        <div className="relative group">
+                            <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-cyan-500/10 rounded-3xl blur-xl"></div>
+                            <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-6">
+                                <h3 className="text-lg font-semibold text-white mb-4">2. Campaign Objective</h3>
+                                <div className="space-y-3">
+                                    {AD_OBJECTIVES.map(objective => (
+                                        <button 
+                                            key={objective.id} 
+                                            onClick={() => setSelectedObjective(objective.id)} 
+                                            className={`w-full text-left p-3 rounded-xl border-2 transition-all ${
+                                                selectedObjective === objective.id 
+                                                    ? 'border-indigo-400 bg-indigo-400/20' 
+                                                    : 'border-white/20 hover:border-indigo-400/50 hover:bg-white/5'
+                                            }`}
+                                        >
+                                            <div className="font-medium text-white text-sm">{objective.name}</div>
+                                            <div className="text-xs text-slate-400 mt-1">{objective.description}</div>
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                         </div>
 
                         {/* Generate & Finalize */}
-                        <div className="bg-brand-panel p-6 rounded-lg border border-brand-border">
-                            <h3 className="text-lg font-semibold text-brand-text-primary mb-4">3. Generate & Finalize</h3>
-                            {isCurrentPlatformFinalized ? (
-                                <div className="text-center p-4 bg-green-500/10 rounded-lg border border-green-500/20">
-                                    <CheckIcon className="h-8 w-8 mx-auto text-green-500 mb-2"/>
-                                    <p className="font-semibold text-green-400 text-sm">"{AD_PLATFORMS.find(p=>p.id === activePlatform)?.name}" ad is finalized!</p>
-                                    <p className="text-xs text-green-500/80 mt-1">Select another platform to continue.</p>
-                                </div>
-                            ) : (
-                                <Button 
-                                    onClick={!currentAdCopy ? handleGenerateAdCopy : handleFinalizeAndContinue} 
-                                    isLoading={isGenerating} 
-                                    disabled={isGenerating} 
-                                    variant="primary"
-                                    size="lg"
-                                    fullWidth
-                                    leftIcon={!currentAdCopy ? <SparklesOutlineIcon className="h-5 w-5" /> : <CheckIcon className="h-5 w-5" />}
-                                >
-                                    {!currentAdCopy ? 'Generate Ad Copy' : 'Finalize & Continue'}
-                                </Button>
-                            )}
+                        <div className="relative group">
+                            <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 rounded-3xl blur-xl"></div>
+                            <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-6">
+                                <h3 className="text-lg font-semibold text-white mb-4">3. Generate & Finalize</h3>
+                                {isCurrentPlatformFinalized ? (
+                                    <div className="text-center p-4 bg-emerald-500/20 rounded-xl border border-emerald-500/30">
+                                        <CheckIcon className="h-8 w-8 mx-auto text-emerald-400 mb-2"/>
+                                        <p className="font-semibold text-emerald-400 text-sm">"{AD_PLATFORMS.find(p=>p.id === activePlatform)?.name}" ad is finalized!</p>
+                                        <p className="text-xs text-emerald-500/80 mt-1">Select another platform to continue.</p>
+                                    </div>
+                                ) : (
+                                    <Button 
+                                        onClick={!currentAdCopy ? handleGenerateAdCopy : handleFinalizeAndContinue} 
+                                        isLoading={isGenerating} 
+                                        disabled={isGenerating} 
+                                        variant={!currentAdCopy ? "gradient" : "glow"}
+                                        glowColor={!currentAdCopy ? undefined : "emerald"}
+                                        size="lg"
+                                        fullWidth
+                                        leftIcon={!currentAdCopy ? <SparklesOutlineIcon className="h-5 w-5" /> : <CheckIcon className="h-5 w-5" />}
+                                    >
+                                        {!currentAdCopy ? 'Generate Ad Copy' : 'Finalize & Continue'}
+                                    </Button>
+                                )}
+                            </div>
                         </div>
                     </div>
 
                     {/* Right Column - Ad Content & Preview */}
-                    <div className="lg:col-span-3">
-                        <div className="bg-brand-panel p-6 rounded-lg border border-brand-border">
-                            <div className="flex justify-between items-center mb-6">
-                                <h3 className="text-xl font-semibold text-brand-text-primary">Ad Content & Preview</h3>
-                                <div className="text-sm text-brand-text-secondary">
-                                    Platform: <span className="font-medium text-brand-text-primary">{AD_PLATFORMS.find(p => p.id === activePlatform)?.name}</span> | 
-                                    Objective: <span className="font-medium text-brand-text-primary">{AD_OBJECTIVES.find(o => o.id === selectedObjective)?.name}</span>
+                    <div className="xl:col-span-3">
+                        <div className="relative group">
+                            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-3xl blur-xl"></div>
+                            <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8">
+                                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
+                                    <h3 className="text-2xl font-bold text-white">Ad Content & Preview</h3>
+                                    <div className="text-sm text-slate-400">
+                                        Platform: <span className="font-medium text-white">{AD_PLATFORMS.find(p => p.id === activePlatform)?.name}</span> | 
+                                        Objective: <span className="font-medium text-white">{AD_OBJECTIVES.find(o => o.id === selectedObjective)?.name}</span>
+                                    </div>
                                 </div>
-                            </div>
-                            
-                            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 h-full items-stretch">
-                                {/* Ad Content Editor */}
-                                <div className="flex flex-col space-y-6 min-h-full">
-                                    <div className="space-y-6 flex-1">
-                                        <Input
-                                            label={`Headline (${headlineRemaining} characters remaining)`}
-                                            value={currentAdCopy?.headline || ''}
-                                            onChange={e => setGeneratedAds(p => ({...p, [activePlatform]: {...p[activePlatform]!, headline: e.target.value}}))}
-                                            variant="gradient"
-                                            disabled={isCurrentPlatformFinalized || isGenerating}
-                                            placeholder="Your compelling headline will appear here..."
-                                            inputSize="md"
-                                        />
+                                
+                                <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                                    {/* Ad Content Editor */}
+                                    <div className="space-y-6">
+                                        <div>
+                                            <label className="block text-sm font-medium text-white mb-2">
+                                                Headline ({headlineRemaining} characters remaining)
+                                            </label>
+                                            <Input
+                                                value={currentAdCopy?.headline || ''}
+                                                onChange={e => setGeneratedAds(p => ({...p, [activePlatform]: {...p[activePlatform]!, headline: e.target.value}}))}
+                                                variant="modern"
+                                                disabled={isCurrentPlatformFinalized || isGenerating}
+                                                placeholder="Your compelling headline will appear here..."
+                                                inputSize="md"
+                                            />
+                                        </div>
                                         
-                                        <Textarea
-                                            label={`Body Text (${bodyRemaining} characters remaining)`}
-                                            value={currentAdCopy?.body || ''}
-                                            onChange={e => setGeneratedAds(p => ({...p, [activePlatform]: {...p[activePlatform]!, body: e.target.value}}))}
-                                            rows={8}
-                                            variant="gradient"
-                                            disabled={isCurrentPlatformFinalized || isGenerating}
-                                            placeholder="Your engaging ad copy will appear here..."
-                                            resizable={false}
-                                        />
+                                        <div>
+                                            <label className="block text-sm font-medium text-white mb-2">
+                                                Body Text ({bodyRemaining} characters remaining)
+                                            </label>
+                                            <Textarea
+                                                value={currentAdCopy?.body || ''}
+                                                onChange={e => setGeneratedAds(p => ({...p, [activePlatform]: {...p[activePlatform]!, body: e.target.value}}))}
+                                                rows={8}
+                                                variant="modern"
+                                                disabled={isCurrentPlatformFinalized || isGenerating}
+                                                placeholder="Your engaging ad copy will appear here..."
+                                                resizable={false}
+                                            />
+                                        </div>
                                         
-                                        <Input
-                                            label={`Call to Action (${ctaRemaining} characters remaining)`}
-                                            value={currentAdCopy?.cta || ''}
-                                            onChange={e => setGeneratedAds(p => ({...p, [activePlatform]: {...p[activePlatform]!, cta: e.target.value}}))}
-                                            variant="gradient"
-                                            disabled={isCurrentPlatformFinalized || isGenerating}
-                                            placeholder="e.g., Learn More, Contact Us, View Property"
-                                            inputSize="md"
-                                        />
+                                        <div>
+                                            <label className="block text-sm font-medium text-white mb-2">
+                                                Call to Action ({ctaRemaining} characters remaining)
+                                            </label>
+                                            <Input
+                                                value={currentAdCopy?.cta || ''}
+                                                onChange={e => setGeneratedAds(p => ({...p, [activePlatform]: {...p[activePlatform]!, cta: e.target.value}}))}
+                                                variant="modern"
+                                                disabled={isCurrentPlatformFinalized || isGenerating}
+                                                placeholder="e.g., Learn More, Contact Us, View Property"
+                                                inputSize="md"
+                                            />
+                                        </div>
+
+                                        {/* Best Practices */}
+                                        <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                                            <h5 className="text-sm font-medium text-white mb-3">
+                                                💡 {AD_PLATFORMS.find(p => p.id === activePlatform)?.name} - {AD_OBJECTIVES.find(o => o.id === selectedObjective)?.name} Tips
+                                            </h5>
+                                            <div className="text-xs text-slate-300 space-y-1">
+                                                {currentBestPractices.map((tip, index) => (
+                                                    <div key={index}>{tip}</div>
+                                                ))}
+                                            </div>
+                                        </div>
                                     </div>
 
-                                    {/* Best Practices Footer */}
-                                    <div className="pt-6 border-t border-brand-border/30">
-                                        <h5 className="text-xs font-medium text-brand-text-secondary mb-2">
-                                            💡 {AD_PLATFORMS.find(p => p.id === activePlatform)?.name} - {AD_OBJECTIVES.find(o => o.id === selectedObjective)?.name}
-                                        </h5>
-                                        <div className="text-xs text-brand-text-primary space-y-0.5">
-                                            {currentBestPractices.map((tip, index) => (
-                                                <div key={index}>{tip}</div>
-                                            ))}
+                                    {/* Ad Preview */}
+                                    <div className="bg-white/5 p-6 rounded-xl border border-white/10">
+                                        <div className="flex justify-between items-center mb-4">
+                                            <h4 className="text-lg font-medium text-white">Live Preview</h4>
+                                            {currentAdCopy && (
+                                                <Button
+                                                    onClick={handleRegenerateAdCopy}
+                                                    size="sm"
+                                                    variant="glass"
+                                                    isLoading={isGenerating}
+                                                    disabled={isGenerating || isCurrentPlatformFinalized}
+                                                    leftIcon={<ArrowPathIcon className="h-4 w-4" />}
+                                                >
+                                                    Regenerate
+                                                </Button>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center justify-center min-h-[400px]">
+                                            <AdCreativeMockup 
+                                                listing={listing} 
+                                                headline={currentAdCopy?.headline || ''} 
+                                                body={currentAdCopy?.body || ''} 
+                                                cta={currentAdCopy?.cta || ''}
+                                                platform={activePlatform}
+                                            />
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Ad Preview */}
-                                <div className="bg-brand-background p-4 rounded-lg border border-brand-border flex flex-col min-h-full">
-                                    <div className="flex justify-between items-center mb-4">
-                                        <h4 className="text-sm font-medium text-brand-text-primary">Live Preview</h4>
-                                        {currentAdCopy && (
-                                            <Button
-                                                onClick={handleRegenerateAdCopy}
-                                                size="sm"
-                                                variant="ghost"
-                                                isLoading={isGenerating}
-                                                disabled={isGenerating || isCurrentPlatformFinalized}
-                                                leftIcon={<ArrowPathIcon className="h-4 w-4" />}
-                                            >
-                                                Regenerate
-                                            </Button>
+                                {/* Action Footer */}
+                                <div className="mt-8 pt-6 border-t border-white/20 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                    <div className="text-sm text-slate-300">
+                                        {finalizedPlatforms.size > 0 ? (
+                                            <span className="text-emerald-400 font-medium">
+                                                ✓ {finalizedPlatforms.size} ad{finalizedPlatforms.size !== 1 ? 's' : ''} finalized
+                                            </span>
+                                        ) : (
+                                            'Generate and finalize ads for each platform'
                                         )}
                                     </div>
-                                    <div className="flex-1 flex items-center justify-center">
-                                        <AdCreativeMockup 
-                                            listing={listing} 
-                                            headline={currentAdCopy?.headline || ''} 
-                                            body={currentAdCopy?.body || ''} 
-                                            cta={currentAdCopy?.cta || ''}
-                                            platform={activePlatform}
-                                        />
-                                    </div>
+                                    <Button 
+                                        onClick={handleSaveAllAds} 
+                                        disabled={finalizedPlatforms.size === 0} 
+                                        size="lg" 
+                                        variant="glow"
+                                        glowColor="emerald"
+                                        leftIcon={<CheckIcon className="h-5 w-5" />}
+                                    >
+                                        Save {finalizedPlatforms.size > 0 ? finalizedPlatforms.size : ''} Ad{finalizedPlatforms.size !== 1 ? 's' : ''}
+                                    </Button>
                                 </div>
-                            </div>
-
-                            {/* Action Footer */}
-                            <div className="mt-8 pt-6 border-t border-brand-border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                                <div className="text-sm text-brand-text-secondary">
-                                    {finalizedPlatforms.size > 0 ? (
-                                        <span className="text-green-500 font-medium">
-                                            ✓ {finalizedPlatforms.size} ad{finalizedPlatforms.size !== 1 ? 's' : ''} finalized
-                                        </span>
-                                    ) : (
-                                        'Generate and finalize ads for each platform'
-                                    )}
-                                </div>
-                                <Button 
-                                    onClick={handleSaveAllAds} 
-                                    disabled={finalizedPlatforms.size === 0} 
-                                    size="lg" 
-                                    variant="primary"
-                                    leftIcon={<CheckIcon className="h-5 w-5" />}
-                                >
-                                    Save {finalizedPlatforms.size > 0 ? finalizedPlatforms.size : ''} Ad{finalizedPlatforms.size !== 1 ? 's' : ''}
-                                </Button>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </ModernDashboardLayout>
     );
 };
 

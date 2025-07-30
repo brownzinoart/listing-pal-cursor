@@ -3,10 +3,6 @@ import OpenAI from 'openai';
 // Node.js imports (only in Node environment)
 let fs: any;
 let path: any;
-if (typeof window === 'undefined') {
-  fs = await import('fs');
-  path = await import('path');
-}
 
 // Voice options for OpenAI TTS
 export type OpenAIVoice = 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer';
@@ -20,7 +16,8 @@ interface TTSOptions {
 }
 
 export class OpenAITTSService {
-  private openai: OpenAI;
+  private isServerSide: boolean;
+  private openai?: OpenAI;
   private defaultOptions: Required<TTSOptions> = {
     model: 'tts-1',        // Standard quality, lower latency
     voice: 'nova',         // Professional female voice
@@ -29,13 +26,20 @@ export class OpenAITTSService {
   };
 
   constructor(apiKey?: string) {
-    const key = apiKey || process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API_KEY;
-    if (!key) {
-      throw new Error('OpenAI API key not found. Please set OPENAI_API_KEY or VITE_OPENAI_API_KEY in your environment.');
-    }
+    this.isServerSide = typeof window === 'undefined';
     
-    this.openai = new OpenAI({ apiKey: key });
-    console.log('✅ OpenAI TTS Service initialized');
+    if (this.isServerSide) {
+      // Server-side: Use OpenAI SDK directly
+      const key = apiKey || process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API_KEY;
+      if (!key) {
+        throw new Error('OpenAI API key not found. Please set OPENAI_API_KEY or VITE_OPENAI_API_KEY in your environment.');
+      }
+      this.openai = new OpenAI({ apiKey: key });
+      console.log('✅ OpenAI TTS Service initialized (server-side)');
+    } else {
+      // Client-side: Will use backend API endpoint
+      console.log('✅ OpenAI TTS Service initialized (client-side)');
+    }
   }
 
   /**
@@ -53,35 +57,67 @@ export class OpenAITTSService {
         voice: config.voice,
         speed: config.speed,
         textLength: text.length,
+        environment: this.isServerSide ? 'server' : 'client',
         estimatedCost: `$${(text.length * 0.000015).toFixed(4)}` // $0.015 per 1k chars
       });
 
-      // Make the API request
-      const response = await this.openai.audio.speech.create({
-        model: config.model,
-        voice: config.voice,
-        input: text,
-        speed: config.speed,
-        response_format: config.format,
-      });
+      if (this.isServerSide && this.openai) {
+        // Server-side: Use OpenAI SDK directly
+        const response = await this.openai.audio.speech.create({
+          model: config.model,
+          voice: config.voice,
+          input: text,
+          speed: config.speed,
+          response_format: config.format,
+        });
 
-      // Convert response to buffer
-      const buffer = Buffer.from(await response.arrayBuffer());
+        // Convert response to buffer
+        const buffer = Buffer.from(await response.arrayBuffer());
 
-      // Create a blob URL for client-side use
-      const blob = new Blob([buffer], { type: `audio/${config.format}` });
-      const audioUrl = URL.createObjectURL(blob);
+        // Create a blob URL for client-side use
+        const blob = new Blob([buffer], { type: `audio/${config.format}` });
+        const audioUrl = URL.createObjectURL(blob);
 
-      console.log('✅ Speech generated successfully:', {
-        size: `${(buffer.length / 1024).toFixed(2)} KB`,
-        format: config.format,
-        url: audioUrl
-      });
+        console.log('✅ Speech generated successfully (server-side):', {
+          size: `${(buffer.length / 1024).toFixed(2)} KB`,
+          format: config.format,
+          url: audioUrl
+        });
 
-      return audioUrl;
+        return audioUrl;
+      } else {
+        // Client-side: Use backend API endpoint
+        const response = await fetch('/api/generate-tts', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            text,
+            voice: config.voice,
+            speed: config.speed,
+            model: config.model
+          })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+          throw new Error(`TTS API failed: ${errorData.error || 'Unknown error'}`);
+        }
+
+        const result = await response.json();
+        
+        console.log('✅ Speech generated successfully (client-side):', {
+          size: `${(result.size / 1024).toFixed(2)} KB`,
+          voice: result.voice,
+          model: result.model
+        });
+
+        return result.audioBase64; // Return data URL directly
+      }
     } catch (error) {
       console.error('❌ OpenAI TTS Error:', error);
-      throw error;
+      throw new Error(`TTS generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -118,6 +154,12 @@ export class OpenAITTSService {
       });
 
       const buffer = Buffer.from(await response.arrayBuffer());
+
+      // Import Node.js modules dynamically for server-side use
+      if (!fs || !path) {
+        fs = await import('fs');
+        path = await import('path');
+      }
 
       // Ensure directory exists
       const dir = path.dirname(outputPath);

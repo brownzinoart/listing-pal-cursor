@@ -3004,6 +3004,7 @@ app.post('/api/generate-remotion-video', async (req, res) => {
             imageDuration = 5,
             platform = 'youtube',
             generateAllPlatforms = false,
+            noAudio = false,
         } = req.body;
 
         if (!images || images.length === 0) {
@@ -3043,7 +3044,7 @@ app.post('/api/generate-remotion-video', async (req, res) => {
             const videoUrl = await remotionVideoService.generateVideo(
                 {
                     images,
-                    audioUrl,
+                    audioUrl: noAudio ? null : audioUrl,
                     propertyInfo,
                     transitionType,
                     imageDuration,
@@ -3065,6 +3066,82 @@ app.post('/api/generate-remotion-video', async (req, res) => {
         return res.status(500).json({
             error: 'Failed to generate video',
             details: error instanceof Error ? error.message : 'Unknown error',
+        });
+    }
+});
+
+// OpenAI TTS endpoint for voice generation
+app.post('/api/generate-tts', async (req, res) => {
+    try {
+        const { text, voice = 'nova', speed = 1.0, model = 'tts-1' } = req.body;
+        
+        if (!text) {
+            return res.status(400).json({ error: 'Text is required for TTS generation' });
+        }
+
+        const OPENAI_API_KEY = process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API_KEY;
+        if (!OPENAI_API_KEY) {
+            return res.status(500).json({ error: 'OpenAI API key not configured' });
+        }
+
+        console.log('🎙️ Generating TTS with OpenAI:', {
+            voice,
+            model,
+            speed,
+            textLength: text.length,
+            estimatedCost: `$${(text.length * 0.000015).toFixed(4)}`
+        });
+
+        // Make OpenAI TTS API request
+        const response = await fetch('https://api.openai.com/v1/audio/speech', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${OPENAI_API_KEY}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                model,
+                voice,
+                input: text,
+                speed,
+                response_format: 'mp3'
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.text();
+            console.error('OpenAI TTS API error:', response.status, errorData);
+            return res.status(response.status).json({ 
+                error: 'OpenAI TTS API failed',
+                details: errorData
+            });
+        }
+
+        // Get audio buffer
+        const audioBuffer = await response.arrayBuffer();
+        const buffer = Buffer.from(audioBuffer);
+
+        console.log('✅ TTS generated successfully:', {
+            size: `${(buffer.length / 1024).toFixed(2)} KB`,
+            voice,
+            model
+        });
+
+        // Return audio as base64 for frontend consumption
+        const audioBase64 = buffer.toString('base64');
+        res.json({
+            success: true,
+            audioBase64: `data:audio/mp3;base64,${audioBase64}`,
+            size: buffer.length,
+            voice,
+            model
+        });
+
+    } catch (error) {
+        console.error('TTS generation error:', error);
+        res.status(500).json({
+            error: 'Failed to generate TTS',
+            details: error instanceof Error ? error.message : 'Unknown error'
         });
     }
 });

@@ -54,6 +54,7 @@ const ToolkitPlaceholder: React.FC<ToolkitPlaceholderProps> = ({ listing }) => {
     flyer: 'bg-orange-600',
     print: 'bg-indigo-600',
     paid_ads: 'bg-green-600',
+    contract: 'bg-amber-600',
   };
 
   // Content type descriptions matching the specification
@@ -68,6 +69,7 @@ const ToolkitPlaceholder: React.FC<ToolkitPlaceholderProps> = ({ listing }) => {
       case 'print': return 'Lawn signs, postcards & more';
       case 'interior': return 'AI interior styling';
       case 'paid_ads': return 'Generate paid ad copy';
+      case 'contract': return 'Generate purchase contracts';
       default: return 'Generate content for your listing';
     }
   };
@@ -86,72 +88,77 @@ const ToolkitPlaceholder: React.FC<ToolkitPlaceholderProps> = ({ listing }) => {
   ] : [];
 
   return (
-    <div className="w-full flex flex-col items-center">
-      <div className="mb-8 mt-12">
-        <h3 className="text-xl font-bold text-brand-text-primary text-center mb-6">Generate New Content</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8 w-full">
-          {TOOLKIT_TOOLS.filter(t=>t.enabled).map((tool) => {
-            const isEnabled = tool.enabled;
-            const isSelected = selected.includes(tool.id);
-            const Icon = tool.icon;
-            const hasGeneratedContent = generatedContent.includes(tool.id);
-            
-            return (
-              <div
-                key={tool.id}
-                className={`tool-card ${isEnabled ? 'enabled' : 'disabled'} ${
-                  isSelected ? 'border-brand-primary bg-brand-primary/20' : ''
-                }`}
-                onClick={() => handleToggle(tool.id)}
-              >
-                                 <div className="flex items-center space-x-3 mb-2 min-w-0 w-full">
-                   {/* Icon Container */}
-                   <div className={`p-2 rounded flex-shrink-0 ${iconBg[tool.id] || 'bg-brand-primary'}`}>
-                     <Icon className={`w-5 h-5 ${isEnabled ? 'text-white' : 'text-gray-500'}`} />
-                   </div>
-                   
-                   {/* Content - Fixed width to prevent stretching */}
-                   <div className="flex-1 min-w-0 max-w-[160px]">
-                     <h4 className={`font-medium text-sm ${isEnabled ? 'text-brand-text-primary' : 'text-gray-500'} truncate`}>
-                       {tool.name}{!isEnabled && ' (Coming Soon)'}
-                     </h4>
-                     <p className={`text-xs ${isEnabled ? 'text-brand-text-secondary' : 'text-gray-600'} truncate`}>
-                       {getDescription(tool.id)}
-                     </p>
-                   </div>
-                   
-                   {/* Status Indicators - Fixed positioning */}
-                   <div className="flex items-center space-x-1 flex-shrink-0 ml-auto">
-                     {/* Generated Content Indicators */}
-                     {hasGeneratedContent && isEnabled && (
-                       <div className="generated-indicator">
-                         <div className="generated-dot"></div>
-                         <span className="text-xs text-green-400 whitespace-nowrap hidden sm:inline">Generated</span>
-                       </div>
-                     )}
-                     
-                     {/* Selection Checkmark */}
-                     {isSelected && (
-                       <div className="selection-indicator">
-                         <CheckIcon className="w-2.5 h-2.5 text-white" />
-                       </div>
-                     )}
-                   </div>
-                 </div>
-              </div>
-            );
-          })}
-        </div>
+    <div className="space-y-8">
+      <div className="text-center">
+        <h3 className="text-2xl font-bold text-white mb-2">Generate New Content</h3>
+        <p className="text-slate-400">Select content types to generate for your listing</p>
       </div>
       
-      <button
-        type="button"
-        className="start-workflow-btn max-w-sm w-full"
-        disabled={!canGenerate}
-        onClick={handleStart}
-      >
-        Start Content Generation
-      </button>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        {TOOLKIT_TOOLS.filter(t=>t.enabled).map((tool) => {
+          const isEnabled = tool.enabled;
+          const isSelected = selected.includes(tool.id);
+          const Icon = tool.icon;
+          const hasGeneratedContent = generatedContent.includes(tool.id);
+          
+          return (
+            <div
+              key={tool.id}
+              className={`relative cursor-pointer transition-all duration-200 group ${
+                isEnabled ? '' : 'opacity-50 cursor-not-allowed'
+              }`}
+              onClick={() => handleToggle(tool.id)}
+            >
+              <div className={`bg-white/10 backdrop-blur-lg border rounded-2xl p-6 text-center transition-all duration-200 ${
+                isSelected 
+                  ? 'border-blue-400 bg-blue-500/20' 
+                  : 'border-white/20 hover:border-white/30 hover:bg-white/15'
+              }`}>
+                <div className={`w-12 h-12 ${iconBg[tool.id] || 'bg-blue-600'} rounded-2xl flex items-center justify-center mx-auto mb-4`}>
+                  <Icon className="w-6 h-6 text-white" />
+                </div>
+                
+                <h4 className="font-semibold text-white text-sm mb-2">
+                  {tool.name}
+                </h4>
+                <p className="text-slate-300 text-xs mb-4">
+                  {getDescription(tool.id)}
+                </p>
+                
+                <div className="flex items-center justify-center space-x-2">
+                  {hasGeneratedContent && (
+                    <div className="flex items-center space-x-1">
+                      <div className="w-2 h-2 bg-emerald-400 rounded-full"></div>
+                      <span className="text-xs text-emerald-400">Generated</span>
+                    </div>
+                  )}
+                  
+                  {isSelected && (
+                    <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center ml-2">
+                      <CheckIcon className="w-3 h-3 text-white" />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      
+      <div className="text-center">
+        <button
+          type="button"
+          className={`px-12 py-4 rounded-2xl font-semibold text-white text-lg transition-all duration-200 ${
+            canGenerate
+              ? 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 shadow-lg hover:shadow-xl hover:shadow-blue-500/25'
+              : 'bg-slate-600 cursor-not-allowed opacity-50'
+          }`}
+          disabled={!canGenerate}
+          onClick={handleStart}
+        >
+          Start Content Generation
+        </button>
+      </div>
     </div>
   );
 };

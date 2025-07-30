@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { AILoadingState } from '../../shared/AILoadingStates';
 import { videoGenerationService, VideoAnalysis } from '../../../services/videoGenerationService';
+import { errorHandlingService, ErrorHandlingResult } from '../../../services/errorHandlingService';
 import { SparklesIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import Button from '../../shared/Button';
+import ErrorDisplay from '../../shared/ErrorDisplay';
 
 interface VideoAnalysisStepProps {
   images: File[];
@@ -12,21 +14,28 @@ interface VideoAnalysisStepProps {
 const VideoAnalysisStep: React.FC<VideoAnalysisStepProps> = ({ images, onComplete }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(true);
   const [analysis, setAnalysis] = useState<VideoAnalysis | null>(null);
+  const [error, setError] = useState<ErrorHandlingResult | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
-    const analyzeImages = async () => {
-      try {
-        const result = await videoGenerationService.analyzeImages(images);
-        setAnalysis(result);
-        setIsAnalyzing(false);
-      } catch (error) {
-        console.error('Analysis failed:', error);
-        setIsAnalyzing(false);
-      }
-    };
-
     analyzeImages();
-  }, [images]);
+  }, [images, retryCount]);
+
+  const analyzeImages = async () => {
+    try {
+      setIsAnalyzing(true);
+      setError(null);
+      const result = await videoGenerationService.analyzeImages(images);
+      setAnalysis(result);
+      setIsAnalyzing(false);
+    } catch (error) {
+      console.error('Analysis failed:', error);
+      setIsAnalyzing(false);
+      
+      const errorResult = errorHandlingService.handleError(error, 'VideoAnalysisStep');
+      setError(errorResult);
+    }
+  };
 
   const analysisSteps = [
     { text: "Detecting rooms", duration: 800 },
@@ -48,11 +57,33 @@ const VideoAnalysisStep: React.FC<VideoAnalysisStepProps> = ({ images, onComplet
     );
   }
 
-  if (!analysis) {
+  const handleRecoveryAction = async (action: any) => {
+    if (action.action === 'retry') {
+      setRetryCount(prev => prev + 1);
+    }
+    // Execute the action handler
+    await action.handler();
+  };
+
+  if (!isAnalyzing && error && !analysis) {
     return (
-      <div className="text-center py-12">
-        <p className="text-red-400">Analysis failed. Please try again.</p>
-      </div>
+      <>
+        <div className="text-center py-12">
+          <p className="text-red-400 mb-4">Analysis failed. Please see the error details above.</p>
+          <Button 
+            variant="gradient" 
+            onClick={() => setRetryCount(prev => prev + 1)}
+          >
+            Try Again
+          </Button>
+        </div>
+        <ErrorDisplay
+          error={error}
+          show={!!error}
+          onDismiss={() => setError(null)}
+          onRecoveryAction={handleRecoveryAction}
+        />
+      </>
     );
   }
 
@@ -156,6 +187,13 @@ const VideoAnalysisStep: React.FC<VideoAnalysisStepProps> = ({ images, onComplet
           Continue to Script Generation
         </Button>
       </div>
+
+      <ErrorDisplay
+        error={error}
+        show={!!error}
+        onDismiss={() => setError(null)}
+        onRecoveryAction={handleRecoveryAction}
+      />
     </div>
   );
 };

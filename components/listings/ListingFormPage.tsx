@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeftIcon as ArrowLeft, DocumentIcon as Save, ArrowUpTrayIcon as Upload, XMarkIcon as X, SparklesIcon, ChevronDownIcon, ExclamationTriangleIcon } from "@heroicons/react/24/outline";
+import { DocumentIcon as Save, ArrowUpTrayIcon as Upload, XMarkIcon as X, SparklesIcon, ChevronDownIcon, ExclamationTriangleIcon } from "@heroicons/react/24/outline";
 import { useAuth } from "../../contexts/AuthContext";
 import * as listingService from "../../services/listingService";
 import Button from "../shared/Button";
 import AddressAutocomplete from "../shared/AddressAutocomplete";
 import NeighborhoodInsights from '../shared/NeighborhoodInsights';
+import ModernDashboardLayout from '../shared/ModernDashboardLayout';
 import { ContextCard } from '../../types/locationContext';
 
 // Helper function to extract the first number from a string (e.g., "3-4" -> 3, "1500 sq ft" -> 1500)
@@ -397,13 +398,6 @@ export default function ListingFormPage() {
     setFormData(prev => ({ ...prev, imageUrls: prev.imageUrls.filter((_, i) => i !== index) }));
   };
 
-  const handleBack = () => {
-    if (isEditing && listingId) {
-      navigate(`/listings/${listingId}`);
-    } else {
-      navigate('/dashboard');
-    }
-  };
 
   const handleAddressSelect = async (address: string, lat?: number, lng?: number) => {
     console.log('Selected address:', address, 'Latitude:', lat || 0, 'Longitude:', lng || 0);
@@ -822,328 +816,296 @@ export default function ListingFormPage() {
     );
   }
 
+
   return (
-    <div className="min-h-screen bg-brand-background">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="flex items-center justify-between mb-8">
-          <Button 
-            onClick={handleBack}
-            variant="ghost" 
-            size="sm"
-            leftIcon={<ArrowLeft className="h-4 w-4" />}
-          >
-            Back
-          </Button>
-          <h1 className="text-3xl font-bold text-brand-text-primary text-center flex-grow">
-            {isEditing ? "Edit Listing" : "Create New Listing"}
-          </h1>
-          <div className="w-24"></div> {/* Spacer to balance the back button */}
+    <ModernDashboardLayout
+      title={isEditing ? "Edit Listing" : "Create New Listing"}
+      subtitle={isEditing ? "Update your property listing details" : "Add a new property to your portfolio"}
+    >
+    <div className="space-y-8">
+      {formError && (
+        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-6">
+          <div className="text-red-400 text-sm">{formError}</div>
+        </div>
+      )}
+
+      <form onSubmit={onSubmit} className="space-y-8">
+        {/* Property Address & Price */}
+        <div className="relative group">
+          <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 rounded-3xl blur-xl"></div>
+          <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8">
+            <h2 className="text-2xl font-bold text-white mb-6">Property Information</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="md:col-span-2 space-y-2">
+                <label className="block text-sm font-medium text-white">
+                  Property Address
+                  {isFetchingDetails && (
+                    <span className="ml-2 text-xs text-blue-400">
+                      <SparklesIcon className="inline h-3 w-3 mr-1 animate-pulse"/>
+                      Auto-filling...
+                    </span>
+                  )}
+                </label>
+                <AddressAutocomplete
+                  onAddressSelect={handleAddressSelect}
+                  value={formData.address}
+                />
+                <p className="text-xs text-slate-400">
+                  Property details will auto-fill after selecting address
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-white text-sm font-medium">Asking Price ($)</label>
+                <input
+                  type="number"
+                  name="price"
+                  value={formData.price || ''}
+                  onChange={handleInputChange}
+                  placeholder="500000"
+                  className={`w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${isFieldMissing('price') ? 'border-red-500 ring-2 ring-red-500/20' : ''}`}
+                />
+              </div>
+            </div>
+          </div>
         </div>
 
-        {formError && (
-          <div className="bg-red-500/10 text-red-400 text-sm p-3 rounded-lg mb-6 border border-red-500/20">
-            {formError}
-          </div>
-        )}
-  
-        <div className="bg-brand-panel rounded-2xl shadow-2xl border border-brand-border">
-          <div className="p-8">
-            <form onSubmit={onSubmit} className="space-y-8">
-              {/* Agent Inputs Section */}
-              <div className="space-y-6">
-                <div className="border-b border-brand-border pb-4">
-                  <h2 className="text-2xl font-bold text-brand-text-primary mb-2">Agent Inputs</h2>
-                  <p className="text-sm text-brand-text-tertiary">Primary information required from agent</p>
-                </div>
+        {/* Property Details */}
+        <div className="relative group">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-3xl blur-xl"></div>
+          <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8">
+            <div className="flex items-center mb-6">
+              <h2 className="text-2xl font-bold text-white">Property Details</h2>
+              {!isEditing && (
+                <span className="ml-3 text-sm text-slate-400 flex items-center">
+                  <SparklesIcon className="h-4 w-4 mr-1 text-blue-400"/>
+                  Auto-filled from address
+                </span>
+              )}
+            </div>
                 
-                {/* Address (2 columns) + Price (1 column) Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* Address - Takes 2 columns */}
-                  <div className="md:col-span-2 space-y-2">
-                    <label className="block text-sm font-medium text-brand-text-secondary flex items-center">
-                      Property Address
-                      {isFetchingDetails && (
-                        <span className="ml-2 flex items-center text-xs text-brand-text-tertiary">
-                          <SparklesIcon className="h-4 w-4 mr-1 animate-pulse text-brand-accent"/>
-                          Auto-filling details...
-                        </span>
-                      )}
-                    </label>
-                    <div className="flex-grow">
-                      <AddressAutocomplete
-                        onAddressSelect={handleAddressSelect}
-                        value={formData.address}
+            {/* First Row: Bedrooms - Bathrooms - Square Feet */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+              <div className="space-y-2">
+                <label className="block text-white text-sm font-medium">Bedrooms</label>
+                <input
+                  type="number"
+                  name="bedrooms"
+                  value={formData.bedrooms || ''}
+                  onChange={handleInputChange}
+                  placeholder="3"
+                  className={`w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${isFieldMissing('bedrooms') ? 'border-red-500 ring-2 ring-red-500/20' : ''}`}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="block text-white text-sm font-medium">Bathrooms</label>
+                <input
+                  type="number"
+                  name="bathrooms"
+                  step="0.5"
+                  value={formData.bathrooms || ''}
+                  onChange={handleInputChange}
+                  placeholder="2.5"
+                  className={`w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${isFieldMissing('bathrooms') ? 'border-red-500 ring-2 ring-red-500/20' : ''}`}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="block text-white text-sm font-medium">Square Feet</label>
+                <input
+                  type="number"
+                  name="sqFt"
+                  value={formData.sqFt || ''}
+                  onChange={handleInputChange}
+                  placeholder="1800"
+                  className={`w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${isFieldMissing('sqFt') ? 'border-red-500 ring-2 ring-red-500/20' : ''}`}
+                />
+              </div>
+            </div>
+
+            {/* Second Row: Year Built - Property Type - Listing Type */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="space-y-2">
+                <label className="block text-white text-sm font-medium">Year Built</label>
+                <input
+                  type="number"
+                  name="yearBuilt"
+                  value={formData.yearBuilt || ''}
+                  onChange={handleInputChange}
+                  placeholder="1998"
+                  className={`w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${isFieldMissing('yearBuilt') ? 'border-red-500 ring-2 ring-red-500/20' : ''}`}
+                />
+              </div>
+              <EnhancedDropdown
+                label="Property Type"
+                value={formData.propertyType}
+                onChange={(value) => handleDropdownChange('propertyType', value)}
+                options={PROPERTY_TYPE_OPTIONS.map(type => ({ value: type, label: type }))}
+                placeholder="Select property type"
+                needsInput={propertyTypeNeedsInput}
+                onNeedsInputChange={setPropertyTypeNeedsInput}
+                disabled={!hasAttemptedAutoFill}
+                disabledPlaceholder="Enter address to auto-fill"
+              />
+              
+              <EnhancedDropdown
+                label="Listing Type"
+                value={formData.listingType}
+                onChange={(value) => handleDropdownChange('listingType', value)}
+                options={[
+                  { value: 'sale', label: 'For Sale' },
+                  { value: 'rental', label: 'For Rent' }
+                ]}
+                placeholder="Select listing type"
+                autoDetected={listingTypeAutoDetected}
+                disabled={!hasAttemptedAutoFill}
+                disabledPlaceholder="Enter address and price first"
+              />
+            </div>
+
+            {/* Data Source Indicator */}
+            {priceSource && !isEditing && (
+              <div className="mt-6 bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+                <div className="flex items-center text-sm">
+                  <SparklesIcon className="h-4 w-4 mr-2 text-blue-400"/>
+                  <span className="text-slate-300">
+                    Property data auto-filled from: <span className="font-medium text-blue-400">{priceSource}</span>
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Neighborhood Insights */}
+        {isValidAddressForContext(insightsAddress) && formData.latitude && formData.longitude && (
+          <NeighborhoodInsights 
+            address={insightsAddress}
+            lat={formData.latitude}
+            lng={formData.longitude}
+            listingPrice={formData.price}
+            listingType={formData.listingType}
+            addedSections={insightsAddedSections}
+            onSectionToggle={(sections) => {
+              setInsightsAddedSections(sections);
+            }}
+          />
+        )}
+        
+        {/* Image Upload */}
+        <div className="relative group">
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-3xl blur-xl"></div>
+          <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8">
+            <h2 className="text-2xl font-bold text-white mb-6">Listing Images</h2>
+            <div className="border-2 border-dashed border-slate-600 rounded-lg p-8 hover:border-slate-500 transition-colors">
+              <div className="space-y-4 text-center">
+                <Upload className="mx-auto h-12 w-12 text-slate-400" />
+                <div className="flex justify-center text-sm text-slate-300">
+                  <label
+                    htmlFor="file-upload"
+                    className="relative cursor-pointer bg-transparent rounded-md font-medium text-blue-400 hover:text-blue-300 focus-within:outline-none focus-within:ring-2 focus-within:ring-blue-500"
+                  >
+                    <span>Upload files</span>
+                    <input id="file-upload" name="file-upload" type="file" className="sr-only" multiple onChange={handleImageUpload} />
+                  </label>
+                  <p className="pl-1">or drag and drop</p>
+                </div>
+                <p className="text-xs text-slate-400">PNG, JPG up to 10MB</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Image Previews */}
+        {uploadedImages.length > 0 && (
+          <div className="relative group">
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-3xl blur-xl"></div>
+            <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8">
+              <h3 className="text-lg font-medium text-white mb-4">Image Previews</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                {uploadedImages.map((file, index) => (
+                  <div key={index} className="relative group">
+                    <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-lg bg-gray-200">
+                      <img 
+                        src={file} 
+                        alt={`Preview ${index + 1}`}
+                        className="w-full h-full object-cover"
                       />
                     </div>
-                    <p className="text-xs text-brand-text-tertiary">
-                      Start typing to search for an address. Property details will auto-fill below.
-                    </p>
+                    <button
+                      type="button"
+                      onClick={() => removeImage(index)}
+                      className="absolute -top-2 -right-2 bg-red-500 rounded-full p-1 hover:bg-red-600 transition-colors duration-200"
+                    >
+                      <X className="w-4 h-4 text-white" />
+                    </button>
+                    <p className="text-sm text-slate-400 mt-2 text-center">Image {index + 1}</p>
                   </div>
-
-                  {/* Price - Takes 1 column */}
-                  <div className="space-y-2">
-                    <label className="block text-brand-text-secondary text-sm font-medium">
-                      Asking Price ($)
-                    </label>
-                    <input
-                      type="number"
-                      name="price"
-                      value={formData.price || ''}
-                      onChange={handleInputChange}
-                      placeholder="e.g., 500000"
-                      className={`w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary ${isFieldMissing('price') ? 'border-red-500' : ''}`}
-                    />
-                    <p className="text-xs text-brand-text-tertiary">
-                      Set your listing price
-                    </p>
-                  </div>
-                </div>
+                ))}
               </div>
+            </div>
+          </div>
+        )}
 
-              {/* Auto-Filled Property Details Section */}
-              <div className="space-y-6">
-                <div className="border-b border-brand-border pb-4">
-                  <h2 className="text-2xl font-bold text-brand-text-primary mb-2 flex items-center">
-                    Property Details
-                    {!isEditing && (
-                      <span className="ml-3 text-sm font-normal text-brand-text-tertiary flex items-center">
-                        <SparklesIcon className="h-4 w-4 mr-1 text-brand-accent"/>
-                        Auto-filled from address
-                      </span>
-                    )}
-                  </h2>
-                  <p className="text-sm text-brand-text-tertiary">
-                    {isEditing ? 'Review and edit the property information' : 'Review and edit the auto-filled property information'}
-                  </p>
-                </div>
-                
-                {/* First Row: Bedrooms - Bathrooms - Square Feet */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* Bedrooms */}
-                  <div>
-                    <label className="block text-brand-text-secondary text-sm font-medium mb-3">Bedrooms</label>
-                    <input
-                      type="number"
-                      name="bedrooms"
-                      value={formData.bedrooms || ''}
-                      onChange={handleInputChange}
-                      placeholder="e.g., 3"
-                      className={`w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary ${isFieldMissing('bedrooms') ? 'border-red-500' : ''}`}
-                    />
-                  </div>
-                  {/* Bathrooms */}
-                  <div>
-                    <label className="block text-brand-text-secondary text-sm font-medium mb-3">Bathrooms</label>
-                    <input
-                      type="number"
-                      name="bathrooms"
-                      step="0.5"
-                      value={formData.bathrooms || ''}
-                      onChange={handleInputChange}
-                      placeholder="e.g., 2.5"
-                      className={`w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary ${isFieldMissing('bathrooms') ? 'border-red-500' : ''}`}
-                    />
-                  </div>
-                  {/* Square Feet */}
-                  <div>
-                    <label className="block text-brand-text-secondary text-sm font-medium mb-3">Square Feet</label>
-                    <input
-                      type="number"
-                      name="sqFt"
-                      value={formData.sqFt || ''}
-                      onChange={handleInputChange}
-                      placeholder="e.g., 1800"
-                      className={`w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary ${isFieldMissing('sqFt') ? 'border-red-500' : ''}`}
-                    />
-                  </div>
-                </div>
-
-                {/* Second Row: Year Built - Property Type - Listing Type */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* Year Built */}
-                  <div>
-                    <label className="block text-brand-text-secondary text-sm font-medium mb-3">Year Built</label>
-                    <input
-                      type="number"
-                      name="yearBuilt"
-                      value={formData.yearBuilt || ''}
-                      onChange={handleInputChange}
-                      placeholder="e.g., 1998"
-                      className={`w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary ${isFieldMissing('yearBuilt') ? 'border-red-500' : ''}`}
-                    />
-                  </div>
-                  {/* Property Type */}
-                  <EnhancedDropdown
-                    label="Property Type"
-                    value={formData.propertyType}
-                    onChange={(value) => handleDropdownChange('propertyType', value)}
-                    options={PROPERTY_TYPE_OPTIONS.map(type => ({ value: type, label: type }))}
-                    placeholder="Select property type"
-                    needsInput={propertyTypeNeedsInput}
-                    onNeedsInputChange={setPropertyTypeNeedsInput}
-                    disabled={!hasAttemptedAutoFill}
-                    disabledPlaceholder="Enter address to auto-fill"
-                  />
-                  
-                  {/* Listing Type */}
-                  <EnhancedDropdown
-                    label="Listing Type"
-                    value={formData.listingType}
-                    onChange={(value) => handleDropdownChange('listingType', value)}
-                    options={[
-                      { value: 'sale', label: 'For Sale' },
-                      { value: 'rental', label: 'For Rent' }
-                    ]}
-                    placeholder="Select listing type"
-                    autoDetected={listingTypeAutoDetected}
-                    disabled={!hasAttemptedAutoFill}
-                    disabledPlaceholder="Enter address and price first"
-                  />
-                </div>
-
-                {/* Data Source Indicator */}
-                {priceSource && !isEditing && (
-                  <div className="bg-brand-accent/10 border border-brand-accent/20 rounded-lg p-4">
-                    <div className="flex items-center text-sm">
-                      <SparklesIcon className="h-4 w-4 mr-2 text-brand-accent"/>
-                      <span className="text-brand-text-secondary">
-                        Property data auto-filled from: <span className="font-medium text-brand-accent">{priceSource}</span>
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Neighborhood Insights */}
-              {isValidAddressForContext(insightsAddress) && formData.latitude && formData.longitude && (
-                <NeighborhoodInsights 
-                  address={insightsAddress}
-                  lat={formData.latitude}
-                  lng={formData.longitude}
-                  listingPrice={formData.price}
-                  listingType={formData.listingType}
-                  addedSections={insightsAddedSections}
-                  onSectionToggle={(sections) => {
-                    setInsightsAddedSections(sections);
-                  }}
-                />
-              )}
-              
-              {/* Image Upload */}
-              <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-brand-text-primary border-b border-brand-border pb-3">
-                  Listing Images
-                </h2>
-                <div>
-                  <label className="block text-brand-text-secondary text-sm font-medium mb-3">Upload Images</label>
-                  <div className="mt-2 flex justify-center px-6 pt-5 pb-6 border-2 border-brand-border border-dashed rounded-lg bg-brand-input-bg">
-                    <div className="space-y-1 text-center">
-                      <Upload className="mx-auto h-12 w-12 text-brand-text-tertiary" />
-                      <div className="flex text-sm text-brand-text-secondary">
-                        <label
-                          htmlFor="file-upload"
-                          className="relative cursor-pointer bg-transparent rounded-md font-medium text-brand-primary hover:text-brand-accent focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-brand-primary"
-                        >
-                          <span>Upload files</span>
-                          <input id="file-upload" name="file-upload" type="file" className="sr-only" multiple onChange={handleImageUpload} />
-                        </label>
-                        <p className="pl-1">or drag and drop</p>
-                      </div>
-                      <p className="text-xs text-brand-text-tertiary">PNG, JPG up to 10MB</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Image Previews */}
-              {uploadedImages.length > 0 && (
-                <div>
-                  <h3 className="text-lg font-medium text-brand-text-primary mb-4">Image Previews</h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                    {uploadedImages.map((file, index) => (
-                      <div key={index} className="relative group">
-                        <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-lg bg-gray-200">
-                          <img 
-                            src={file} 
-                            alt={`Preview ${index + 1}`}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => removeImage(index)}
-                          className="absolute -top-2 -right-2 bg-brand-danger rounded-full p-1 hover:bg-red-600 transition-colors duration-200"
-                        >
-                          <X className="w-4 h-4 text-white" />
-                        </button>
-                        <p className="text-sm text-brand-text-tertiary mt-2 text-center">Image {index + 1}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Additional Features */}
-              <div className="space-y-3 mt-8">
-                <h2 className="text-2xl font-bold text-brand-text-primary border-b border-brand-border pb-3">
-                  Additional Features
-                </h2>
-                <label className="block text-brand-text-secondary text-sm font-medium">
-                  Anything else we should know? Add details that will help us generate richer marketing content for this listing.
-                </label>
-                <textarea
-                  name="keyFeatures"
-                  value={formData.keyFeatures}
-                  onChange={handleInputChange}
-                  rows={8}
-                  placeholder="Add any additional features, notes, or context..."
-                  className={`w-full bg-brand-input-bg border-brand-border rounded-lg px-4 py-2 text-brand-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary ${isFieldMissing('keyFeatures') ? 'border-red-500' : ''}`}
-                />
-              </div>
-
-              {/* Form Actions */}
-              <div className="flex justify-end space-x-4 pt-8 border-t border-brand-border">
-                <Button 
-                  type="button"
-                  variant="secondary"
-                  leftIcon={<SparklesIcon className="h-5 w-5" />}
-                  className={
-                    formData.address.trim().toLowerCase() === DEMO_ADDRESS.toLowerCase()
-                      ? "bg-gradient-to-r from-brand-secondary to-emerald-600 hover:from-emerald-600 hover:to-brand-secondary text-white font-semibold shadow-lg transition-all duration-300"
-                      : "bg-gray-400 text-gray-200 cursor-not-allowed opacity-50"
-                  }
-                  onClick={handleGenerateAllContent}
-                  disabled={formData.address.trim().toLowerCase() !== DEMO_ADDRESS.toLowerCase()}
-                  title={
-                    formData.address.trim().toLowerCase() !== DEMO_ADDRESS.toLowerCase()
-                      ? `Content generation is only available for demo address: ${DEMO_ADDRESS}`
-                      : "Generate all marketing content"
-                  }
-                >
-                  Generate All Content
-                </Button>
-                <Button 
-                  type="submit" 
-                  variant="primary"
-                  isLoading={isSubmitting}
-                  leftIcon={!isSubmitting ? <Save className="h-5 w-5" /> : undefined}
-                >
-                  {isSubmitting ? "Saving..." : `${isEditing ? "Update" : "Save"} Listing`}
-                </Button>
-              </div>
-            </form>
+        {/* Additional Features */}
+        <div className="relative group">
+          <div className="absolute inset-0 bg-gradient-to-r from-amber-500/10 to-orange-500/10 rounded-3xl blur-xl"></div>
+          <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8">
+            <h2 className="text-2xl font-bold text-white mb-6">Additional Features</h2>
+            <textarea
+              name="keyFeatures"
+              value={formData.keyFeatures}
+              onChange={handleInputChange}
+              rows={8}
+              placeholder="Add any additional features, notes, or context..."
+              className={`w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${isFieldMissing('keyFeatures') ? 'border-red-500 ring-2 ring-red-500/20' : ''}`}
+            />
+            <p className="text-slate-400 text-sm mt-3">
+              Optional details that will help us generate richer marketing content for this listing.
+            </p>
           </div>
         </div>
 
-        {/* Data Source Footer */}
-        <div className="mt-6 p-4 bg-brand-panel/50 border border-brand-border/50 rounded-lg">
+        {/* Form Actions */}
+        <div className="flex justify-end space-x-4 pt-8 border-t border-white/10">
+          <Button 
+            type="button"
+            variant="glass"
+            glowColor="emerald"
+            leftIcon={<SparklesIcon className="h-5 w-5" />}
+            disabled={formData.address.trim().toLowerCase() !== DEMO_ADDRESS.toLowerCase()}
+            onClick={handleGenerateAllContent}
+            title={
+              formData.address.trim().toLowerCase() !== DEMO_ADDRESS.toLowerCase()
+                ? `Content generation is only available for demo address: ${DEMO_ADDRESS}`
+                : "Generate all marketing content"
+            }
+          >
+            Generate All Content
+          </Button>
+          <Button 
+            type="submit" 
+            variant="glow"
+            glowColor="emerald"
+            isLoading={isSubmitting}
+            leftIcon={!isSubmitting ? <Save className="h-5 w-5" /> : undefined}
+          >
+            {isSubmitting ? "Saving..." : `${isEditing ? "Update" : "Save"} Listing`}
+          </Button>
+        </div>
+      </form>
+
+      {/* Data Source Footer */}
+      <div className="relative group">
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-500/10 to-gray-500/10 rounded-3xl blur-xl"></div>
+        <div className="relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-6">
           <div className="flex items-start space-x-2">
             <div className="flex-shrink-0 mt-0.5">
-              <svg className="w-4 h-4 text-brand-text-tertiary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <div className="text-xs text-brand-text-tertiary leading-relaxed">
+            <div className="text-xs text-slate-400 leading-relaxed">
               <p className="mb-1">
                 <strong>Data Sources:</strong> Information displayed comes from Google Places API, Google Custom Search API, 
                 public real estate listings, and AI-enhanced insights when real data is limited.
@@ -1157,6 +1119,7 @@ export default function ListingFormPage() {
         </div>
       </div>
     </div>
+    </ModernDashboardLayout>
   );
 }
     
